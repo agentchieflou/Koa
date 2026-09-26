@@ -1,0 +1,6 @@
+Themes:
+  FleetTheme:
+    Font: "'Segoe UI', 'Open Sans', sans-serif"
+    BasePaletteColor: '#58A6FF'
+    HueTorsion: 0
+    Vibrancy: 0

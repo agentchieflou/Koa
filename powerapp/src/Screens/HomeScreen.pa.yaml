@@ -1,0 +1,805 @@
+Screens:
+  HomeScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+    Children:
+      - conHomeRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =0
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+          Children:
+            - cmpHeaderHome:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: ="Fleet"
+                  Status: =If(!Connection.Connected, "offline", LaptopStale, "laptop not syncing", PendingCount & " approvals · " & NeedsYouCount & " need you")
+                  ShowBack: =false
+                  ShowSettings: =true
+                  OnBack: =false
+                  OnRefresh: |-
+                    =Refresh(FleetAttention);
+                    Refresh(FleetApprovals);
+                    Refresh(FleetNotifications);
+                    Refresh(FleetHeartbeat);
+                    Refresh(FleetDecisions)
+                  OnSettings: =Navigate(SettingsScreen, ScreenTransition.Cover)
+            - conHomeAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - conHomeBanner:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Center
+                  LayoutGap: =0
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Visible: =OperatorMismatch || LaptopStale
+                  Width: =Parent.Width
+                  Height: =If(IsPhone, 104, 72)
+                  FillPortions: =0
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                  PaddingTop: =8
+                  PaddingBottom: =8
+                  Fill: =RGBA(255, 244, 206, 1)
+                Children:
+                  - lblHomeBanner:
+                      Control: ModernText
+                      Properties:
+                        Text: |-
+                          =If(OperatorMismatch, "Signed in as " & Operator & " but the laptop accepts decisions from " & Lower(Heartbeat.Operator) & ". ", "") & If(LaptopStale, If(IsBlank(Heartbeat.At), "No heartbeat from the laptop yet.", "The laptop is not syncing: its last heartbeat was " & HeartbeatAgeSeconds & " s ago."), "")
+                        Size: =14
+                        Color: =RGBA(36, 36, 36, 1)
+                        Wrap: =true
+                        VerticalAlign: =VerticalAlign.Middle
+                        Height: =Parent.Height - 16
+                        FillPortions: =0
+            - tabHome:
+                Control: ModernTabList
+                Properties:
+                  Items: =["Attention", "Approvals", "Alerts", "History"]
+                  Default: ="Attention"
+                  Appearance: =TabListAppearance.Underline
+                  Alignment: =TabListAlignment.Start
+                  Size: =16
+                  Width: =Parent.Width
+                  Height: =56
+                  FillPortions: =0
+                  AccessibleLabel: ="Fleet sections"
+            - conHomeBody:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutGap: =16
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Width: =Parent.Width
+                  FillPortions: =1
+                Children:
+                  - conHomeList:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutJustifyContent: =LayoutJustifyContent.Start
+                        LayoutGap: =0
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        Width: =If(Parent.Width >= 900, 420, Parent.Width)
+                        FillPortions: =0
+                      Children:
+                        - cmpEmptyAttention:
+                            Control: CanvasComponent
+                            ComponentName: EmptyState
+                            Properties:
+                              Visible: =tabHome.Selected.Value = "Attention" && CountRows(galAttention.AllItems) = 0
+                              Message: ="Nothing needs you"
+                              Icon: ="CheckmarkCircle"
+                              Height: =160
+                              FillPortions: =0
+                        - galAttention:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              Items: =SortByColumns(FleetAttention, "NeedsHuman", SortOrder.Descending, "At", SortOrder.Descending)
+                              Visible: =tabHome.Selected.Value = "Attention"
+                              FillPortions: =1
+                              TemplateSize: =112
+                              TemplatePadding: =8
+                              TemplateFill: =RGBA(255, 255, 255, 1)
+                              Selectable: =true
+                              DelayItemLoading: =true
+                              LoadingSpinner: =LoadingSpinner.Data
+                              ShowScrollbar: =true
+                              TabIndex: =0
+                              AccessibleLabel: ="Repositories, the ones needing you first"
+                              ItemAccessibleLabel: =ThisItem.Title & ", " & ThisItem.State & ", " & ThisItem.Says
+                              OnSelect: |-
+                                =Set(selAttention, ThisItem);
+                                If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                            Children:
+                              - conAttentionRow:
+                                  Control: GroupContainer
+                                  Variant: AutoLayout
+                                  Properties:
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutAlignItems: =LayoutAlignItems.Stretch
+                                    LayoutJustifyContent: =LayoutJustifyContent.Start
+                                    LayoutGap: =8
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =Parent.TemplateHeight
+                                    PaddingLeft: =12
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    PaddingBottom: =8
+                                  Children:
+                                    - conAttentionText:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.Stretch
+                                          LayoutJustifyContent: =LayoutJustifyContent.Start
+                                          LayoutGap: =2
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          FillPortions: =1
+                                        Children:
+                                          - lblAttentionTitle:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Title & If(IsBlank(ThisItem.Ticket), "", " · " & ThisItem.Ticket)
+                                                Size: =16
+                                                FontWeight: =FontWeight.Semibold
+                                                Color: =RGBA(36, 36, 36, 1)
+                                                Wrap: =false
+                                                Height: =24
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, ThisItem);
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                          - lblAttentionSays:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Says
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =true
+                                                VerticalAlign: =VerticalAlign.Top
+                                                Height: =44
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, ThisItem);
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                          - lblAttentionAge:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: |-
+                                                  =With({s: Value(ThisItem.AgeSeconds)}, If(IsBlank(s), ThisItem.At, s < 90, Text(s) & " s ago", s < 5400, Text(RoundDown(s / 60, 0)) & " min ago", Text(RoundDown(s / 3600, 0)) & " h ago"))
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =false
+                                                Height: =20
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, ThisItem);
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                    - conAttentionSide:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.End
+                                          LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                                          LayoutGap: =4
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          Width: =120
+                                          FillPortions: =0
+                                        Children:
+                                          - bdgAttentionState:
+                                              Control: Badge
+                                              Properties:
+                                                Content: =ThisItem.State
+                                                ThemeColor: |-
+                                                  =Switch(ThisItem.Role, "human", 'BadgeCanvas.ThemeColor'.Danger, "waiting", 'BadgeCanvas.ThemeColor'.Warning, "running", 'BadgeCanvas.ThemeColor'.Brand, "done", 'BadgeCanvas.ThemeColor'.Success, 'BadgeCanvas.ThemeColor'.Subtle)
+                                                AccessibleLabel: ="State " & ThisItem.State
+                                                Width: =120
+                                                Height: =28
+                                                FillPortions: =0
+                                          - btnAttentionOpen:
+                                              Control: ModernButton
+                                              Properties:
+                                                Text: ="Open"
+                                                Icon: ="ChevronRight"
+                                                Layout: =ButtonLayout.IconOnly
+                                                Appearance: =ButtonAppearance.Subtle
+                                                AccessibleLabel: ="Open " & ThisItem.Title
+                                                Width: =48
+                                                Height: =48
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, ThisItem);
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                        - cmpEmptyApprovals:
+                            Control: CanvasComponent
+                            ComponentName: EmptyState
+                            Properties:
+                              Visible: =tabHome.Selected.Value = "Approvals" && CountRows(galApprovals.AllItems) = 0
+                              Message: ="No approvals waiting"
+                              Icon: ="CheckmarkCircle"
+                              Height: =160
+                              FillPortions: =0
+                        - galApprovals:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              Items: =SortByColumns(PendingApprovals, "Created", SortOrder.Descending)
+                              Visible: =tabHome.Selected.Value = "Approvals"
+                              FillPortions: =1
+                              TemplateSize: =112
+                              TemplatePadding: =8
+                              TemplateFill: =RGBA(255, 255, 255, 1)
+                              Selectable: =true
+                              DelayItemLoading: =true
+                              LoadingSpinner: =LoadingSpinner.Data
+                              ShowScrollbar: =true
+                              TabIndex: =0
+                              AccessibleLabel: ="Approvals waiting for you, newest first"
+                              ItemAccessibleLabel: =ThisItem.ApprovalKind & ", " & ThisItem.Repo & ", " & ThisItem.Summary
+                              OnSelect: |-
+                                =Set(selApproval, ThisItem);
+                                Navigate(ApprovalScreen, ScreenTransition.Cover)
+                            Children:
+                              - conApprovalsRow:
+                                  Control: GroupContainer
+                                  Variant: AutoLayout
+                                  Properties:
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutAlignItems: =LayoutAlignItems.Stretch
+                                    LayoutJustifyContent: =LayoutJustifyContent.Start
+                                    LayoutGap: =8
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =Parent.TemplateHeight
+                                    PaddingLeft: =12
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    PaddingBottom: =8
+                                  Children:
+                                    - conApprovalsText:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.Stretch
+                                          LayoutJustifyContent: =LayoutJustifyContent.Start
+                                          LayoutGap: =2
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          FillPortions: =1
+                                        Children:
+                                          - lblApprovalsTitle:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Repo & If(IsBlank(ThisItem.Ticket), "", " · " & ThisItem.Ticket)
+                                                Size: =16
+                                                FontWeight: =FontWeight.Semibold
+                                                Color: =RGBA(36, 36, 36, 1)
+                                                Wrap: =false
+                                                Height: =24
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                          - lblApprovalsSummary:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Summary
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =true
+                                                VerticalAlign: =VerticalAlign.Top
+                                                Height: =44
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                          - lblApprovalsAge:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: |-
+                                                  =With({s: Value(ThisItem.WaitingSeconds)}, If(IsBlank(s), ThisItem.Created, s < 90, "waiting " & Text(s) & " s", s < 5400, "waiting " & Text(RoundDown(s / 60, 0)) & " min", "waiting " & Text(RoundDown(s / 3600, 0)) & " h"))
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =false
+                                                Height: =20
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                    - conApprovalsSide:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.End
+                                          LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                                          LayoutGap: =4
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          Width: =120
+                                          FillPortions: =0
+                                        Children:
+                                          - bdgApprovalsKind:
+                                              Control: Badge
+                                              Properties:
+                                                Content: =ThisItem.ApprovalKind
+                                                ThemeColor: |-
+                                                  =Switch(ThisItem.Status, "pending", 'BadgeCanvas.ThemeColor'.Warning, "sent", 'BadgeCanvas.ThemeColor'.Informative, "approved", 'BadgeCanvas.ThemeColor'.Success, "denied", 'BadgeCanvas.ThemeColor'.Danger, "rejected", 'BadgeCanvas.ThemeColor'.Danger, 'BadgeCanvas.ThemeColor'.Subtle)
+                                                AccessibleLabel: ="Kind " & ThisItem.ApprovalKind
+                                                Width: =120
+                                                Height: =28
+                                                FillPortions: =0
+                                          - btnApprovalsOpen:
+                                              Control: ModernButton
+                                              Properties:
+                                                Text: ="Open"
+                                                Icon: ="ChevronRight"
+                                                Layout: =ButtonLayout.IconOnly
+                                                Appearance: =ButtonAppearance.Subtle
+                                                AccessibleLabel: ="Open approval " & ThisItem.Title
+                                                Width: =48
+                                                Height: =48
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                        - cmpEmptyAlerts:
+                            Control: CanvasComponent
+                            ComponentName: EmptyState
+                            Properties:
+                              Visible: =tabHome.Selected.Value = "Alerts" && CountRows(galAlerts.AllItems) = 0
+                              Message: ="No alerts"
+                              Icon: ="Info"
+                              Height: =160
+                              FillPortions: =0
+                        - galAlerts:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              Items: =FirstN(SortByColumns(FleetNotifications, "At", SortOrder.Descending), 50)
+                              Visible: =tabHome.Selected.Value = "Alerts"
+                              FillPortions: =1
+                              TemplateSize: =112
+                              TemplatePadding: =8
+                              TemplateFill: =RGBA(255, 255, 255, 1)
+                              Selectable: =true
+                              DelayItemLoading: =true
+                              LoadingSpinner: =LoadingSpinner.Data
+                              ShowScrollbar: =true
+                              TabIndex: =0
+                              AccessibleLabel: ="The newest fifty alerts"
+                              ItemAccessibleLabel: =ThisItem.Severity & ", " & ThisItem.TitleText & ", " & ThisItem.Body
+                              OnSelect: |-
+                                =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                            Children:
+                              - conAlertsRow:
+                                  Control: GroupContainer
+                                  Variant: AutoLayout
+                                  Properties:
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutAlignItems: =LayoutAlignItems.Stretch
+                                    LayoutJustifyContent: =LayoutJustifyContent.Start
+                                    LayoutGap: =8
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =Parent.TemplateHeight
+                                    PaddingLeft: =12
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    PaddingBottom: =8
+                                  Children:
+                                    - conAlertsText:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.Stretch
+                                          LayoutJustifyContent: =LayoutJustifyContent.Start
+                                          LayoutGap: =2
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          FillPortions: =1
+                                        Children:
+                                          - lblAlertsTitle:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.TitleText
+                                                Size: =16
+                                                FontWeight: =FontWeight.Semibold
+                                                Color: =RGBA(36, 36, 36, 1)
+                                                Wrap: =false
+                                                Height: =24
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                          - lblAlertsBody:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Body
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =true
+                                                VerticalAlign: =VerticalAlign.Top
+                                                Height: =44
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                          - lblAlertsAge:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =Text(DateTimeValue(ThisItem.At), DateTimeFormat.ShortDateTime) & If(ThisItem.Quiet = "true", " · quiet hours", "")
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =false
+                                                Height: =20
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                                    - conAlertsSide:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.End
+                                          LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                                          LayoutGap: =4
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          Width: =120
+                                          FillPortions: =0
+                                        Children:
+                                          - bdgAlertsSeverity:
+                                              Control: Badge
+                                              Properties:
+                                                Content: =ThisItem.Severity
+                                                ThemeColor: |-
+                                                  =Switch(ThisItem.Severity, "action", 'BadgeCanvas.ThemeColor'.Danger, "alert", 'BadgeCanvas.ThemeColor'.Warning, "info", 'BadgeCanvas.ThemeColor'.Informative, 'BadgeCanvas.ThemeColor'.Subtle)
+                                                AccessibleLabel: ="Severity " & ThisItem.Severity
+                                                Width: =120
+                                                Height: =28
+                                                FillPortions: =0
+                                          - btnAlertsOpen:
+                                              Control: ModernButton
+                                              Properties:
+                                                Text: ="Open"
+                                                Icon: ="ChevronRight"
+                                                Layout: =ButtonLayout.IconOnly
+                                                Appearance: =ButtonAppearance.Subtle
+                                                AccessibleLabel: ="Open " & ThisItem.Repo
+                                                Width: =48
+                                                Height: =48
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
+                        - cmpEmptyHistory:
+                            Control: CanvasComponent
+                            ComponentName: EmptyState
+                            Properties:
+                              Visible: =tabHome.Selected.Value = "History" && CountRows(galHistory.AllItems) = 0
+                              Message: ="No history yet"
+                              Icon: ="History"
+                              Height: =160
+                              FillPortions: =0
+                        - galHistory:
+                            Control: Gallery
+                            Variant: Vertical
+                            Properties:
+                              Items: =SortByColumns(Filter(FleetApprovals, Status = "approved" || Status = "denied" || Status = "rejected" || Status = "expired" || Status = "sent"), "Created", SortOrder.Descending)
+                              Visible: =tabHome.Selected.Value = "History"
+                              FillPortions: =1
+                              TemplateSize: =112
+                              TemplatePadding: =8
+                              TemplateFill: =RGBA(255, 255, 255, 1)
+                              Selectable: =true
+                              DelayItemLoading: =true
+                              LoadingSpinner: =LoadingSpinner.Data
+                              ShowScrollbar: =true
+                              TabIndex: =0
+                              AccessibleLabel: ="Decided approvals, newest first"
+                              ItemAccessibleLabel: =ThisItem.Status & ", " & ThisItem.Repo & ", " & ThisItem.Summary
+                              OnSelect: |-
+                                =Set(selApproval, ThisItem);
+                                Navigate(ApprovalScreen, ScreenTransition.Cover)
+                            Children:
+                              - conHistoryRow:
+                                  Control: GroupContainer
+                                  Variant: AutoLayout
+                                  Properties:
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutAlignItems: =LayoutAlignItems.Stretch
+                                    LayoutJustifyContent: =LayoutJustifyContent.Start
+                                    LayoutGap: =8
+                                    LayoutMinWidth: =0
+                                    LayoutMinHeight: =0
+                                    Width: =Parent.TemplateWidth
+                                    Height: =Parent.TemplateHeight
+                                    PaddingLeft: =12
+                                    PaddingRight: =8
+                                    PaddingTop: =8
+                                    PaddingBottom: =8
+                                  Children:
+                                    - conHistoryText:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.Stretch
+                                          LayoutJustifyContent: =LayoutJustifyContent.Start
+                                          LayoutGap: =2
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          FillPortions: =1
+                                        Children:
+                                          - lblHistoryTitle:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Repo & If(IsBlank(ThisItem.Ticket), "", " · " & ThisItem.Ticket)
+                                                Size: =16
+                                                FontWeight: =FontWeight.Semibold
+                                                Color: =RGBA(36, 36, 36, 1)
+                                                Wrap: =false
+                                                Height: =24
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                          - lblHistorySummary:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Summary
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =true
+                                                VerticalAlign: =VerticalAlign.Top
+                                                Height: =44
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                          - lblHistoryOutcome:
+                                              Control: ModernText
+                                              Properties:
+                                                Text: =ThisItem.Status & If(IsBlank(ThisItem.DecidedBy), "", " by " & ThisItem.DecidedBy) & If(IsBlank(ThisItem.DecidedAt), "", " · " & Text(DateTimeValue(ThisItem.DecidedAt), DateTimeFormat.ShortDateTime))
+                                                Size: =14
+                                                Color: =RGBA(97, 97, 97, 1)
+                                                Wrap: =false
+                                                Height: =20
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                                    - conHistorySide:
+                                        Control: GroupContainer
+                                        Variant: AutoLayout
+                                        Properties:
+                                          LayoutDirection: =LayoutDirection.Vertical
+                                          LayoutAlignItems: =LayoutAlignItems.End
+                                          LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                                          LayoutGap: =4
+                                          LayoutMinWidth: =0
+                                          LayoutMinHeight: =0
+                                          Width: =120
+                                          FillPortions: =0
+                                        Children:
+                                          - bdgHistoryKind:
+                                              Control: Badge
+                                              Properties:
+                                                Content: =ThisItem.ApprovalKind
+                                                ThemeColor: |-
+                                                  =Switch(ThisItem.Status, "pending", 'BadgeCanvas.ThemeColor'.Warning, "sent", 'BadgeCanvas.ThemeColor'.Informative, "approved", 'BadgeCanvas.ThemeColor'.Success, "denied", 'BadgeCanvas.ThemeColor'.Danger, "rejected", 'BadgeCanvas.ThemeColor'.Danger, 'BadgeCanvas.ThemeColor'.Subtle)
+                                                AccessibleLabel: ="Kind " & ThisItem.ApprovalKind & ", " & ThisItem.Status
+                                                Width: =120
+                                                Height: =28
+                                                FillPortions: =0
+                                          - btnHistoryOpen:
+                                              Control: ModernButton
+                                              Properties:
+                                                Text: ="Open"
+                                                Icon: ="ChevronRight"
+                                                Layout: =ButtonLayout.IconOnly
+                                                Appearance: =ButtonAppearance.Subtle
+                                                AccessibleLabel: ="Open approval " & ThisItem.Title
+                                                Width: =48
+                                                Height: =48
+                                                FillPortions: =0
+                                                OnSelect: |-
+                                                  =Set(selApproval, ThisItem);
+                                                  Navigate(ApprovalScreen, ScreenTransition.Cover)
+                  - conHomeDetail:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutJustifyContent: =LayoutJustifyContent.Start
+                        LayoutOverflowY: =LayoutOverflow.Scroll
+                        LayoutGap: =8
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        Visible: =Parent.Width >= 900
+                        FillPortions: =1
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        PaddingTop: =16
+                        PaddingBottom: =16
+                        Fill: =RGBA(255, 255, 255, 1)
+                      Children:
+                        - lblDetailTitle:
+                            Control: ModernText
+                            Properties:
+                              Text: =If(IsBlank(selAttention), "Select a repository", selAttention.Title)
+                              Size: =20
+                              FontWeight: =FontWeight.Semibold
+                              Color: =RGBA(36, 36, 36, 1)
+                              Wrap: =false
+                              Height: =32
+                              FillPortions: =0
+                        - cmpEmptyDetail:
+                            Control: CanvasComponent
+                            ComponentName: EmptyState
+                            Properties:
+                              Visible: =IsBlank(selAttention)
+                              Message: ="Tap a row to see the laptop's words here"
+                              Icon: ="Info"
+                              Height: =160
+                              FillPortions: =0
+                        - cmpKvDetailRepo:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Repo"
+                              Value: =selAttention.Title & " · " & selAttention.Project
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - cmpKvDetailTicket:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Ticket"
+                              Value: =selAttention.Ticket
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - cmpKvDetailState:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="State"
+                              Value: =selAttention.State & If(selAttention.NeedsHuman = "true", " · needs you", "")
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - cmpKvDetailSays:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Says"
+                              Value: =selAttention.Says
+                              Wrap: =true
+                              Height: =96
+                              FillPortions: =0
+                        - cmpKvDetailModel:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Model"
+                              Value: =selAttention.Model
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - cmpKvDetailSpend:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Spend"
+                              Value: =selAttention.SpendLine
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - cmpKvDetailRun:
+                            Control: CanvasComponent
+                            ComponentName: KeyValueRow
+                            Properties:
+                              Visible: =!IsBlank(selAttention)
+                              Label: ="Run"
+                              Value: =selAttention.RunNumber & " · " & selAttention.RunOrigin & If(selAttention.RunLive = "true", " · live", " · not live")
+                              Wrap: =false
+                              Height: =40
+                              FillPortions: =0
+                        - btnDetailOpenAgent:
+                            Control: ModernButton
+                            Properties:
+                              Text: ="Open agent"
+                              Appearance: =ButtonAppearance.Primary
+                              Visible: =!IsBlank(selAttention)
+                              AccessibleLabel: ="Open the agent page"
+                              Height: =48
+                              FillPortions: =0
+                              OnSelect: =Navigate(AgentScreen, ScreenTransition.Cover)
+                        - btnDetailOpenApproval:
+                            Control: ModernButton
+                            Properties:
+                              Text: ="Open approval"
+                              Appearance: =ButtonAppearance.Secondary
+                              Visible: =!IsBlank(selAttention.ApprovalId)
+                              AccessibleLabel: ="Open the approval waiting for this repository"
+                              Height: =48
+                              FillPortions: =0
+                              OnSelect: |-
+                                =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId));
+                                Navigate(ApprovalScreen, ScreenTransition.Cover)
+            - tmrRefresh:
+                Control: Timer
+                Properties:
+                  Duration: =60000
+                  Repeat: =true
+                  AutoStart: =true
+                  AutoPause: =true
+                  Visible: =false
+                  TabIndex: =-1
+                  Text: ="Refresh"
+                  Width: =1
+                  Height: =1
+                  FillPortions: =0
+                  OnTimerEnd: |-
+                    =Refresh(FleetAttention);
+                    Refresh(FleetApprovals);
+                    Refresh(FleetNotifications);
+                    Refresh(FleetHeartbeat);
+                    Refresh(FleetDecisions)

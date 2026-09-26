@@ -1,0 +1,270 @@
+Screens:
+  ApprovalScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+      OnVisible: =Set(selApproval, LookUp(FleetApprovals, Title = Coalesce(selApproval.Title, Param("approvalId"))))
+    Children:
+      - conApprovalRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingBottom: =24
+          Children:
+            - cmpHeaderApproval:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: ="Approval"
+                  Status: =selApproval.Repo & If(IsBlank(selApproval.Ticket), "", " · " & selApproval.Ticket)
+                  ShowBack: =true
+                  ShowSettings: =false
+                  OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
+                  OnRefresh: |-
+                    =Refresh(FleetApprovals);
+                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title))
+                  OnSettings: =false
+            - conApprovalAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - conApprovalKindRow:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutGap: =12
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+                Children:
+                  - bdgApprovalKind:
+                      Control: Badge
+                      Properties:
+                        Content: =selApproval.ApprovalKind
+                        ThemeColor: |-
+                          =Switch(selApproval.Status, "pending", 'BadgeCanvas.ThemeColor'.Warning, "sent", 'BadgeCanvas.ThemeColor'.Informative, "approved", 'BadgeCanvas.ThemeColor'.Success, "denied", 'BadgeCanvas.ThemeColor'.Danger, "rejected", 'BadgeCanvas.ThemeColor'.Danger, 'BadgeCanvas.ThemeColor'.Subtle)
+                        AccessibleLabel: ="Kind " & selApproval.ApprovalKind
+                        Width: =150
+                        Height: =28
+                        FillPortions: =0
+                  - lblApprovalStatusWord:
+                      Control: ModernText
+                      Properties:
+                        Text: =selApproval.Status
+                        Size: =16
+                        FontWeight: =FontWeight.Semibold
+                        Color: =RGBA(36, 36, 36, 1)
+                        Wrap: =false
+                        FillPortions: =1
+            - cmpKvApprovalSummary:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Summary"
+                  Value: =selApproval.Summary
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =96
+                  FillPortions: =0
+            - cmpKvApprovalRepo:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Repo"
+                  Value: =selApproval.Repo & If(IsBlank(selApproval.Ticket), "", " · " & selApproval.Ticket)
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvApprovalCreated:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Created"
+                  Value: =Text(DateTimeValue(selApproval.Created), DateTimeFormat.ShortDateTime)
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvApprovalExpires:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Expires"
+                  Value: |-
+                    =Text(DateTimeValue(selApproval.Expires), DateTimeFormat.ShortDateTime) & With({m: DateDiff(Now(), DateTimeValue(selApproval.Expires), TimeUnit.Minutes)}, If(IsBlank(m), "", m < 0, " · past expiry", " · " & Text(m) & " min left"))
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - lblApprovalPayloadHeading:
+                Control: ModernText
+                Properties:
+                  Text: ="Payload (the dry run, redacted by the laptop)"
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =24
+                  FillPortions: =0
+            - conApprovalPayload:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutAlignItems: =LayoutAlignItems.Start
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                  LayoutGap: =0
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Width: =Parent.Width - 32
+                  Height: =240
+                  FillPortions: =0
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                  PaddingTop: =8
+                  PaddingBottom: =8
+                  Fill: =RGBA(243, 242, 241, 1)
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                Children:
+                  - lblApprovalPayload:
+                      Control: ModernText
+                      Properties:
+                        Text: =selApproval.PayloadPreview
+                        Font: ="Consolas, 'Courier New', monospace"
+                        Size: =13
+                        Color: =RGBA(36, 36, 36, 1)
+                        Wrap: =true
+                        AutoHeight: =true
+                        VerticalAlign: =VerticalAlign.Top
+                        Width: =Parent.Width - 24
+                        Height: =200
+                        FillPortions: =0
+            - lblApprovalTruncated:
+                Control: ModernText
+                Properties:
+                  Text: =Text(Value(selApproval.PayloadBytes) - Len(selApproval.PayloadPreview)) & " bytes not shown; the digest covers all of it"
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Visible: =selApproval.PayloadTruncated = "true"
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvApprovalDigest:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Digest"
+                  Value: =Left(selApproval.Digest, 12) & "…"
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvApprovalStatus:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Status"
+                  Value: |-
+                    =Switch(selApproval.Status,
+                      "pending", "pending",
+                      "sent", "sent by " & selApproval.DecidedBy & " · waiting for the laptop",
+                      "approved", "approved by " & selApproval.DecidedBy & If(IsBlank(selApproval.DecidedAt), "", " · " & Text(DateTimeValue(selApproval.DecidedAt), DateTimeFormat.ShortDateTime)),
+                      "denied", "denied: " & selApproval.Reason & " · by " & selApproval.DecidedBy,
+                      "rejected", "rejected: " & selApproval.ResultText,
+                      "expired", "expired",
+                      selApproval.Status)
+                    & If(selApproval.Late = "true", " · late", "")
+                    & If(IsBlank(selApproval.Via), "", " · via " & selApproval.Via)
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =72
+                  FillPortions: =0
+            - cmpKvApprovalResult:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Visible: =!IsBlank(selApproval.ResultText) || !IsBlank(selApproval.ResultCode)
+                  Label: ="Laptop says"
+                  Value: =Trim(selApproval.ResultCode & " " & selApproval.ResultText)
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =72
+                  FillPortions: =0
+            - conApprovalButtons:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutGap: =12
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                Children:
+                  - btnApprove:
+                      Control: ModernButton
+                      Properties:
+                        Text: ="Approve…"
+                        Appearance: =ButtonAppearance.Primary
+                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now(), DisplayMode.Edit, DisplayMode.Disabled)
+                        AccessibleLabel: ="Approve, then confirm on the next screen"
+                        Height: =52
+                        FillPortions: =1
+                        OnSelect: |-
+                          =Set(decideChoice, "approved");
+                          Navigate(DecideScreen, ScreenTransition.Cover)
+                  - btnDeny:
+                      Control: ModernButton
+                      Properties:
+                        Text: ="Deny…"
+                        Appearance: =ButtonAppearance.Secondary
+                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now(), DisplayMode.Edit, DisplayMode.Disabled)
+                        AccessibleLabel: ="Deny, then give a reason on the next screen"
+                        Height: =52
+                        FillPortions: =1
+                        OnSelect: |-
+                          =Set(decideChoice, "denied");
+                          Navigate(DecideScreen, ScreenTransition.Cover)
+            - lblApprovalDisabledWhy:
+                Control: ModernText
+                Properties:
+                  Text: =If(IsBlank(selApproval), "No approval selected.", selApproval.Status <> "pending", "Already " & selApproval.Status & "; nothing to decide.", DateTimeValue(selApproval.Expires) <= Now(), "Past the approval's expiry; the agent has already given up waiting.", "")
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Visible: =IsBlank(selApproval) || selApproval.Status <> "pending" || DateTimeValue(selApproval.Expires) <= Now()
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0

@@ -1,0 +1,58 @@
+[
+  {
+    "Title": "luna:waiting_approval",
+    "Repo": "luna",
+    "Ticket": "RDSD-118",
+    "State": "waiting_approval",
+    "Severity": "action",
+    "TitleText": "luna · RDSD-118 — needs approval",
+    "Body": "a write is waiting for one click",
+    "At": "2026-09-26T09:18:06Z",
+    "Seq": "812",
+    "Quiet": "false",
+    "ApprovalId": "luna-jira-transition-20260926T091806-a52c",
+    "SourceFile": "20260926T091806Z-luna-waiting_approval-812.json"
+  },
+  {
+    "Title": "rdsd-uat:needs_human",
+    "Repo": "rdsd-uat",
+    "Ticket": "RDSD-121",
+    "State": "needs_human",
+    "Severity": "action",
+    "TitleText": "rdsd-uat · RDSD-121 — needs you",
+    "Body": "The acceptance criteria give two readings: compare the UAT extract against the source of truth by row count only, or by row count and by the twelve amount columns. Which one?",
+    "At": "2026-09-26T08:54:18Z",
+    "Seq": "455",
+    "Quiet": "false",
+    "ApprovalId": "",
+    "SourceFile": "20260926T085418Z-rdsd-uat-needs_human-455.json"
+  },
+  {
+    "Title": "luna-docs:error",
+    "Repo": "luna-docs",
+    "Ticket": "RDSD-119",
+    "State": "error",
+    "Severity": "alert",
+    "TitleText": "luna-docs · RDSD-119 — fell over",
+    "Body": "the last turn exited 1",
+    "At": "2026-09-26T08:23:13Z",
+    "Seq": "678",
+    "Quiet": "false",
+    "ApprovalId": "",
+    "SourceFile": "20260926T082313Z-luna-docs-error-678.json"
+  },
+  {
+    "Title": "pbi-brief:done",
+    "Repo": "pbi-brief",
+    "Ticket": "",
+    "State": "done",
+    "Severity": "info",
+    "TitleText": "pbi-brief — finished",
+    "Body": "phase is pr_open",
+    "At": "2026-09-26T07:22:18Z",
+    "Seq": "391",
+    "Quiet": "true",
+    "ApprovalId": "",
+    "SourceFile": "20260926T072218Z-pbi-brief-done-391.json"
+  }
+]

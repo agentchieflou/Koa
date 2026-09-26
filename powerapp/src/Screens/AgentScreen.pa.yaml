@@ -1,0 +1,309 @@
+Screens:
+  AgentScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+      OnVisible: =Set(selAttention, LookUp(FleetAttention, Title = Coalesce(selAttention.Title, Param("repo"))))
+    Children:
+      - conAgentRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingBottom: =24
+          Children:
+            - cmpHeaderAgent:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: =Coalesce(selAttention.Title, "Agent")
+                  Status: =selAttention.Project & If(IsBlank(selAttention.Ticket), "", " · " & selAttention.Ticket)
+                  ShowBack: =true
+                  ShowSettings: =false
+                  OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
+                  OnRefresh: |-
+                    =Refresh(FleetAttention);
+                    Refresh(FleetApprovals);
+                    Refresh(FleetDecisions);
+                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title))
+                  OnSettings: =false
+            - conAgentAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - conAgentState:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutJustifyContent: =LayoutJustifyContent.Start
+                  LayoutGap: =12
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+                Children:
+                  - bdgAgentState:
+                      Control: Badge
+                      Properties:
+                        Content: =selAttention.State
+                        ThemeColor: |-
+                          =Switch(selAttention.Role, "human", 'BadgeCanvas.ThemeColor'.Danger, "waiting", 'BadgeCanvas.ThemeColor'.Warning, "running", 'BadgeCanvas.ThemeColor'.Brand, "done", 'BadgeCanvas.ThemeColor'.Success, 'BadgeCanvas.ThemeColor'.Subtle)
+                        AccessibleLabel: ="State " & selAttention.State
+                        Width: =150
+                        Height: =28
+                        FillPortions: =0
+                  - lblAgentNeedsYou:
+                      Control: ModernText
+                      Properties:
+                        Text: =If(selAttention.NeedsHuman = "true", "needs you", "")
+                        Size: =16
+                        FontWeight: =FontWeight.Semibold
+                        Color: =RGBA(36, 36, 36, 1)
+                        Wrap: =false
+                        FillPortions: =1
+            - cmpKvAgentProject:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Project"
+                  Value: =selAttention.Project
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentTicket:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Ticket"
+                  Value: =selAttention.Ticket
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentNeedsYou:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Needs you"
+                  Value: =selAttention.NeedsHuman
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentSays:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Says"
+                  Value: =selAttention.Says
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =120
+                  FillPortions: =0
+            - cmpKvAgentLastSaid:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Last said"
+                  Value: =selAttention.LastSaid
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =96
+                  FillPortions: =0
+            - cmpKvAgentAge:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Age"
+                  Value: |-
+                    =With({s: Value(selAttention.AgeSeconds)}, If(IsBlank(s), "", s < 90, Text(s) & " s ago", s < 5400, Text(RoundDown(s / 60, 0)) & " min ago", Text(RoundDown(s / 3600, 0)) & " h ago")) & If(IsBlank(selAttention.At), "", " · " & Text(DateTimeValue(selAttention.At), DateTimeFormat.ShortDateTime))
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentRun:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Run"
+                  Value: =selAttention.RunNumber & " · " & selAttention.RunOrigin & If(selAttention.RunLive = "true", " · live", " · not live")
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentModel:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Model"
+                  Value: =selAttention.Model
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentSpend:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Spend"
+                  Value: =selAttention.SpendLine
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentSpendDetail:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Spend detail"
+                  Value: =selAttention.SpendTotal & " total · " & selAttention.SpendToday & " today" & If(IsBlank(selAttention.SpendBudget), "", " · budget " & selAttention.SpendBudget) & " · " & selAttention.Turns & " turns"
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentSession:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Session"
+                  Value: ="supervised " & selAttention.Supervised & " · external " & selAttention.External
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvAgentLastReply:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Last reply"
+                  Value: |-
+                    =With({d: First(SortByColumns(Filter(FleetDecisions, Repo = selAttention.Title), "Issued", SortOrder.Descending))}, If(IsBlank(d), "none yet", d.Kind & " " & d.Result & If(IsBlank(d.ResultText), "", " · " & d.ResultText)))
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =64
+                  FillPortions: =0
+            - lblAgentQuestions:
+                Control: ModernText
+                Properties:
+                  Text: ="Questions the agent asked"
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =false
+                  Visible: =!IsBlank(selAttention.QuestionsJson) && selAttention.QuestionsJson <> "[]"
+                  Width: =Parent.Width - 32
+                  Height: =24
+                  FillPortions: =0
+            - galAgentQuestions:
+                Control: Gallery
+                Variant: Vertical
+                Properties:
+                  Items: =Table(ParseJSON(Coalesce(selAttention.QuestionsJson, "[]")))
+                  Visible: =!IsBlank(selAttention.QuestionsJson) && selAttention.QuestionsJson <> "[]"
+                  Width: =Parent.Width - 32
+                  Height: =288
+                  FillPortions: =0
+                  TemplateSize: =96
+                  TemplatePadding: =8
+                  TemplateFill: =RGBA(255, 255, 255, 1)
+                  Selectable: =false
+                  DelayItemLoading: =true
+                  LoadingSpinner: =LoadingSpinner.Data
+                  ShowScrollbar: =true
+                  TabIndex: =0
+                  AccessibleLabel: ="Questions the agent asked"
+                  ItemAccessibleLabel: =Text(ThisItem.Value.q)
+                Children:
+                  - conQuestionRow:
+                      Control: GroupContainer
+                      Variant: AutoLayout
+                      Properties:
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutJustifyContent: =LayoutJustifyContent.Start
+                        LayoutGap: =4
+                        LayoutMinWidth: =0
+                        LayoutMinHeight: =0
+                        Width: =Parent.TemplateWidth
+                        Height: =Parent.TemplateHeight
+                        PaddingLeft: =12
+                        PaddingRight: =12
+                        PaddingTop: =8
+                        PaddingBottom: =8
+                      Children:
+                        - lblQuestionText:
+                            Control: ModernText
+                            Properties:
+                              Text: =Text(ThisItem.Value.q)
+                              Size: =16
+                              Color: =RGBA(36, 36, 36, 1)
+                              Wrap: =true
+                              VerticalAlign: =VerticalAlign.Top
+                              Height: =48
+                              FillPortions: =0
+                        - lblQuestionMeta:
+                            Control: ModernText
+                            Properties:
+                              Text: |-
+                                ="want " & Text(ThisItem.Value.want) & If(IsBlank(Text(ThisItem.Value.'default')), "", " · default " & Text(ThisItem.Value.'default')) & With({c: Concat(Table(ThisItem.Value.choices), Text(ThisRecord.Value), " / ")}, If(IsBlank(c), "", " · " & c))
+                              Size: =14
+                              Color: =RGBA(97, 97, 97, 1)
+                              Wrap: =true
+                              VerticalAlign: =VerticalAlign.Top
+                              Height: =28
+                              FillPortions: =0
+            - btnAgentReply:
+                Control: ModernButton
+                Properties:
+                  Text: ="Reply"
+                  Appearance: =ButtonAppearance.Primary
+                  DisplayMode: =If(selAttention.External = "true" || IsBlank(selAttention), DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: ="Reply to the agent"
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                  OnSelect: =Navigate(ReplyScreen, ScreenTransition.Cover)
+            - lblAgentReplyNote:
+                Control: ModernText
+                Properties:
+                  Text: ="Reply is off. The laptop reports this session as external, which means somebody else's session, and it refuses to type into one."
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Visible: =selAttention.External = "true"
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - btnAgentApproval:
+                Control: ModernButton
+                Properties:
+                  Text: ="Approval waiting"
+                  Appearance: =ButtonAppearance.Secondary
+                  Visible: =!IsBlank(selAttention.ApprovalId)
+                  AccessibleLabel: ="Open the approval waiting for this repository"
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                  OnSelect: |-
+                    =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId));
+                    Navigate(ApprovalScreen, ScreenTransition.Cover)

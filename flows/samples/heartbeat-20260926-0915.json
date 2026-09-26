@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "kind": "heartbeat",
+  "at": "2026-09-26T09:15:00Z",
+  "every_s": 300,
+  "expire_s": 900,
+  "contract": 1,
+  "operator": "operator@example.com",
+  "bridge": "agentdata 0.9.0",
+  "laptop_id": "5e1c9a7b3d2f4e6a8c0b1d3f5a7c9e2b",
+  "serve_up": true,
+  "desk_streams": 2,
+  "counts": {
+    "repos": 3,
+    "needs_human": 1,
+    "approvals_pending": 1,
+    "notifications_24h": 9,
+    "rejected_24h": 0
+  },
+  "inbox_last_seen": "2026-09-26T09:14:58Z"
+}

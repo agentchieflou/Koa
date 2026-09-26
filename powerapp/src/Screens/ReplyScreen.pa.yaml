@@ -1,0 +1,145 @@
+Screens:
+  ReplyScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+      OnVisible: |-
+        =Set(busy, false);
+        Reset(txtMessage)
+    Children:
+      - conReplyRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingBottom: =24
+          Children:
+            - cmpHeaderReply:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: ="Reply"
+                  Status: =selAttention.Title & If(IsBlank(selAttention.Ticket), "", " · " & selAttention.Ticket)
+                  ShowBack: =true
+                  ShowSettings: =false
+                  OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
+                  OnRefresh: |-
+                    =Refresh(FleetAttention);
+                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title))
+                  OnSettings: =false
+            - conReplyAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - cmpKvReplyRepo:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Repo"
+                  Value: =selAttention.Title & " · " & selAttention.Project
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvReplyState:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="State"
+                  Value: =selAttention.State & If(selAttention.NeedsHuman = "true", " · needs you", "")
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvReplySays:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Says"
+                  Value: =selAttention.Says
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =96
+                  FillPortions: =0
+            - txtMessage:
+                Control: ModernTextInput
+                Properties:
+                  Default: =""
+                  Placeholder: ="Your message to the agent"
+                  Type: =TextInputType.Multiline
+                  TriggerOutput: =TriggerOutput.Keypress
+                  MaxLength: =4000
+                  Required: =true
+                  DisplayMode: =If(busy, DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: ="Message to the agent, required"
+                  Width: =Parent.Width - 32
+                  Height: =160
+                  FillPortions: =0
+            - btnReplySend:
+                Control: ModernButton
+                Properties:
+                  Text: ="Send reply"
+                  Appearance: =ButtonAppearance.Primary
+                  DisplayMode: =If(busy || IsBlank(selAttention) || selAttention.External = "true" || IsBlank(Trim(txtMessage.Text)), DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: ="Send the reply to the laptop"
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                  OnSelect: |-
+                    =Set(busy, true);
+                    IfError(
+                      With({r: FleetDecide.Run("reply", "", selAttention.Title, "", "", Trim(txtMessage.Text), "", "", ExpireSeconds, Host.OSType)},
+                        If(r.ok,
+                          Notify("Reply sent — the laptop answers in its own words", NotificationType.Success, 4000);
+                          Refresh(FleetDecisions);
+                          Back(),
+                          Notify("Not sent: " & r.error, NotificationType.Error))),
+                      Notify("Not sent: " & FirstError.Message, NotificationType.Error));
+                    Set(busy, false)
+            - spnReply:
+                Control: ModernSpinner
+                Properties:
+                  Label: ="Sending…"
+                  AccessibleLabel: ="Sending the reply"
+                  Visible: =busy
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - btnReplyCancel:
+                Control: ModernButton
+                Properties:
+                  Text: ="Cancel"
+                  Appearance: =ButtonAppearance.Secondary
+                  DisplayMode: =If(busy, DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: ="Cancel and go back"
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+                  OnSelect: =Back()
+            - lblReplyNote:
+                Control: ModernText
+                Properties:
+                  Text: ="The laptop answers in its own words. Its answer appears on the agent's page under Last reply, and every result is kept in the decision history (FleetDecisions)."
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =64
+                  FillPortions: =0

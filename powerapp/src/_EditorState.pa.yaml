@@ -1,0 +1,12 @@
+EditorState:
+  ScreensOrder:
+    - HomeScreen
+    - AgentScreen
+    - ApprovalScreen
+    - DecideScreen
+    - ReplyScreen
+    - SettingsScreen
+  ComponentDefinitionsOrder:
+    - EmptyState
+    - KeyValueRow
+    - FleetHeader

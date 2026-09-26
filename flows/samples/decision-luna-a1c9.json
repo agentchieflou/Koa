@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "kind": "decision",
+  "id": "luna-jira-create-20260925T160301Z-a1c9",
+  "decision": "approved",
+  "reason": "",
+  "by": "operator@example.com",
+  "via": "mobile",
+  "decided": "2026-09-25T16:06:40Z",
+  "digest": "a1c9e2b4d6f8a0c2e4b6d8f0a2c4e6b8d0f2a4c6e8b0d2f4a6c8e0b2d4f6a8c0",
+  "late": false,
+  "nonce": "9f2c4b7e1d3a48c2b6e5f0a1d2c3b4e5"
+}

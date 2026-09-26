@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "kind": "approval",
+  "id": "rdsd-uat-jira-transition-20260926T091200Z-7f3a",
+  "repo": "rdsd-uat",
+  "ticket": "RDSD-131",
+  "approval_kind": "jira-transition",
+  "summary": "Transition RDSD-131 to In Review",
+  "payload_preview": {
+    "key": "RDSD-131",
+    "transition": "In Review",
+    "comment": "PR #42 opened"
+  },
+  "payload_truncated": false,
+  "payload_bytes": 74,
+  "digest": "7d2a9f4c6b1e8d3f5a0c2e4b6d8f1a3c5e7b9d0f2a4c6e8b1d3f5a7c9e0b2d4f",
+  "created": "2026-09-26T09:12:00Z",
+  "expires": "2026-09-26T09:42:00Z",
+  "waiting_s": 125
+}

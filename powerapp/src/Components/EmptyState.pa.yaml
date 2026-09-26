@@ -1,0 +1,57 @@
+ComponentDefinitions:
+  EmptyState:
+    DefinitionType: CanvasComponent
+    Description: A centred icon and one sentence for a list with nothing in it. The sentence is an input; the component decides nothing.
+    AccessAppScope: false
+    CustomProperties:
+      Message:
+        PropertyKind: Input
+        DataType: Text
+        Description: The one sentence to show, for example "Nothing needs you"
+        Default: ="Nothing here"
+      Icon:
+        PropertyKind: Input
+        DataType: Text
+        Description: A Fluent icon name, for example "CheckmarkCircle" or "Info"
+        Default: ="Info"
+    Properties:
+      Width: =360
+      Height: =160
+      Fill: =RGBA(0, 0, 0, 0)
+    Children:
+      - conEmptyRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Center
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingLeft: =16
+            PaddingRight: =16
+          Children:
+            - icoEmpty:
+                Control: ModernIcon
+                Properties:
+                  Icon: =EmptyState.Icon
+                  IconStyle: =IconStyle.Outline
+                  IconColor: =RGBA(97, 97, 97, 1)
+                  Width: =40
+                  Height: =40
+                  FillPortions: =0
+            - lblEmptyMessage:
+                Control: ModernText
+                Properties:
+                  Text: =EmptyState.Message
+                  Size: =16
+                  Color: =RGBA(97, 97, 97, 1)
+                  Align: =Align.Center
+                  VerticalAlign: =VerticalAlign.Top
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0

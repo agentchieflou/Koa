@@ -1,0 +1,20 @@
+[
+  {
+    "Title": "laptop",
+    "At": "2026-09-26T09:23:18Z",
+    "EverySeconds": "300",
+    "ExpireSeconds": "900",
+    "Contract": "1",
+    "Operator": "operator@example.com",
+    "Bridge": "agentdata 0.41.0 (checkout)",
+    "LaptopId": "9f3a7c1e5b2d",
+    "ServeUp": "true",
+    "DeskStreams": "1",
+    "Repos": "5",
+    "NeedsHuman": "3",
+    "ApprovalsPending": "1",
+    "Notifications24h": "4",
+    "Rejected24h": "1",
+    "InboxLastSeen": "2026-09-26T09:22:01Z"
+  }
+]

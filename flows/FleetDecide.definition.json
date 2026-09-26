@@ -1,0 +1,636 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365users": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedoffice365users_fleetagent"
+        },
+        "api": {
+          "name": "shared_office365users"
+        },
+        "_comment_unverified": "'invoker' is the value expected for 'Provided by run-only user'; 'embedded' for the maker's own connection. README 'Verify on import' row 11."
+      },
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedonedriveforbusiness_fleetagent"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedsharepointonline_fleetagent"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "fleet_FleetSiteUrl (fleet_FleetSiteUrl)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetSiteUrl",
+            "description": "SharePoint site that hosts the five Fleet* lists (Site Address)."
+          }
+        },
+        "fleet_FleetInboxFolderPath (fleet_FleetInboxFolderPath)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetInboxFolderPath",
+            "description": "OneDrive for Business folder path of the inbox, e.g. /FleetAgent/inbox."
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "Kind",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "decision or reply",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "ApprovalId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "FleetApprovals Title (decision) or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "Repo",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "registry name of the repo (reply) or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_3": {
+                  "title": "Decision",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "approved or denied (decision) or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_4": {
+                  "title": "Reason",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "required when denied; else may be empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_5": {
+                  "title": "Message",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "free text for a reply, or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_6": {
+                  "title": "AnswersJson",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "JSON array of {id, answer} for a reply, or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_7": {
+                  "title": "Digest",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "64 lowercase hex from the FleetApprovals row (decision) or empty",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "number": {
+                  "title": "ExpiresSeconds",
+                  "type": "number",
+                  "x-ms-dynamically-added": true,
+                  "description": "seconds until the record expires; 0 means the default 900",
+                  "x-ms-content-hint": "NUMBER"
+                },
+                "text_8": {
+                  "title": "Device",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "informational device label, may be empty",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1",
+                "text_2",
+                "text_3",
+                "text_4",
+                "text_5",
+                "text_6",
+                "text_7",
+                "number",
+                "text_8"
+              ]
+            },
+            "_comment_unverified": "Power Apps (V2) trigger: kind 'PowerAppV2', the text/text_1/.../number property keys assigned in the order the inputs are added, and the x-ms-* annotations are the exported form, not documented. README 'Verify on import' row 8."
+          }
+        }
+      },
+      "actions": {
+        "Try": {
+          "runAfter": {},
+          "type": "Scope",
+          "actions": {
+            "Get_my_profile_(V2)": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_office365users",
+                  "operationId": "MyProfile_V2",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users"
+                },
+                "parameters": {},
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Compose_validation_error": {
+              "runAfter": {
+                "Get_my_profile_(V2)": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@if(not(or(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), equals(trim(coalesce(triggerBody()?['text'], '')), 'reply'))), 'Kind must be decision or reply.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), empty(trim(coalesce(triggerBody()?['text_1'], '')))), 'ApprovalId is required for a decision.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), not(or(equals(trim(coalesce(triggerBody()?['text_3'], '')), 'approved'), equals(trim(coalesce(triggerBody()?['text_3'], '')), 'denied')))), 'Decision must be approved or denied.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), equals(trim(coalesce(triggerBody()?['text_3'], '')), 'denied'), empty(trim(coalesce(triggerBody()?['text_4'], '')))), 'A reason is required when denying.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), not(and(equals(length(trim(coalesce(triggerBody()?['text_7'], ''))), 64), empty(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(trim(coalesce(triggerBody()?['text_7'], '')), '0', ''), '1', ''), '2', ''), '3', ''), '4', ''), '5', ''), '6', ''), '7', ''), '8', ''), '9', ''), 'a', ''), 'b', ''), 'c', ''), 'd', ''), 'e', ''), 'f', ''))))), 'Digest must be 64 lowercase hex characters.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'reply'), empty(trim(coalesce(triggerBody()?['text_2'], '')))), 'Repo is required for a reply.', if(and(equals(trim(coalesce(triggerBody()?['text'], '')), 'reply'), empty(trim(coalesce(triggerBody()?['text_5'], ''))), empty(trim(coalesce(triggerBody()?['text_6'], '')))), 'A reply needs a message or answers.', '')))))))"
+            },
+            "Reject_invalid_input": {
+              "runAfter": {
+                "Compose_validation_error": [
+                  "Succeeded"
+                ]
+              },
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "not": {
+                      "equals": [
+                        "@outputs('Compose_validation_error')",
+                        ""
+                      ]
+                    }
+                  }
+                ]
+              },
+              "actions": {
+                "Respond_invalid_input": {
+                  "runAfter": {},
+                  "type": "Response",
+                  "kind": "PowerApp",
+                  "inputs": {
+                    "statusCode": 200,
+                    "body": {
+                      "ok": false,
+                      "nonce": "",
+                      "inboxFile": "",
+                      "error": "@outputs('Compose_validation_error')"
+                    },
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "title": "ok",
+                          "x-ms-dynamically-added": true,
+                          "type": "boolean"
+                        },
+                        "nonce": {
+                          "title": "nonce",
+                          "x-ms-dynamically-added": true,
+                          "type": "string"
+                        },
+                        "inboxFile": {
+                          "title": "inboxFile",
+                          "x-ms-dynamically-added": true,
+                          "type": "string"
+                        },
+                        "error": {
+                          "title": "error",
+                          "x-ms-dynamically-added": true,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "_comment_unverified": "Respond to a PowerApp or flow: type 'Response' with kind 'PowerApp' and the x-ms-dynamically-added output schema are the exported form, not documented. README 'Verify on import' row 9."
+                },
+                "Terminate_after_invalid_input": {
+                  "runAfter": {
+                    "Respond_invalid_input": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Succeeded"
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "Compose_nonce": {
+              "runAfter": {
+                "Reject_invalid_input": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@replace(guid(), '-', '')"
+            },
+            "Compose_issued": {
+              "runAfter": {
+                "Compose_nonce": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@utcNow('yyyy-MM-ddTHH:mm:ssZ')"
+            },
+            "Compose_expires": {
+              "runAfter": {
+                "Compose_issued": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@addSeconds(outputs('Compose_issued'), if(greater(int(coalesce(triggerBody()?['number'], 900)), 0), int(coalesce(triggerBody()?['number'], 900)), 900), 'yyyy-MM-ddTHH:mm:ssZ')"
+            },
+            "Compose_by": {
+              "runAfter": {
+                "Compose_expires": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@coalesce(body('Get_my_profile_(V2)')?['userPrincipalName'], body('Get_my_profile_(V2)')?['mail'], '')"
+            },
+            "Compose_decision_record": {
+              "runAfter": {
+                "Compose_by": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": {
+                "schema": 1,
+                "kind": "decision",
+                "nonce": "@outputs('Compose_nonce')",
+                "issued": "@outputs('Compose_issued')",
+                "expires": "@outputs('Compose_expires')",
+                "by": "@outputs('Compose_by')",
+                "id": "@trim(coalesce(triggerBody()?['text_1'], ''))",
+                "digest": "@trim(coalesce(triggerBody()?['text_7'], ''))",
+                "decision": "@trim(coalesce(triggerBody()?['text_3'], ''))",
+                "reason": "@coalesce(triggerBody()?['text_4'], '')",
+                "device": "@trim(coalesce(triggerBody()?['text_8'], ''))"
+              }
+            },
+            "Compose_reply_record": {
+              "runAfter": {
+                "Compose_decision_record": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": {
+                "schema": 1,
+                "kind": "reply",
+                "nonce": "@outputs('Compose_nonce')",
+                "issued": "@outputs('Compose_issued')",
+                "expires": "@outputs('Compose_expires')",
+                "by": "@outputs('Compose_by')",
+                "repo": "@trim(coalesce(triggerBody()?['text_2'], ''))",
+                "message": "@coalesce(triggerBody()?['text_5'], '')",
+                "answers": "@json(if(empty(trim(coalesce(triggerBody()?['text_6'], ''))), '[]', coalesce(triggerBody()?['text_6'], '')))",
+                "device": "@trim(coalesce(triggerBody()?['text_8'], ''))"
+              }
+            },
+            "Compose_record": {
+              "runAfter": {
+                "Compose_reply_record": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@if(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), outputs('Compose_decision_record'), outputs('Compose_reply_record'))"
+            },
+            "Compose_inbox_file_name": {
+              "runAfter": {
+                "Compose_record": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@concat(trim(coalesce(triggerBody()?['text'], '')), '-', outputs('Compose_nonce'), '.json')"
+            },
+            "Create_file": {
+              "runAfter": {
+                "Compose_inbox_file_name": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness",
+                  "operationId": "CreateFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "folderPath": "@parameters('fleet_FleetInboxFolderPath (fleet_FleetInboxFolderPath)')",
+                  "name": "@outputs('Compose_inbox_file_name')",
+                  "body": "@string(outputs('Compose_record'))",
+                  "_comment_unverified": "'body' given as a JSON string; the parameter is declared binary and the runtime is expected to upload the text as UTF-8 bytes. README 'Verify on import' row 7."
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Create_item_FleetDecisions": {
+              "runAfter": {
+                "Create_file": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                  "table": "FleetDecisions",
+                  "item/Title": "@outputs('Compose_nonce')",
+                  "item/Kind": "@trim(coalesce(triggerBody()?['text'], ''))",
+                  "item/ApprovalId": "@trim(coalesce(triggerBody()?['text_1'], ''))",
+                  "item/Repo": "@trim(coalesce(triggerBody()?['text_2'], ''))",
+                  "item/Decision": "@trim(coalesce(triggerBody()?['text_3'], ''))",
+                  "item/Reason": "@substring(coalesce(triggerBody()?['text_4'], ''), 0, min(255, length(coalesce(triggerBody()?['text_4'], ''))))",
+                  "item/Message": "@coalesce(triggerBody()?['text_5'], '')",
+                  "item/AnswersJson": "@coalesce(triggerBody()?['text_6'], '')",
+                  "item/Digest": "@trim(coalesce(triggerBody()?['text_7'], ''))",
+                  "item/By": "@outputs('Compose_by')",
+                  "item/Device": "@trim(coalesce(triggerBody()?['text_8'], ''))",
+                  "item/Issued": "@outputs('Compose_issued')",
+                  "item/Expires": "@outputs('Compose_expires')",
+                  "item/InboxFile": "@outputs('Compose_inbox_file_name')",
+                  "item/Result": "sent",
+                  "item/ResultCode": "",
+                  "item/ResultText": "",
+                  "item/ResultAt": "",
+                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                },
+                "authentication": "@parameters('$authentication')",
+                "retryPolicy": {
+                  "type": "none"
+                }
+              }
+            },
+            "Mark_approval_sent": {
+              "runAfter": {
+                "Create_item_FleetDecisions": [
+                  "Succeeded"
+                ]
+              },
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@trim(coalesce(triggerBody()?['text'], ''))",
+                      "decision"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Get_items_FleetApprovals_by_id": {
+                  "runAfter": {},
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetItems",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                    },
+                    "parameters": {
+                      "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                      "table": "FleetApprovals",
+                      "$filter": "Title eq '@{trim(coalesce(triggerBody()?['text_1'], ''))}'",
+                      "$top": 1,
+                      "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Approval_row_found": {
+                  "runAfter": {
+                    "Get_items_FleetApprovals_by_id": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "If",
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(outputs('Get_items_FleetApprovals_by_id')?['body/value'])",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "Update_item_FleetApprovals_sent": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "PatchItem",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetApprovals",
+                          "id": "@first(outputs('Get_items_FleetApprovals_by_id')?['body/value'])?['ID']",
+                          "item/Title": "@trim(coalesce(triggerBody()?['text_1'], ''))",
+                          "item/Status": "sent",
+                          "item/DecidedBy": "@outputs('Compose_by')",
+                          "item/DecidedAt": "@outputs('Compose_issued')",
+                          "item/Nonce": "@outputs('Compose_nonce')",
+                          "item/Via": "mobile",
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')",
+                        "retryPolicy": {
+                          "type": "none"
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "actions": {}
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "Respond_ok": {
+              "runAfter": {
+                "Mark_approval_sent": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "ok": true,
+                  "nonce": "@outputs('Compose_nonce')",
+                  "inboxFile": "@outputs('Compose_inbox_file_name')",
+                  "error": ""
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "title": "ok",
+                      "x-ms-dynamically-added": true,
+                      "type": "boolean"
+                    },
+                    "nonce": {
+                      "title": "nonce",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    },
+                    "inboxFile": {
+                      "title": "inboxFile",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    },
+                    "error": {
+                      "title": "error",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_comment_unverified": "Respond to a PowerApp or flow: type 'Response' with kind 'PowerApp' and the x-ms-dynamically-added output schema are the exported form, not documented. README 'Verify on import' row 9."
+            }
+          }
+        },
+        "Catch": {
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "type": "Scope",
+          "actions": {
+            "Filter_array_failed_actions": {
+              "runAfter": {},
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@equals(item()?['status'], 'Failed')"
+              }
+            },
+            "Compose_failure_text": {
+              "runAfter": {
+                "Filter_array_failed_actions": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@substring(concat('FleetDecide run ', workflow()?['run']?['name'], ': ', if(empty(string(first(body('Filter_array_failed_actions'))?['error'])), 'no failed top-level action in Try; open the run history', string(first(body('Filter_array_failed_actions'))?['error']))), 0, min(300, length(concat('FleetDecide run ', workflow()?['run']?['name'], ': ', if(empty(string(first(body('Filter_array_failed_actions'))?['error'])), 'no failed top-level action in Try; open the run history', string(first(body('Filter_array_failed_actions'))?['error']))))))"
+            },
+            "Respond_failure": {
+              "runAfter": {
+                "Compose_failure_text": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "ok": false,
+                  "nonce": "@if(equals(actions('Create_file')?['status'], 'Succeeded'), string(actions('Compose_nonce')?['outputs']), '')",
+                  "inboxFile": "@if(equals(actions('Create_file')?['status'], 'Succeeded'), string(actions('Compose_inbox_file_name')?['outputs']), '')",
+                  "error": "@outputs('Compose_failure_text')"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "title": "ok",
+                      "x-ms-dynamically-added": true,
+                      "type": "boolean"
+                    },
+                    "nonce": {
+                      "title": "nonce",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    },
+                    "inboxFile": {
+                      "title": "inboxFile",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    },
+                    "error": {
+                      "title": "error",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "_comment_unverified": "Respond to a PowerApp or flow: type 'Response' with kind 'PowerApp' and the x-ms-dynamically-added output schema are the exported form, not documented. README 'Verify on import' row 9."
+            }
+          }
+        }
+      },
+      "description": "FleetDecide: called by the FleetAgent app; validates, writes FleetAgent/inbox/<kind>-<nonce>.json signed with the invoker's UPN, records the FleetDecisions row and marks the approval 'sent'. Contract v1."
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,60 @@
+ComponentDefinitions:
+  KeyValueRow:
+    DefinitionType: CanvasComponent
+    Description: One label and one value on a line. The value is the laptop's own words, shown verbatim; when Wrap is true the instance sets a taller Height and the value wraps inside it.
+    AccessAppScope: false
+    CustomProperties:
+      Label:
+        PropertyKind: Input
+        DataType: Text
+        Description: The muted label on the left, for example "Ticket"
+        Default: ="Label"
+      Value:
+        PropertyKind: Input
+        DataType: Text
+        Description: The value on the right, verbatim from the list row
+        Default: =""
+      Wrap:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Wrap the value over several lines; the instance then sets Height to fit
+        Default: =false
+    Properties:
+      Width: =360
+      Height: =40
+      Fill: =RGBA(0, 0, 0, 0)
+    Children:
+      - conKvRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutGap: =12
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+          Children:
+            - lblKvLabel:
+                Control: ModernText
+                Properties:
+                  Text: =KeyValueRow.Label
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  VerticalAlign: =VerticalAlign.Top
+                  Wrap: =false
+                  Width: =120
+                  Height: =Parent.Height
+                  FillPortions: =0
+            - lblKvValue:
+                Control: ModernText
+                Properties:
+                  Text: =KeyValueRow.Value
+                  Size: =16
+                  Color: =RGBA(36, 36, 36, 1)
+                  VerticalAlign: =VerticalAlign.Top
+                  Wrap: =KeyValueRow.Wrap
+                  Height: =Parent.Height
+                  FillPortions: =1

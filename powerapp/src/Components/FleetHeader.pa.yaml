@@ -1,0 +1,132 @@
+ComponentDefinitions:
+  FleetHeader:
+    DefinitionType: CanvasComponent
+    Description: The bar at the top of every screen. Title and status are inputs; back, refresh and settings are events the screen handles, so the header itself navigates nowhere and reads no list.
+    AccessAppScope: false
+    CustomProperties:
+      Title:
+        PropertyKind: Input
+        DataType: Text
+        Description: The screen title
+        Default: ="Fleet"
+      Status:
+        PropertyKind: Input
+        DataType: Text
+        Description: One short status line under the title, for example "2 approvals · 1 needs you"
+        Default: =""
+      ShowBack:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Show the back button
+        Default: =false
+      ShowSettings:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Show the settings button
+        Default: =false
+      OnBack:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Raised when the back button is tapped
+      OnRefresh:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Raised when the refresh button is tapped
+      OnSettings:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Raised when the settings button is tapped
+    Properties:
+      Width: =360
+      Height: =64
+      Fill: =RGBA(255, 255, 255, 1)
+    Children:
+      - conHeaderRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingLeft: =8
+            PaddingRight: =8
+            Fill: =RGBA(255, 255, 255, 1)
+          Children:
+            - btnHeaderBack:
+                Control: ModernButton
+                Properties:
+                  Text: ="Back"
+                  Icon: ="ChevronLeft"
+                  Layout: =ButtonLayout.IconOnly
+                  Appearance: =ButtonAppearance.Subtle
+                  Visible: =FleetHeader.ShowBack
+                  OnSelect: =FleetHeader.OnBack()
+                  AccessibleLabel: ="Back"
+                  Width: =48
+                  Height: =48
+                  FillPortions: =0
+            - conHeaderText:
+                Control: GroupContainer
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutJustifyContent: =LayoutJustifyContent.Center
+                  LayoutGap: =0
+                  LayoutMinWidth: =0
+                  LayoutMinHeight: =0
+                  Height: =Parent.Height
+                  FillPortions: =1
+                Children:
+                  - lblHeaderTitle:
+                      Control: ModernText
+                      Properties:
+                        Text: =FleetHeader.Title
+                        Size: =20
+                        FontWeight: =FontWeight.Semibold
+                        Color: =RGBA(36, 36, 36, 1)
+                        VerticalAlign: =VerticalAlign.Bottom
+                        Wrap: =false
+                        Height: =30
+                        FillPortions: =0
+                  - lblHeaderStatus:
+                      Control: ModernText
+                      Properties:
+                        Text: =FleetHeader.Status
+                        Size: =14
+                        Color: =RGBA(97, 97, 97, 1)
+                        VerticalAlign: =VerticalAlign.Top
+                        Wrap: =false
+                        Visible: =!IsBlank(FleetHeader.Status)
+                        Height: =22
+                        FillPortions: =0
+            - btnHeaderRefresh:
+                Control: ModernButton
+                Properties:
+                  Text: ="Refresh"
+                  Icon: ="ArrowSync"
+                  Layout: =ButtonLayout.IconOnly
+                  Appearance: =ButtonAppearance.Subtle
+                  OnSelect: =FleetHeader.OnRefresh()
+                  AccessibleLabel: ="Refresh the lists"
+                  Width: =48
+                  Height: =48
+                  FillPortions: =0
+            - btnHeaderSettings:
+                Control: ModernButton
+                Properties:
+                  Text: ="Settings"
+                  Icon: ="Settings"
+                  Layout: =ButtonLayout.IconOnly
+                  Appearance: =ButtonAppearance.Subtle
+                  Visible: =FleetHeader.ShowSettings
+                  OnSelect: =FleetHeader.OnSettings()
+                  AccessibleLabel: ="Settings"
+                  Width: =48
+                  Height: =48
+                  FillPortions: =0

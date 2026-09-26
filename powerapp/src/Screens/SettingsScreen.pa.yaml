@@ -1,0 +1,201 @@
+Screens:
+  SettingsScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+    Children:
+      - conSettingsRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingBottom: =24
+          Children:
+            - cmpHeaderSettings:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: ="Settings"
+                  Status: ="FleetAgent " & AppVersion
+                  ShowBack: =true
+                  ShowSettings: =false
+                  OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
+                  OnRefresh: |-
+                    =Refresh(FleetAttention);
+                    Refresh(FleetApprovals);
+                    Refresh(FleetNotifications);
+                    Refresh(FleetHeartbeat);
+                    Refresh(FleetDecisions)
+                  OnSettings: =false
+            - conSettingsAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - cmpKvSettingsSignedIn:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Signed in as"
+                  Value: =User().Email
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - cmpKvSettingsOperator:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Laptop operator"
+                  Value: =Coalesce(Heartbeat.Operator, "unknown until the first heartbeat")
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - lblSettingsMismatch:
+                Control: ModernText
+                Properties:
+                  Text: ="The laptop accepts decisions only from its operator; decisions sent from this account will be rejected."
+                  Size: =14
+                  Color: =RGBA(36, 36, 36, 1)
+                  Fill: =RGBA(255, 244, 206, 1)
+                  Wrap: =true
+                  Visible: =OperatorMismatch
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                  Width: =Parent.Width - 32
+                  Height: =64
+                  FillPortions: =0
+            - cmpKvSettingsHeartbeat:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Heartbeat"
+                  Value: =If(IsBlank(Heartbeat.At), "none yet", HeartbeatAgeSeconds & " s ago · every " & HeartbeatEverySeconds & " s" & If(LaptopStale, " · not syncing", " · syncing"))
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - cmpKvSettingsBridge:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Bridge"
+                  Value: =Heartbeat.Bridge & " · contract " & Heartbeat.Contract
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - cmpKvSettingsLaptop:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Laptop"
+                  Value: ="id " & Heartbeat.LaptopId & " · serve up " & Heartbeat.ServeUp & " · desk streams " & Heartbeat.DeskStreams
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - cmpKvSettingsRepos:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Repos"
+                  Value: =Heartbeat.Repos & " · " & Heartbeat.NeedsHuman & " need a human"
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvSettingsApprovals:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Approvals"
+                  Value: =Heartbeat.ApprovalsPending & " pending on the laptop · " & PendingCount & " pending in the list"
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - cmpKvSettingsNotifications:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Last 24 h"
+                  Value: =Heartbeat.Notifications24h & " notifications · " & Heartbeat.Rejected24h & " rejected"
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvSettingsInbox:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Inbox seen"
+                  Value: =If(IsBlank(Heartbeat.InboxLastSeen), "never", Text(DateTimeValue(Heartbeat.InboxLastSeen), DateTimeFormat.ShortDateTime))
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvSettingsApp:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="App"
+                  Value: ="FleetAgent " & AppVersion & " · " & Host.OSType & " · " & If(Connection.Connected, "online", "offline")
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvSettingsScreen:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Screen"
+                  Value: =App.Width & " × " & App.Height & If(IsPhone, " · phone", IsWide, " · wide", " · medium")
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - btnSettingsRefresh:
+                Control: ModernButton
+                Properties:
+                  Text: ="Refresh everything"
+                  Appearance: =ButtonAppearance.Primary
+                  AccessibleLabel: ="Refresh all five lists"
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                  OnSelect: |-
+                    =Refresh(FleetAttention);
+                    Refresh(FleetApprovals);
+                    Refresh(FleetNotifications);
+                    Refresh(FleetHeartbeat);
+                    Refresh(FleetDecisions);
+                    Notify("Refreshed", NotificationType.Success, 2000)
+            - lblSettingsAbout:
+                Control: ModernText
+                Properties:
+                  Text: ="About. FleetAgent shows the laptop's words and decides nothing. Every state, colour and sentence on these screens comes from the laptop's fleet; the phone only carries your decision or reply back, and the laptop checks the digest, your identity and the expiry before it applies anything."
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.Width - 32
+                  Height: =120
+                  FillPortions: =0
