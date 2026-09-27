@@ -208,5 +208,6 @@ human with an open question, one waiting for an approval, one running unsupervis
 (via mobile, with its nonce) and a denied (via laptop) approval; an applied decision, a sent reply and a rejected
 decision (`mobile_expired`); an action notification, one carrying an approval id, and a quiet info one; and the
 heartbeat row at three successive beats. The values agree with `../../contract/examples/*.json`, which are the outbox
-files that would have produced them, so a reviewer can follow one record from file to row. Delete them from any
-live list or workbook before use.
+files that would have produced them, so a reviewer can follow one record from file to row
+(`tests/test_mobile_contract.py` holds each row to its file, and the committed workbook to the generator). Delete
+them from any live list or workbook before use.

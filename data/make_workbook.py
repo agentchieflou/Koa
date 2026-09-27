@@ -35,8 +35,8 @@ try:
     from openpyxl import Workbook, load_workbook
     from openpyxl.utils import get_column_letter
     from openpyxl.worksheet.table import Table, TableStyleInfo
-except ImportError:  # pragma: no cover - a message beats a traceback
-    sys.exit("openpyxl is required: python -m pip install --user openpyxl")
+except ImportError:  # pragma: no cover - building needs it; importing ROWS (tests/test_mobile_contract.py) does not
+    Workbook = None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "FleetAgent.xlsx")
@@ -91,6 +91,7 @@ APPROVAL_APPROVED = "luna-jira-create-20260925T160301Z-a1c9"
 APPROVAL_DENIED = "dpm-reports-pncli-write-20260925T110000Z-33be"
 APPROVAL_EXPIRED = "rdsd-uat-jira-transition-20260924T083000Z-0c4d"
 
+# What FleetOutboxToLists writes from contract/examples/*.json (tests/test_mobile_contract.py holds them to it).
 ROWS = {
     "FleetAttention": [
         {
@@ -134,7 +135,7 @@ ROWS = {
             "Title": APPROVAL_PENDING, "Repo": "rdsd-uat", "Ticket": "RDSD-131", "ApprovalKind": "jira-transition",
             "Summary": "Transition RDSD-131 to In Review",
             "PayloadPreview": '{"key":"RDSD-131","transition":"In Review","comment":"PR #42 opened"}',
-            "PayloadTruncated": "false", "PayloadBytes": "74", "Digest": DIGEST_B, "Created": "2026-09-26T09:12:00Z",
+            "PayloadTruncated": "false", "PayloadBytes": "69", "Digest": DIGEST_B, "Created": "2026-09-26T09:12:00Z",
             "Expires": "2026-09-26T09:42:00Z", "WaitingSeconds": "125", "Status": "pending", "DecidedBy": "",
             "DecidedAt": "", "Reason": "", "Via": "", "Late": "", "Nonce": "", "ResultCode": "", "ResultText": "",
             "SourceFile": APPROVAL_PENDING + ".json",
@@ -144,7 +145,7 @@ ROWS = {
             "Summary": "Create Jira issue RDSD-140: nightly diff of the DPM extracts",
             "PayloadPreview": '{"project":"RDSD","issuetype":"Task","summary":"Nightly diff of the DPM extracts"}',
             "PayloadTruncated": "false", "PayloadBytes": "91", "Digest": DIGEST_C, "Created": "2026-09-25T16:03:01Z",
-            "Expires": "2026-09-25T16:33:01Z", "WaitingSeconds": "219", "Status": "approved", "DecidedBy": OPERATOR,
+            "Expires": "2026-09-25T16:33:01Z", "WaitingSeconds": "219", "Status": "approved", "DecidedBy": "mobile:" + OPERATOR,
             "DecidedAt": "2026-09-25T16:06:40Z", "Reason": "", "Via": "mobile", "Late": "false",
             "Nonce": NONCE_APPLIED, "ResultCode": "", "ResultText": "", "SourceFile": APPROVAL_APPROVED + ".json",
         },
@@ -178,7 +179,8 @@ ROWS = {
             "Decision": "approved", "Reason": "", "Message": "", "AnswersJson": "", "Digest": DIGEST_A, "By": OPERATOR,
             "Device": "ios-phone", "Issued": "2026-09-24T08:44:10Z", "Expires": "2026-09-24T08:59:10Z",
             "InboxFile": "decision-%s.json" % NONCE_REJECTED, "Result": "rejected", "ResultCode": "mobile_expired",
-            "ResultText": "the decision expired before the laptop saw it decide again from the desk or the phone",
+            "ResultText": "the decision has expired, or expires later than fleet.mobile.expire_s allows "
+                          "decide again from the phone",
             "ResultAt": "2026-09-24T09:05:11Z",
         },
     ],
@@ -304,6 +306,8 @@ def check(path: str) -> str:
 
 
 def main() -> int:
+    if Workbook is None:  # a message beats a traceback
+        sys.exit("openpyxl is required: python -m pip install --user openpyxl")
     tmpdir = tempfile.mkdtemp(prefix="fleetagent-xlsx-")
     try:
         raw = os.path.join(tmpdir, "raw.xlsx")
