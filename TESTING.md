@@ -54,6 +54,9 @@ The folder must not be inside any checkout (`mobile_folder_in_repo`).
 
 ## 2. The tenant: lists, flows, app (once)
 
+The quickest way is to let a Copilot agent do this section: [build/README.md](build/README.md). It runs the
+checks below as part of its steps. By hand:
+
 1. **The five lists**, from `data/FleetAgent.xlsx`: `data/README.md` §Creating the five lists. Every column
    text; delete the sample rows afterwards.
 2. **`FleetOutboxToLists`**: `flows/README.md`, the build sheet. Point its trigger at

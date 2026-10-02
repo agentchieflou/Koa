@@ -84,3 +84,14 @@ Nothing here changes the contract with the flows or the laptop bridge.
 26. **The official schema's `CodeComponent-ComponentName` regex has an unbalanced parenthesis**,
     which Python's `re` rejects; the local Draft 7 validation therefore skips the meta-schema check.
     The app has no PCF control, so the pattern is never evaluated. The copy stays unmodified.
+27. **`FleetApprovals.Created` is SharePoint's own column.** Every SharePoint list has a read-only
+    `Created` (Date and Time), so the contract's text `Created` cannot be a second column of that
+    name: the lists are made without it (`build/prepare.py`), `FleetOutboxToLists` no longer writes
+    it, and the two formulas that show it read `Text(... .Created)`, which is the same text for the
+    Excel fallback's ISO string and a readable local time for SharePoint's date. Sorting by
+    `"Created"` is unchanged and delegates on both.
+28. **The Copilot build pushes these files through the Canvas Authoring MCP server**
+    (`build/steps/06-app.md`): screens flat at the working directory's root and components under
+    `Components/`, as the server lays an app out; `build/prepare.py canvas-in` and `canvas-out`
+    convert between that layout and this folder's. Every fix Studio's compiler asks for is made
+    here first and recorded below this item, with the diagnostic it cleared.

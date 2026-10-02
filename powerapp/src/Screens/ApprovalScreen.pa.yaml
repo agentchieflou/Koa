@@ -104,7 +104,7 @@ Screens:
                 ComponentName: KeyValueRow
                 Properties:
                   Label: ="Created"
-                  Value: =Text(DateTimeValue(selApproval.Created), DateTimeFormat.ShortDateTime)
+                  Value: =Text(DateTimeValue(Text(selApproval.Created)), DateTimeFormat.ShortDateTime)
                   Wrap: =false
                   Width: =Parent.Width - 32
                   Height: =40

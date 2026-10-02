@@ -1,3 +1,7 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# The Copilot build (build/README.md): tenant-specific values and generated payloads stay on the laptop.
+build/fleet.config.json
+build/out/

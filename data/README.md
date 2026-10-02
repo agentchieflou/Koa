@@ -22,6 +22,10 @@ Two uses:
 
 ## Creating the five lists from the workbook
 
+The Copilot build (`../build/README.md`) creates the lists with a flow and needs none of this; the steps below
+are the by-hand fallback. In `FleetApprovals`, leave the workbook's `Created` column out of the import (untick it
+in the preview, or delete it afterwards): every SharePoint list already has its own `Created`.
+
 Repeat once per table (five times), in Microsoft Lists (or the SharePoint site's **New > List**):
 
 1. **Create a list > From Excel > Upload file** (`FleetAgent.xlsx`). Under *Select a table from this file*
@@ -70,7 +74,7 @@ is the contract's longest value; the flow truncates the three single-line column
 | `At` | text | 20 | `at` | `YYYY-MM-DDTHH:MM:SSZ` |
 | `Generated` | text | 20 | `generated` | |
 | `ApprovalId` | text | 96 | `approval_id` | oldest pending approval or empty |
-| `ApprovalsJson` | text | 800 | `approvals` | JSON array of ids (up to 8 x 96); over 255 only when many approvals pile up, see flows README "Verify on import" row 19 |
+| `ApprovalsJson` | **multi** | 800 | `approvals` | JSON array of ids (up to 8 x 96): over 255 once more than two approvals pile up (flows README "Verify on import" row 19) |
 | `QuestionsJson` | **multi** | 5000 | `questions` | JSON array of `{id, q, choices, want, default}` |
 | `RunNumber` | text | 6 | `run.n` | |
 | `RunOrigin` | text | 8 | `run.origin` | `console, adopted, fleet` |
@@ -99,7 +103,7 @@ is the contract's longest value; the flow truncates the three single-line column
 | `PayloadTruncated` | text | 5 | `payload_truncated` | |
 | `PayloadBytes` | text | 10 | `payload_bytes` | |
 | `Digest` | text | 64 | `digest` | the app echoes it in `FleetDecide`; the laptop verifies it |
-| `Created` | text | 20 | `created` | |
+| `Created` | (SharePoint's) | 20 | `created` | not created on a SharePoint list: every list already has a read-only `Created` (Date and Time), the row's creation time, which the flow makes from the request; the app reads either form. A text column in the Excel fallback |
 | `Expires` | text | 20 | `expires` | the agent's own deadline |
 | `WaitingSeconds` | text | 10 | `waiting_s` | at export |
 | `Status` | text | 8 | (flow) | `pending, sent, approved, denied, rejected, expired` |
