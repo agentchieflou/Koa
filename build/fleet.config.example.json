@@ -1,0 +1,11 @@
+{
+  "_readme": "Copy to build/fleet.config.json (git ignores it) and fill in as the steps say. No secret goes here: these are addresses and ids.",
+  "environment": "",
+  "siteUrl": "https://contoso.sharepoint.com/sites/FleetAgent",
+  "operator": "you@contoso.com",
+  "outboxFolderPath": "/FleetAgent/outbox",
+  "inboxFolderPath": "/FleetAgent/inbox",
+  "studioUrl": "",
+  "appId": "",
+  "outboxFolderId": ""
+}
