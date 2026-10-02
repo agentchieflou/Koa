@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "kind": "attention",
+  "repo": "luna",
+  "project": "luna",
+  "ticket": "RDSD-118",
+  "state": "needs_human",
+  "role": "human",
+  "needs_human": true,
+  "says": "Two readings of the acceptance criteria lead to different work; asked which date window to use and stopped.",
+  "last_said": "Asked: calendar month or the last 30 days? Waiting for an answer.",
+  "age_s": 412,
+  "at": "2026-09-26T09:14:05Z",
+  "approvals": [],
+  "approval_id": "",
+  "questions": [
+    {
+      "id": "q1",
+      "q": "Which date window: calendar month or the last 30 days?",
+      "choices": [
+        "calendar month",
+        "last 30 days"
+      ],
+      "want": "choice",
+      "default": "calendar month"
+    }
+  ],
+  "run": {
+    "n": 3,
+    "origin": "fleet",
+    "live": true,
+    "since_start": true,
+    "resumed": false
+  },
+  "model": "cli-auto",
+  "spend": {
+    "total": 4.3,
+    "today": 1.2,
+    "budget": 10,
+    "turns": 12,
+    "line": "4.3 premium · of 10 · 12 turns"
+  },
+  "supervised": true,
+  "external": false,
+  "digest": "3f9c1e8d2b7a4c6e5d0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d",
+  "generated": "2026-09-26T09:14:06Z",
+  "seq": 187
+}

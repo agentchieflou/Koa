@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "kind": "pairing",
+  "contract": 1,
+  "operator": "operator@example.com",
+  "laptop_id": "5e1c9a7b3d2f4e6a8c0b1d3f5a7c9e2b",
+  "expire_s": 900,
+  "created": "2026-09-24T08:00:00Z"
+}

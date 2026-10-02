@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kind": "notification",
+  "repo": "luna",
+  "ticket": "RDSD-118",
+  "state": "needs_human",
+  "severity": "action",
+  "title": "luna · RDSD-118 — needs you",
+  "body": "Two readings of the acceptance criteria lead to different work; asked which date window to use and stopped.",
+  "seq": 187,
+  "at": "2026-09-26T09:14:05Z",
+  "key": "luna:needs_human",
+  "quiet": false,
+  "approval_id": ""
+}

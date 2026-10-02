@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "kind": "result",
+  "nonce": "9f2c4b7e1d3a48c2b6e5f0a1d2c3b4e5",
+  "kind_of": "decision",
+  "id": "luna-jira-create-20260925T160301Z-a1c9",
+  "ok": true,
+  "result": "applied",
+  "code": "",
+  "error": "",
+  "hint": "",
+  "late": false,
+  "at": "2026-09-25T16:06:40Z"
+}
