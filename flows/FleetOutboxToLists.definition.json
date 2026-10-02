@@ -1,0 +1,1819 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedonedriveforbusiness_fleetagent"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_sharepointonline": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedsharepointonline_fleetagent"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      },
+      "shared_powerappsnotificationv2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "fleet_sharedpowerappsnotificationv2_fleetagent"
+        },
+        "api": {
+          "name": "shared_powerappsnotificationv2"
+        }
+      },
+      "_comment_unverified": "Connection-reference block shape (runtimeSource / connection.connectionReferenceLogicalName / api.name) is the exported form seen in solution zips, not documented field by field. README 'Verify on import' row 11."
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "fleet_FleetSiteUrl (fleet_FleetSiteUrl)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetSiteUrl",
+            "description": "SharePoint site that hosts the five Fleet* lists (Site Address)."
+          }
+        },
+        "fleet_FleetOutboxFolderId (fleet_FleetOutboxFolderId)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetOutboxFolderId",
+            "description": "OneDrive for Business folder ID of FleetAgent/outbox (from the trigger's folder picker, Code view, or Get file metadata using path)."
+          }
+        },
+        "fleet_FleetAppId (fleet_FleetAppId)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetAppId",
+            "description": "App ID (GUID) of the FleetAgent canvas app: Apps > ... > Details."
+          }
+        },
+        "fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetOperatorEmail",
+            "description": "UPN of the operator who receives push notifications."
+          }
+        }
+      },
+      "triggers": {
+        "When_a_file_is_created_(properties_only)": {
+          "recurrence": {
+            "frequency": "Minute",
+            "interval": 5
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_onedriveforbusiness",
+              "operationId": "OnNewFilesV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+            },
+            "parameters": {
+              "folderId": "@parameters('fleet_FleetOutboxFolderId (fleet_FleetOutboxFolderId)')",
+              "includeSubfolders": true,
+              "maxFileCount": 20,
+              "_comment_unverified": "folderId taken from an environment variable instead of the folder picker; the picker stores a folder ID, so the variable must hold that ID. README 'Verify on import' row 3."
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "conditions": [
+            {
+              "expression": "@endswith(triggerOutputs()?['body/Name'], '.json')"
+            }
+          ],
+          "_comment_unverified": "splitOn path ('body/value') and the recurrence block: on Microsoft 365 seeded plans the platform enforces a 5-minute floor whatever is written here; confirm in the trigger's Code view. README 'Verify on import' row 4."
+        }
+      },
+      "actions": {
+        "Try": {
+          "runAfter": {},
+          "type": "Scope",
+          "actions": {
+            "Get_file_content": {
+              "runAfter": {},
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness",
+                  "operationId": "GetFileContent",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "id": "@triggerOutputs()?['body/Id']",
+                  "inferContentType": false
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Parse_JSON": {
+              "runAfter": {
+                "Get_file_content": [
+                  "Succeeded"
+                ]
+              },
+              "type": "ParseJson",
+              "inputs": {
+                "content": "@json(base64ToString(body('Get_file_content')?['$content']))",
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "kind": {
+                      "type": "string"
+                    },
+                    "repo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "project": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "ticket": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "state": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "role": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "needs_human": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "says": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "last_said": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "age_s": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "approvals": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "approval_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "questions": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "q": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "choices": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "want": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "default": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "run": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "n": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "origin": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "live": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "since_start": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "resumed": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "model": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "spend": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "today": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "budget": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "turns": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "line": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "supervised": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "external": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "digest": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "generated": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "seq": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "approval_kind": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "payload_preview": {
+                      "type": [
+                        "object",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "payload_truncated": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "payload_bytes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "created": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "expires": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "waiting_s": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "decision": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "by": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "via": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "decided": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "late": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "nonce": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "severity": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "title": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "body": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "key": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "quiet": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "every_s": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "expire_s": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "contract": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "operator": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "bridge": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "laptop_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "serve_up": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "desk_streams": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "counts": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "repos": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "needs_human": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "approvals_pending": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notifications_24h": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "rejected_24h": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "inbox_last_seen": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "kind_of": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "ok": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hint": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "_comment_unverified": "With Infer Content Type = No the connector returns application/octet-stream, which the runtime carries as {$content-type, $content(base64)}; hence base64ToString. If Parse JSON fails with an 'Expected Object' error, see README 'Verify on import' row 5 for the two alternatives."
+              }
+            },
+            "Switch_on_kind": {
+              "runAfter": {
+                "Parse_JSON": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Switch",
+              "expression": "@body('Parse_JSON')?['kind']",
+              "cases": {
+                "Case_attention": {
+                  "case": "attention",
+                  "actions": {
+                    "Get_items_FleetAttention": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetAttention",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['repo']}'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Attention_row_exists": {
+                      "runAfter": {
+                        "Get_items_FleetAttention": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('Get_items_FleetAttention')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Attention_file_is_newer": {
+                          "runAfter": {},
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greaterOrEquals": [
+                                  "@int(coalesce(body('Parse_JSON')?['seq'], 0))",
+                                  "@int(if(empty(coalesce(first(outputs('Get_items_FleetAttention')?['body/value'])?['Seq'], '')), '0', coalesce(first(outputs('Get_items_FleetAttention')?['body/value'])?['Seq'], '')))"
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Update_item_FleetAttention": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                },
+                                "parameters": {
+                                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                  "table": "FleetAttention",
+                                  "id": "@first(outputs('Get_items_FleetAttention')?['body/value'])?['ID']",
+                                  "item/Title": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                                  "item/Project": "@coalesce(body('Parse_JSON')?['project'], '')",
+                                  "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                                  "item/State": "@coalesce(body('Parse_JSON')?['state'], '')",
+                                  "item/Role": "@coalesce(body('Parse_JSON')?['role'], '')",
+                                  "item/NeedsHuman": "@if(equals(body('Parse_JSON')?['needs_human'], true), 'true', 'false')",
+                                  "item/Says": "@coalesce(body('Parse_JSON')?['says'], '')",
+                                  "item/LastSaid": "@coalesce(body('Parse_JSON')?['last_said'], '')",
+                                  "item/AgeSeconds": "@string(coalesce(body('Parse_JSON')?['age_s'], ''))",
+                                  "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                  "item/Generated": "@coalesce(body('Parse_JSON')?['generated'], '')",
+                                  "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
+                                  "item/ApprovalsJson": "@string(coalesce(body('Parse_JSON')?['approvals'], json('[]')))",
+                                  "item/QuestionsJson": "@string(coalesce(body('Parse_JSON')?['questions'], json('[]')))",
+                                  "item/RunNumber": "@string(coalesce(body('Parse_JSON')?['run']?['n'], ''))",
+                                  "item/RunOrigin": "@coalesce(body('Parse_JSON')?['run']?['origin'], '')",
+                                  "item/RunLive": "@if(equals(body('Parse_JSON')?['run']?['live'], true), 'true', 'false')",
+                                  "item/Model": "@coalesce(body('Parse_JSON')?['model'], '')",
+                                  "item/SpendLine": "@coalesce(body('Parse_JSON')?['spend']?['line'], '')",
+                                  "item/SpendTotal": "@string(coalesce(body('Parse_JSON')?['spend']?['total'], ''))",
+                                  "item/SpendToday": "@string(coalesce(body('Parse_JSON')?['spend']?['today'], ''))",
+                                  "item/SpendBudget": "@string(coalesce(body('Parse_JSON')?['spend']?['budget'], ''))",
+                                  "item/Turns": "@string(coalesce(body('Parse_JSON')?['spend']?['turns'], ''))",
+                                  "item/Supervised": "@if(equals(body('Parse_JSON')?['supervised'], true), 'true', 'false')",
+                                  "item/External": "@if(equals(body('Parse_JSON')?['external'], true), 'true', 'false')",
+                                  "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
+                                  "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                },
+                                "authentication": "@parameters('$authentication')",
+                                "retryPolicy": {
+                                  "type": "none"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Create_item_FleetAttention": {
+                            "runAfter": {},
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "connectionName": "shared_sharepointonline",
+                                "operationId": "PostItem",
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                              },
+                              "parameters": {
+                                "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                "table": "FleetAttention",
+                                "item/Title": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                                "item/Project": "@coalesce(body('Parse_JSON')?['project'], '')",
+                                "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                                "item/State": "@coalesce(body('Parse_JSON')?['state'], '')",
+                                "item/Role": "@coalesce(body('Parse_JSON')?['role'], '')",
+                                "item/NeedsHuman": "@if(equals(body('Parse_JSON')?['needs_human'], true), 'true', 'false')",
+                                "item/Says": "@coalesce(body('Parse_JSON')?['says'], '')",
+                                "item/LastSaid": "@coalesce(body('Parse_JSON')?['last_said'], '')",
+                                "item/AgeSeconds": "@string(coalesce(body('Parse_JSON')?['age_s'], ''))",
+                                "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                "item/Generated": "@coalesce(body('Parse_JSON')?['generated'], '')",
+                                "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
+                                "item/ApprovalsJson": "@string(coalesce(body('Parse_JSON')?['approvals'], json('[]')))",
+                                "item/QuestionsJson": "@string(coalesce(body('Parse_JSON')?['questions'], json('[]')))",
+                                "item/RunNumber": "@string(coalesce(body('Parse_JSON')?['run']?['n'], ''))",
+                                "item/RunOrigin": "@coalesce(body('Parse_JSON')?['run']?['origin'], '')",
+                                "item/RunLive": "@if(equals(body('Parse_JSON')?['run']?['live'], true), 'true', 'false')",
+                                "item/Model": "@coalesce(body('Parse_JSON')?['model'], '')",
+                                "item/SpendLine": "@coalesce(body('Parse_JSON')?['spend']?['line'], '')",
+                                "item/SpendTotal": "@string(coalesce(body('Parse_JSON')?['spend']?['total'], ''))",
+                                "item/SpendToday": "@string(coalesce(body('Parse_JSON')?['spend']?['today'], ''))",
+                                "item/SpendBudget": "@string(coalesce(body('Parse_JSON')?['spend']?['budget'], ''))",
+                                "item/Turns": "@string(coalesce(body('Parse_JSON')?['spend']?['turns'], ''))",
+                                "item/Supervised": "@if(equals(body('Parse_JSON')?['supervised'], true), 'true', 'false')",
+                                "item/External": "@if(equals(body('Parse_JSON')?['external'], true), 'true', 'false')",
+                                "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
+                                "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                              },
+                              "authentication": "@parameters('$authentication')",
+                              "retryPolicy": {
+                                "type": "none"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "Case_approval": {
+                  "case": "approval",
+                  "actions": {
+                    "Get_items_FleetApprovals_by_id": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetApprovals",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Approval_row_is_new": {
+                      "runAfter": {
+                        "Get_items_FleetApprovals_by_id": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@length(outputs('Get_items_FleetApprovals_by_id')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Create_item_FleetApprovals": {
+                          "runAfter": {},
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "PostItem",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                            },
+                            "parameters": {
+                              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                              "table": "FleetApprovals",
+                              "item/Title": "@coalesce(body('Parse_JSON')?['id'], '')",
+                              "item/Repo": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                              "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                              "item/ApprovalKind": "@coalesce(body('Parse_JSON')?['approval_kind'], '')",
+                              "item/Summary": "@substring(coalesce(body('Parse_JSON')?['summary'], ''), 0, min(255, length(coalesce(body('Parse_JSON')?['summary'], ''))))",
+                              "item/PayloadPreview": "@string(coalesce(body('Parse_JSON')?['payload_preview'], ''))",
+                              "item/PayloadTruncated": "@if(equals(body('Parse_JSON')?['payload_truncated'], true), 'true', 'false')",
+                              "item/PayloadBytes": "@string(coalesce(body('Parse_JSON')?['payload_bytes'], ''))",
+                              "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
+                              "item/Created": "@coalesce(body('Parse_JSON')?['created'], '')",
+                              "item/Expires": "@coalesce(body('Parse_JSON')?['expires'], '')",
+                              "item/WaitingSeconds": "@string(coalesce(body('Parse_JSON')?['waiting_s'], ''))",
+                              "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                              "item/Status": "pending",
+                              "item/DecidedBy": "",
+                              "item/DecidedAt": "",
+                              "item/Reason": "",
+                              "item/Via": "",
+                              "item/Late": "",
+                              "item/Nonce": "",
+                              "item/ResultCode": "",
+                              "item/ResultText": "",
+                              "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                            },
+                            "authentication": "@parameters('$authentication')",
+                            "retryPolicy": {
+                              "type": "none"
+                            }
+                          }
+                        },
+                        "Send_push_notification_V2_approval": {
+                          "runAfter": {
+                            "Create_item_FleetApprovals": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_powerappsnotificationv2",
+                              "operationId": "SendPushNotificationV2",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerappsnotificationv2"
+                            },
+                            "parameters": {
+                              "playerType": "PowerApps",
+                              "app": "@parameters('fleet_FleetAppId (fleet_FleetAppId)')",
+                              "recipients": [
+                                "@parameters('fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)')"
+                              ],
+                              "message": "An agent is waiting for your approval",
+                              "openApp": true,
+                              "dynamicParams": {
+                                "screen": "approval",
+                                "approvalId": "@coalesce(body('Parse_JSON')?['id'], '')"
+                              },
+                              "_comment_unverified": "UNVERIFIED wire shape: 'playerType' value for 'Mobile app = Power Apps', 'recipients' as a one-element array, and 'dynamicParams' as an object rather than JSON text. README 'Verify on import' row 6."
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Approval_row_has_no_summary": {
+                            "runAfter": {},
+                            "type": "If",
+                            "expression": {
+                              "and": [
+                                {
+                                  "equals": [
+                                    "@empty(coalesce(first(outputs('Get_items_FleetApprovals_by_id')?['body/value'])?['Summary'], ''))",
+                                    true
+                                  ]
+                                }
+                              ]
+                            },
+                            "actions": {
+                              "Update_item_FleetApprovals_descriptive": {
+                                "runAfter": {},
+                                "type": "OpenApiConnection",
+                                "inputs": {
+                                  "host": {
+                                    "connectionName": "shared_sharepointonline",
+                                    "operationId": "PatchItem",
+                                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                  },
+                                  "parameters": {
+                                    "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                    "table": "FleetApprovals",
+                                    "id": "@first(outputs('Get_items_FleetApprovals_by_id')?['body/value'])?['ID']",
+                                    "item/Title": "@coalesce(body('Parse_JSON')?['id'], '')",
+                                    "item/Repo": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                                    "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                                    "item/ApprovalKind": "@coalesce(body('Parse_JSON')?['approval_kind'], '')",
+                                    "item/Summary": "@substring(coalesce(body('Parse_JSON')?['summary'], ''), 0, min(255, length(coalesce(body('Parse_JSON')?['summary'], ''))))",
+                                    "item/PayloadPreview": "@string(coalesce(body('Parse_JSON')?['payload_preview'], ''))",
+                                    "item/PayloadTruncated": "@if(equals(body('Parse_JSON')?['payload_truncated'], true), 'true', 'false')",
+                                    "item/PayloadBytes": "@string(coalesce(body('Parse_JSON')?['payload_bytes'], ''))",
+                                    "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
+                                    "item/Created": "@coalesce(body('Parse_JSON')?['created'], '')",
+                                    "item/Expires": "@coalesce(body('Parse_JSON')?['expires'], '')",
+                                    "item/WaitingSeconds": "@string(coalesce(body('Parse_JSON')?['waiting_s'], ''))",
+                                    "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                    "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                  },
+                                  "authentication": "@parameters('$authentication')",
+                                  "retryPolicy": {
+                                    "type": "none"
+                                  }
+                                }
+                              }
+                            },
+                            "else": {
+                              "actions": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "Case_decision": {
+                  "case": "decision",
+                  "actions": {
+                    "Get_items_FleetApprovals_for_decision": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetApprovals",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Approval_row_found_for_decision": {
+                      "runAfter": {
+                        "Get_items_FleetApprovals_for_decision": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('Get_items_FleetApprovals_for_decision')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Update_item_FleetApprovals_decided": {
+                          "runAfter": {},
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "PatchItem",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                            },
+                            "parameters": {
+                              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                              "table": "FleetApprovals",
+                              "id": "@first(outputs('Get_items_FleetApprovals_for_decision')?['body/value'])?['ID']",
+                              "item/Title": "@coalesce(body('Parse_JSON')?['id'], '')",
+                              "item/Status": "@coalesce(body('Parse_JSON')?['decision'], '')",
+                              "item/DecidedBy": "@coalesce(body('Parse_JSON')?['by'], '')",
+                              "item/DecidedAt": "@coalesce(body('Parse_JSON')?['decided'], '')",
+                              "item/Via": "@coalesce(body('Parse_JSON')?['via'], '')",
+                              "item/Late": "@if(equals(body('Parse_JSON')?['late'], true), 'true', 'false')",
+                              "item/Reason": "@substring(coalesce(body('Parse_JSON')?['reason'], ''), 0, min(255, length(coalesce(body('Parse_JSON')?['reason'], ''))))",
+                              "item/Nonce": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                              "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                            },
+                            "authentication": "@parameters('$authentication')",
+                            "retryPolicy": {
+                              "type": "none"
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Create_item_FleetApprovals_from_decision": {
+                            "runAfter": {},
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "connectionName": "shared_sharepointonline",
+                                "operationId": "PostItem",
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                              },
+                              "parameters": {
+                                "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                "table": "FleetApprovals",
+                                "item/Title": "@coalesce(body('Parse_JSON')?['id'], '')",
+                                "item/Status": "@coalesce(body('Parse_JSON')?['decision'], '')",
+                                "item/DecidedBy": "@coalesce(body('Parse_JSON')?['by'], '')",
+                                "item/DecidedAt": "@coalesce(body('Parse_JSON')?['decided'], '')",
+                                "item/Via": "@coalesce(body('Parse_JSON')?['via'], '')",
+                                "item/Late": "@if(equals(body('Parse_JSON')?['late'], true), 'true', 'false')",
+                                "item/Reason": "@substring(coalesce(body('Parse_JSON')?['reason'], ''), 0, min(255, length(coalesce(body('Parse_JSON')?['reason'], ''))))",
+                                "item/Nonce": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                                "item/Repo": "",
+                                "item/Ticket": "",
+                                "item/ApprovalKind": "",
+                                "item/Summary": "",
+                                "item/PayloadPreview": "",
+                                "item/PayloadTruncated": "",
+                                "item/PayloadBytes": "",
+                                "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
+                                "item/Created": "",
+                                "item/Expires": "",
+                                "item/WaitingSeconds": "",
+                                "item/ResultCode": "",
+                                "item/ResultText": "",
+                                "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                              },
+                              "authentication": "@parameters('$authentication')",
+                              "retryPolicy": {
+                                "type": "none"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Decision_carries_a_nonce": {
+                      "runAfter": {
+                        "Approval_row_found_for_decision": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "not": {
+                              "equals": [
+                                "@empty(coalesce(body('Parse_JSON')?['nonce'], ''))",
+                                true
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Get_items_FleetDecisions_for_mirror": {
+                          "runAfter": {},
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "GetItems",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                            },
+                            "parameters": {
+                              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                              "table": "FleetDecisions",
+                              "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}'",
+                              "$top": 1,
+                              "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        },
+                        "Decision_row_found_for_mirror": {
+                          "runAfter": {
+                            "Get_items_FleetDecisions_for_mirror": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Get_items_FleetDecisions_for_mirror')?['body/value'])",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Update_item_FleetDecisions_applied": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                },
+                                "parameters": {
+                                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                  "table": "FleetDecisions",
+                                  "id": "@first(outputs('Get_items_FleetDecisions_for_mirror')?['body/value'])?['ID']",
+                                  "item/Title": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                                  "item/Result": "applied",
+                                  "item/ResultAt": "@coalesce(body('Parse_JSON')?['decided'], '')",
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                },
+                                "authentication": "@parameters('$authentication')",
+                                "retryPolicy": {
+                                  "type": "none"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      }
+                    }
+                  }
+                },
+                "Case_notification": {
+                  "case": "notification",
+                  "actions": {
+                    "Get_items_FleetNotifications_by_key": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetNotifications",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['key']}'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Compose_notification_is_new": {
+                      "runAfter": {
+                        "Get_items_FleetNotifications_by_key": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@or(equals(length(outputs('Get_items_FleetNotifications_by_key')?['body/value']), 0), greater(int(coalesce(body('Parse_JSON')?['seq'], 0)), int(if(empty(coalesce(first(outputs('Get_items_FleetNotifications_by_key')?['body/value'])?['Seq'], '')), '0', coalesce(first(outputs('Get_items_FleetNotifications_by_key')?['body/value'])?['Seq'], '')))))"
+                    },
+                    "Notification_is_new": {
+                      "runAfter": {
+                        "Compose_notification_is_new": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@outputs('Compose_notification_is_new')",
+                              true
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Notification_row_exists": {
+                          "runAfter": {},
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Get_items_FleetNotifications_by_key')?['body/value'])",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Update_item_FleetNotifications": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                },
+                                "parameters": {
+                                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                  "table": "FleetNotifications",
+                                  "id": "@first(outputs('Get_items_FleetNotifications_by_key')?['body/value'])?['ID']",
+                                  "item/Title": "@coalesce(body('Parse_JSON')?['key'], '')",
+                                  "item/Repo": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                                  "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                                  "item/State": "@coalesce(body('Parse_JSON')?['state'], '')",
+                                  "item/Severity": "@coalesce(body('Parse_JSON')?['severity'], '')",
+                                  "item/TitleText": "@coalesce(body('Parse_JSON')?['title'], '')",
+                                  "item/Body": "@coalesce(body('Parse_JSON')?['body'], '')",
+                                  "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                  "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                  "item/Quiet": "@if(equals(body('Parse_JSON')?['quiet'], true), 'true', 'false')",
+                                  "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
+                                  "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                },
+                                "authentication": "@parameters('$authentication')",
+                                "retryPolicy": {
+                                  "type": "none"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {
+                              "Create_item_FleetNotifications": {
+                                "runAfter": {},
+                                "type": "OpenApiConnection",
+                                "inputs": {
+                                  "host": {
+                                    "connectionName": "shared_sharepointonline",
+                                    "operationId": "PostItem",
+                                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                  },
+                                  "parameters": {
+                                    "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                    "table": "FleetNotifications",
+                                    "item/Title": "@coalesce(body('Parse_JSON')?['key'], '')",
+                                    "item/Repo": "@coalesce(body('Parse_JSON')?['repo'], '')",
+                                    "item/Ticket": "@coalesce(body('Parse_JSON')?['ticket'], '')",
+                                    "item/State": "@coalesce(body('Parse_JSON')?['state'], '')",
+                                    "item/Severity": "@coalesce(body('Parse_JSON')?['severity'], '')",
+                                    "item/TitleText": "@coalesce(body('Parse_JSON')?['title'], '')",
+                                    "item/Body": "@coalesce(body('Parse_JSON')?['body'], '')",
+                                    "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                    "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                    "item/Quiet": "@if(equals(body('Parse_JSON')?['quiet'], true), 'true', 'false')",
+                                    "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
+                                    "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                    "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                  },
+                                  "authentication": "@parameters('$authentication')",
+                                  "retryPolicy": {
+                                    "type": "none"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "Notification_should_push": {
+                          "runAfter": {
+                            "Notification_row_exists": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "not": {
+                                  "equals": [
+                                    "@body('Parse_JSON')?['quiet']",
+                                    true
+                                  ]
+                                }
+                              },
+                              {
+                                "not": {
+                                  "equals": [
+                                    "@coalesce(body('Parse_JSON')?['severity'], '')",
+                                    "info"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Send_push_notification_V2_agent": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_powerappsnotificationv2",
+                                  "operationId": "SendPushNotificationV2",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_powerappsnotificationv2"
+                                },
+                                "parameters": {
+                                  "playerType": "PowerApps",
+                                  "app": "@parameters('fleet_FleetAppId (fleet_FleetAppId)')",
+                                  "recipients": [
+                                    "@parameters('fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)')"
+                                  ],
+                                  "message": "Fleet: an agent needs you",
+                                  "openApp": true,
+                                  "dynamicParams": {
+                                    "screen": "agent",
+                                    "repo": "@coalesce(body('Parse_JSON')?['repo'], '')"
+                                  },
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'playerType' value for 'Mobile app = Power Apps', 'recipients' as a one-element array, and 'dynamicParams' as an object rather than JSON text. README 'Verify on import' row 6."
+                                },
+                                "authentication": "@parameters('$authentication')"
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      }
+                    }
+                  }
+                },
+                "Case_heartbeat": {
+                  "case": "heartbeat",
+                  "actions": {
+                    "Get_items_FleetHeartbeat": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetHeartbeat",
+                          "$filter": "Title eq 'laptop'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Heartbeat_row_exists": {
+                      "runAfter": {
+                        "Get_items_FleetHeartbeat": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('Get_items_FleetHeartbeat')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Heartbeat_file_is_newer": {
+                          "runAfter": {},
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greaterOrEquals": [
+                                  "@coalesce(body('Parse_JSON')?['at'], '')",
+                                  "@coalesce(first(outputs('Get_items_FleetHeartbeat')?['body/value'])?['At'], '')"
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Update_item_FleetHeartbeat": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                },
+                                "parameters": {
+                                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                  "table": "FleetHeartbeat",
+                                  "id": "@first(outputs('Get_items_FleetHeartbeat')?['body/value'])?['ID']",
+                                  "item/Title": "laptop",
+                                  "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                  "item/EverySeconds": "@string(coalesce(body('Parse_JSON')?['every_s'], ''))",
+                                  "item/ExpireSeconds": "@string(coalesce(body('Parse_JSON')?['expire_s'], ''))",
+                                  "item/Contract": "@string(coalesce(body('Parse_JSON')?['contract'], ''))",
+                                  "item/Operator": "@coalesce(body('Parse_JSON')?['operator'], '')",
+                                  "item/Bridge": "@coalesce(body('Parse_JSON')?['bridge'], '')",
+                                  "item/LaptopId": "@coalesce(body('Parse_JSON')?['laptop_id'], '')",
+                                  "item/ServeUp": "@if(equals(body('Parse_JSON')?['serve_up'], true), 'true', 'false')",
+                                  "item/DeskStreams": "@string(coalesce(body('Parse_JSON')?['desk_streams'], ''))",
+                                  "item/Repos": "@string(coalesce(body('Parse_JSON')?['counts']?['repos'], ''))",
+                                  "item/NeedsHuman": "@string(coalesce(body('Parse_JSON')?['counts']?['needs_human'], ''))",
+                                  "item/ApprovalsPending": "@string(coalesce(body('Parse_JSON')?['counts']?['approvals_pending'], ''))",
+                                  "item/Notifications24h": "@string(coalesce(body('Parse_JSON')?['counts']?['notifications_24h'], ''))",
+                                  "item/Rejected24h": "@string(coalesce(body('Parse_JSON')?['counts']?['rejected_24h'], ''))",
+                                  "item/InboxLastSeen": "@coalesce(body('Parse_JSON')?['inbox_last_seen'], '')",
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                },
+                                "authentication": "@parameters('$authentication')",
+                                "retryPolicy": {
+                                  "type": "none"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Create_item_FleetHeartbeat": {
+                            "runAfter": {},
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "connectionName": "shared_sharepointonline",
+                                "operationId": "PostItem",
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                              },
+                              "parameters": {
+                                "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                "table": "FleetHeartbeat",
+                                "item/Title": "laptop",
+                                "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                "item/EverySeconds": "@string(coalesce(body('Parse_JSON')?['every_s'], ''))",
+                                "item/ExpireSeconds": "@string(coalesce(body('Parse_JSON')?['expire_s'], ''))",
+                                "item/Contract": "@string(coalesce(body('Parse_JSON')?['contract'], ''))",
+                                "item/Operator": "@coalesce(body('Parse_JSON')?['operator'], '')",
+                                "item/Bridge": "@coalesce(body('Parse_JSON')?['bridge'], '')",
+                                "item/LaptopId": "@coalesce(body('Parse_JSON')?['laptop_id'], '')",
+                                "item/ServeUp": "@if(equals(body('Parse_JSON')?['serve_up'], true), 'true', 'false')",
+                                "item/DeskStreams": "@string(coalesce(body('Parse_JSON')?['desk_streams'], ''))",
+                                "item/Repos": "@string(coalesce(body('Parse_JSON')?['counts']?['repos'], ''))",
+                                "item/NeedsHuman": "@string(coalesce(body('Parse_JSON')?['counts']?['needs_human'], ''))",
+                                "item/ApprovalsPending": "@string(coalesce(body('Parse_JSON')?['counts']?['approvals_pending'], ''))",
+                                "item/Notifications24h": "@string(coalesce(body('Parse_JSON')?['counts']?['notifications_24h'], ''))",
+                                "item/Rejected24h": "@string(coalesce(body('Parse_JSON')?['counts']?['rejected_24h'], ''))",
+                                "item/InboxLastSeen": "@coalesce(body('Parse_JSON')?['inbox_last_seen'], '')",
+                                "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                              },
+                              "authentication": "@parameters('$authentication')",
+                              "retryPolicy": {
+                                "type": "none"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "Case_result": {
+                  "case": "result",
+                  "actions": {
+                    "Get_items_FleetDecisions_by_nonce": {
+                      "runAfter": {},
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetItems",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                        },
+                        "parameters": {
+                          "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                          "table": "FleetDecisions",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}'",
+                          "$top": 1,
+                          "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    },
+                    "Decision_row_exists_for_result": {
+                      "runAfter": {
+                        "Get_items_FleetDecisions_by_nonce": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "greater": [
+                              "@length(outputs('Get_items_FleetDecisions_by_nonce')?['body/value'])",
+                              0
+                            ]
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Update_item_FleetDecisions_result": {
+                          "runAfter": {},
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "PatchItem",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                            },
+                            "parameters": {
+                              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                              "table": "FleetDecisions",
+                              "id": "@first(outputs('Get_items_FleetDecisions_by_nonce')?['body/value'])?['ID']",
+                              "item/Title": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                              "item/Result": "@if(equals(body('Parse_JSON')?['ok'], true), 'applied', 'rejected')",
+                              "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
+                              "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
+                              "item/ResultAt": "@coalesce(body('Parse_JSON')?['at'], '')",
+                              "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                            },
+                            "authentication": "@parameters('$authentication')",
+                            "retryPolicy": {
+                              "type": "none"
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {
+                          "Create_item_FleetDecisions_from_result": {
+                            "runAfter": {},
+                            "type": "OpenApiConnection",
+                            "inputs": {
+                              "host": {
+                                "connectionName": "shared_sharepointonline",
+                                "operationId": "PostItem",
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                              },
+                              "parameters": {
+                                "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                "table": "FleetDecisions",
+                                "item/Title": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                                "item/Kind": "@coalesce(body('Parse_JSON')?['kind_of'], '')",
+                                "item/ApprovalId": "",
+                                "item/Repo": "",
+                                "item/Decision": "",
+                                "item/Reason": "",
+                                "item/Message": "",
+                                "item/AnswersJson": "",
+                                "item/Digest": "",
+                                "item/By": "",
+                                "item/Device": "",
+                                "item/Issued": "",
+                                "item/Expires": "",
+                                "item/InboxFile": "",
+                                "item/Result": "@if(equals(body('Parse_JSON')?['ok'], true), 'applied', 'rejected')",
+                                "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
+                                "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
+                                "item/ResultAt": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                              },
+                              "authentication": "@parameters('$authentication')",
+                              "retryPolicy": {
+                                "type": "none"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Result_rejects_a_decision": {
+                      "runAfter": {
+                        "Decision_row_exists_for_result": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "If",
+                      "expression": {
+                        "and": [
+                          {
+                            "equals": [
+                              "@coalesce(body('Parse_JSON')?['kind_of'], '')",
+                              "decision"
+                            ]
+                          },
+                          {
+                            "not": {
+                              "equals": [
+                                "@body('Parse_JSON')?['ok']",
+                                true
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "Get_items_FleetApprovals_by_nonce": {
+                          "runAfter": {},
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connectionName": "shared_sharepointonline",
+                              "operationId": "GetItems",
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                            },
+                            "parameters": {
+                              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                              "table": "FleetApprovals",
+                              "$filter": "Nonce eq '@{body('Parse_JSON')?['nonce']}'",
+                              "$top": 1,
+                              "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                            },
+                            "authentication": "@parameters('$authentication')"
+                          }
+                        },
+                        "Approval_row_found_by_nonce": {
+                          "runAfter": {
+                            "Get_items_FleetApprovals_by_nonce": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "If",
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(outputs('Get_items_FleetApprovals_by_nonce')?['body/value'])",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "actions": {
+                            "Update_item_FleetApprovals_rejected": {
+                              "runAfter": {},
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "host": {
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "PatchItem",
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                                },
+                                "parameters": {
+                                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                                  "table": "FleetApprovals",
+                                  "id": "@first(outputs('Get_items_FleetApprovals_by_nonce')?['body/value'])?['ID']",
+                                  "item/Title": "@coalesce(first(outputs('Get_items_FleetApprovals_by_nonce')?['body/value'])?['Title'], '')",
+                                  "item/Status": "rejected",
+                                  "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
+                                  "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
+                                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                                },
+                                "authentication": "@parameters('$authentication')",
+                                "retryPolicy": {
+                                  "type": "none"
+                                }
+                              }
+                            }
+                          },
+                          "else": {
+                            "actions": {}
+                          }
+                        }
+                      },
+                      "else": {
+                        "actions": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "default": {
+                "actions": {}
+              }
+            }
+          }
+        },
+        "Catch": {
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "type": "Scope",
+          "actions": {
+            "Filter_array_failed_actions": {
+              "runAfter": {},
+              "type": "Query",
+              "inputs": {
+                "from": "@result('Try')",
+                "where": "@equals(item()?['status'], 'Failed')"
+              }
+            },
+            "Compose_failure_text": {
+              "runAfter": {
+                "Filter_array_failed_actions": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@substring(concat('run ', workflow()?['run']?['name'], ' file ', coalesce(triggerOutputs()?['body/Name'], ''), ': ', if(empty(string(first(body('Filter_array_failed_actions'))?['error'])), 'no failed top-level action in Try; open the run history', string(first(body('Filter_array_failed_actions'))?['error']))), 0, min(300, length(concat('run ', workflow()?['run']?['name'], ' file ', coalesce(triggerOutputs()?['body/Name'], ''), ': ', if(empty(string(first(body('Filter_array_failed_actions'))?['error'])), 'no failed top-level action in Try; open the run history', string(first(body('Filter_array_failed_actions'))?['error']))))))"
+            },
+            "Create_item_FleetNotifications_alert": {
+              "runAfter": {
+                "Compose_failure_text": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "PostItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+                },
+                "parameters": {
+                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                  "table": "FleetNotifications",
+                  "item/Title": "@concat('flow-failed:FleetOutboxToLists:', workflow()?['run']?['name'])",
+                  "item/Repo": "",
+                  "item/Ticket": "",
+                  "item/State": "error",
+                  "item/Severity": "alert",
+                  "item/TitleText": "Flow FleetOutboxToLists failed",
+                  "item/Body": "@outputs('Compose_failure_text')",
+                  "item/At": "@utcNow('yyyy-MM-ddTHH:mm:ssZ')",
+                  "item/Seq": "0",
+                  "item/Quiet": "false",
+                  "item/ApprovalId": "",
+                  "item/SourceFile": "@coalesce(triggerOutputs()?['body/Name'], '')",
+                  "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
+                },
+                "authentication": "@parameters('$authentication')",
+                "retryPolicy": {
+                  "type": "none"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "FleetOutboxToLists: every new *.json under FleetAgent/outbox becomes an upsert into the five Fleet* lists, keyed by Title, plus a content-free push for approvals and non-info notifications. Contract v1."
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

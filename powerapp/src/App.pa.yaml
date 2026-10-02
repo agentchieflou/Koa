@@ -1,0 +1,26 @@
+App:
+  Properties:
+    StartScreen: =If(Param("screen") = "approval" && !IsBlank(Param("approvalId")), ApprovalScreen, Param("screen") = "agent" && !IsBlank(Param("repo")), AgentScreen, HomeScreen)
+    BackEnabled: =true
+    OnError: |-
+      =Trace($"FleetAgent error {FirstError.Message} in {FirstError.Source}", TraceSeverity.Error, { SessionId: Host.SessionID, Screen: App.ActiveScreen.Name });
+      Error(FirstError)
+    Formulas: |-
+      =// Named formulas only. Every value below is read from the laptop's rows, the device or the
+      // launch parameters; none of them decides anything, and none uses a behavior function.
+      Operator = Lower(User().Email);
+      Heartbeat = LookUp(FleetHeartbeat, Title = "laptop");
+      HeartbeatEverySeconds = Coalesce(Value(Heartbeat.EverySeconds), 300);
+      HeartbeatAgeSeconds = If(IsBlank(Heartbeat.At), Blank(), DateDiff(DateTimeValue(Heartbeat.At), Now(), TimeUnit.Seconds));
+      LaptopStale = IsBlank(HeartbeatAgeSeconds) || HeartbeatAgeSeconds > 3 * HeartbeatEverySeconds;
+      OperatorMismatch = !IsBlank(Heartbeat.Operator) && Lower(Heartbeat.Operator) <> Operator;
+      ExpireSeconds = Coalesce(Value(Heartbeat.ExpireSeconds), 900);
+      PendingApprovals = Filter(FleetApprovals, Status = "pending");
+      PendingCount = CountRows(PendingApprovals);
+      NeedsYou = Filter(FleetAttention, NeedsHuman = "true");
+      NeedsYouCount = CountRows(NeedsYou);
+      DeepLinkApproval = LookUp(FleetApprovals, Title = Param("approvalId"));
+      DeepLinkAgent = LookUp(FleetAttention, Title = Param("repo"));
+      IsPhone = App.ActiveScreen.Size = ScreenSize.Small;
+      IsWide = App.ActiveScreen.Size >= ScreenSize.Large;
+      AppVersion = "0.1.0";

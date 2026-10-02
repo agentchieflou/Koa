@@ -1,0 +1,5 @@
+# What CI and a contributor install: the tests read YAML and validate JSON Schema, nothing else.
+# openpyxl is not here: only data/make_workbook.py's build needs it (python -m pip install openpyxl).
+pytest>=8
+pyyaml>=6
+jsonschema>=4.18

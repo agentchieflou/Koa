@@ -1,0 +1,1787 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/agentchieflou/this-next-please/blob/main/contract/fleet-mobile.v1.schema.json",
+  "title": "The fleet's mobile contract, version 1",
+  "description": "What the laptop's bridge writes to the OneDrive folder and what FleetDecide writes back (docs/fleet-mobile.md). One record validates against the root; $defs names each record, the enums, FleetDecide's inputs and response, and the five lists. An additive change keeps the version; a breaking change raises bridge.MOBILE_CONTRACT and moves this file to v2.",
+  "contract": 1,
+  "limits": {
+    "repo": 64,
+    "project": 64,
+    "ticket": 32,
+    "says": 300,
+    "last_said": 200,
+    "q": 300,
+    "choice": 80,
+    "default": 80,
+    "id": 96,
+    "summary": 300,
+    "reason": 500,
+    "by": 254,
+    "message": 4000,
+    "answer": 1000,
+    "title": 120,
+    "body": 300,
+    "preview_bytes": 8192,
+    "preview_head": 2048
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/attention"
+    },
+    {
+      "$ref": "#/$defs/approval"
+    },
+    {
+      "$ref": "#/$defs/decision_mirror"
+    },
+    {
+      "$ref": "#/$defs/notification"
+    },
+    {
+      "$ref": "#/$defs/heartbeat"
+    },
+    {
+      "$ref": "#/$defs/result"
+    },
+    {
+      "$ref": "#/$defs/pairing"
+    },
+    {
+      "$ref": "#/$defs/inbox_decision"
+    },
+    {
+      "$ref": "#/$defs/inbox_reply"
+    }
+  ],
+  "$defs": {
+    "schema": {
+      "description": "bridge.MOBILE_SCHEMA: the record format every file carries as `schema`.",
+      "const": 1
+    },
+    "contract": {
+      "description": "bridge.MOBILE_CONTRACT: this file's version, carried by the heartbeat and pairing records so the app can say \"update the app\".",
+      "const": 1
+    },
+    "stamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "UTC, `yyyy-MM-ddTHH:mm:ssZ` (bridge._utc)."
+    },
+    "stamp_or_empty": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/stamp"
+        },
+        {
+          "const": ""
+        }
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256, 64 lowercase hex."
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{16,64}$",
+      "description": "FleetDecide's guid() without dashes; 16-64 of A-Z a-z 0-9 _ -."
+    },
+    "ticket": {
+      "type": "string",
+      "maxLength": 32,
+      "pattern": "^([A-Za-z][A-Za-z0-9]+-\\d+)?$",
+      "description": "A `KEY-123` shape, or empty."
+    },
+    "laptop_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "Random hex minted once; never a hostname or a pid."
+    },
+    "state": {
+      "description": "agentstate.STATES.",
+      "enum": [
+        "starting",
+        "running",
+        "waiting_approval",
+        "needs_human",
+        "blocked",
+        "idle",
+        "done",
+        "error"
+      ]
+    },
+    "role": {
+      "description": "The values of agentstate.STATE_ROLES.",
+      "enum": [
+        "running",
+        "waiting",
+        "human",
+        "done",
+        "idle"
+      ]
+    },
+    "severity": {
+      "description": "notify.SEVERITIES.",
+      "enum": [
+        "action",
+        "alert",
+        "info"
+      ]
+    },
+    "notification_state": {
+      "description": "The keys of notify.RULES: the states a notification is sent for.",
+      "enum": [
+        "waiting_approval",
+        "needs_human",
+        "blocked",
+        "error",
+        "done",
+        "idle_stalled"
+      ]
+    },
+    "decision": {
+      "description": "approval.APPROVED | approval.DENIED.",
+      "enum": [
+        "approved",
+        "denied"
+      ]
+    },
+    "decided_via": {
+      "enum": [
+        "laptop",
+        "mobile"
+      ]
+    },
+    "result_value": {
+      "enum": [
+        "applied",
+        "rejected"
+      ]
+    },
+    "kind_of": {
+      "enum": [
+        "decision",
+        "reply"
+      ]
+    },
+    "reply_via": {
+      "enum": [
+        "say",
+        "send",
+        ""
+      ]
+    },
+    "attention": {
+      "description": "outbox/attention/<repo>-<seq>.json: exactly bridge.ATTENTION_KEYS; `role` is STATE_ROLES[state].",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "attention"
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "project": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "ticket": {
+          "$ref": "#/$defs/ticket"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        },
+        "role": {
+          "$ref": "#/$defs/role"
+        },
+        "needs_human": {
+          "type": "boolean"
+        },
+        "says": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "last_said": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "age_s": {
+          "type": "integer",
+          "minimum": -1
+        },
+        "at": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "approvals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "maxItems": 8
+        },
+        "approval_id": {
+          "type": "string",
+          "maxLength": 96
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "q": {
+                "type": "string",
+                "maxLength": 300
+              },
+              "choices": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                "maxItems": 8
+              },
+              "want": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "default": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [
+              "id",
+              "q",
+              "choices",
+              "want",
+              "default"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 8
+        },
+        "run": {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "origin": {
+              "type": "string",
+              "maxLength": 32
+            },
+            "live": {
+              "type": "boolean"
+            },
+            "since_start": {
+              "type": "boolean"
+            },
+            "resumed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "n",
+            "origin",
+            "live",
+            "since_start",
+            "resumed"
+          ],
+          "additionalProperties": false
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "spend": {
+          "type": "object",
+          "properties": {
+            "total": {
+              "type": "number"
+            },
+            "today": {
+              "type": "number"
+            },
+            "budget": {
+              "type": "number"
+            },
+            "turns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "line": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "required": [
+            "total",
+            "today",
+            "budget",
+            "turns",
+            "line"
+          ],
+          "additionalProperties": false
+        },
+        "supervised": {
+          "type": "boolean"
+        },
+        "external": {
+          "type": "boolean"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "generated": {
+          "$ref": "#/$defs/stamp"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "repo",
+        "project",
+        "ticket",
+        "state",
+        "role",
+        "needs_human",
+        "says",
+        "last_said",
+        "age_s",
+        "at",
+        "approvals",
+        "approval_id",
+        "questions",
+        "run",
+        "model",
+        "spend",
+        "supervised",
+        "external",
+        "digest",
+        "generated",
+        "seq"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "running"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "running"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "waiting_approval"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "waiting"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "needs_human"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "human"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "blocked"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "human"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "human"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "done"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "done"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "starting"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "idle"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "idle"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "role": {
+                "const": "idle"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "approval": {
+      "description": "outbox/approvals/<id>.json: the request mirror. Over preview_bytes canonical, the preview is {truncated, bytes, head}; the digest covers the whole request either way.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "approval"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 96
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "ticket": {
+          "$ref": "#/$defs/ticket"
+        },
+        "approval_kind": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "payload_preview": true,
+        "payload_truncated": {
+          "type": "boolean"
+        },
+        "payload_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "created": {
+          "$ref": "#/$defs/stamp_or_empty"
+        },
+        "expires": {
+          "$ref": "#/$defs/stamp_or_empty"
+        },
+        "waiting_s": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "id",
+        "repo",
+        "ticket",
+        "approval_kind",
+        "summary",
+        "payload_preview",
+        "payload_truncated",
+        "payload_bytes",
+        "digest",
+        "created",
+        "expires",
+        "waiting_s"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "payload_truncated": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload_preview": {
+                "type": "object",
+                "properties": {
+                  "truncated": {
+                    "const": true
+                  },
+                  "bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "head": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "truncated",
+                  "bytes",
+                  "head"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "decision_mirror": {
+      "description": "outbox/approvals/<id>.decision.json: the laptop's decision, whichever side decided; `nonce` only when `via` is mobile.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "decision"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 96
+        },
+        "decision": {
+          "$ref": "#/$defs/decision"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "by": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "via": {
+          "$ref": "#/$defs/decided_via"
+        },
+        "decided": {
+          "type": "string",
+          "maxLength": 32,
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z?)?$",
+          "description": "UTC, `yyyy-MM-ddTHH:mm:ssZ` (bridge._utc of approval.decide's stamp). The pattern also takes the Z-less form v1 laptops wrote before the fix, so a mirror already in an outbox stays valid."
+        },
+        "digest": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^([0-9a-f]{64})?$"
+        },
+        "late": {
+          "type": "boolean"
+        },
+        "nonce": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "id",
+        "decision",
+        "reason",
+        "by",
+        "via",
+        "decided",
+        "digest",
+        "late"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "via": {
+                "const": "mobile"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "nonce"
+            ]
+          },
+          "else": {
+            "properties": {
+              "nonce": false
+            }
+          }
+        }
+      ]
+    },
+    "notification": {
+      "description": "outbox/notifications/<at>-<repo>-<state>-<seq>.json: `key` is `<repo>:<state>`.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "notification"
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "ticket": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "state": {
+          "$ref": "#/$defs/notification_state"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "body": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "at": {
+          "$ref": "#/$defs/stamp"
+        },
+        "key": {
+          "type": "string"
+        },
+        "quiet": {
+          "type": "boolean"
+        },
+        "approval_id": {
+          "type": "string",
+          "maxLength": 96
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "repo",
+        "ticket",
+        "state",
+        "severity",
+        "title",
+        "body",
+        "seq",
+        "at",
+        "key",
+        "quiet",
+        "approval_id"
+      ],
+      "additionalProperties": false
+    },
+    "heartbeat": {
+      "description": "outbox/heartbeat/<yyyymmdd-hhmm>.json, every `every_s`; stale after 3 x every_s.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "heartbeat"
+        },
+        "at": {
+          "$ref": "#/$defs/stamp"
+        },
+        "every_s": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expire_s": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "operator": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "bridge": {
+          "type": "string"
+        },
+        "laptop_id": {
+          "$ref": "#/$defs/laptop_id"
+        },
+        "serve_up": {
+          "type": "boolean"
+        },
+        "desk_streams": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "counts": {
+          "type": "object",
+          "properties": {
+            "repos": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "needs_human": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "approvals_pending": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "notifications_24h": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "rejected_24h": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "repos",
+            "needs_human",
+            "approvals_pending",
+            "notifications_24h",
+            "rejected_24h"
+          ],
+          "additionalProperties": false
+        },
+        "inbox_last_seen": {
+          "$ref": "#/$defs/stamp_or_empty"
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "at",
+        "every_s",
+        "expire_s",
+        "contract",
+        "operator",
+        "bridge",
+        "laptop_id",
+        "serve_up",
+        "desk_streams",
+        "counts",
+        "inbox_last_seen"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "description": "outbox/results/<nonce>.result.json: the verdict on one phone decision (`id`, `late` once applied) or reply (`repo`, `via`, `answered`, `retried_s` after a mid_turn wait).",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "result"
+        },
+        "nonce": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1,
+          "description": "The nonce of the inbox record this is the verdict on."
+        },
+        "kind_of": {
+          "$ref": "#/$defs/kind_of"
+        },
+        "id": {
+          "type": "string",
+          "maxLength": 96
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "result": {
+          "$ref": "#/$defs/result_value"
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "error": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "hint": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "late": {
+          "type": "boolean"
+        },
+        "via": {
+          "$ref": "#/$defs/reply_via"
+        },
+        "answered": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "retried_s": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "at": {
+          "$ref": "#/$defs/stamp"
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "nonce",
+        "kind_of",
+        "ok",
+        "result",
+        "code",
+        "error",
+        "hint",
+        "at"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind_of": {
+                "const": "decision"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "repo": false,
+              "via": false,
+              "answered": false,
+              "retried_s": false
+            }
+          },
+          "else": {
+            "required": [
+              "repo",
+              "via",
+              "answered"
+            ],
+            "properties": {
+              "id": false,
+              "late": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "const": "applied"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "result": {
+                "const": "rejected"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "pairing": {
+      "description": "pairing.json at the folder's root: written once by `ad-fleet mobile init`; no secret.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "pairing"
+        },
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "operator": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "laptop_id": {
+          "$ref": "#/$defs/laptop_id"
+        },
+        "expire_s": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "created": {
+          "$ref": "#/$defs/stamp"
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "contract",
+        "operator",
+        "laptop_id",
+        "expire_s",
+        "created"
+      ],
+      "additionalProperties": false
+    },
+    "inbox_decision": {
+      "description": "inbox/decision-<nonce>.json, written by FleetDecide. The laptop keeps the first LIMITS.reason characters of `reason` and 64 of `device`; a denial needs a reason.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "decision"
+        },
+        "nonce": {
+          "$ref": "#/$defs/nonce"
+        },
+        "issued": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z?$"
+        },
+        "expires": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z?$"
+        },
+        "by": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{1,96}$"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "decision": {
+          "$ref": "#/$defs/decision"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "nonce",
+        "issued",
+        "expires",
+        "by",
+        "id",
+        "digest",
+        "decision"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "const": "denied"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "reason"
+            ],
+            "properties": {
+              "reason": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "inbox_reply": {
+      "description": "inbox/reply-<nonce>.json, written by FleetDecide: a message, answers, or both, and it says something once blank answers are dropped.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "$ref": "#/$defs/schema"
+        },
+        "kind": {
+          "const": "reply"
+        },
+        "nonce": {
+          "$ref": "#/$defs/nonce"
+        },
+        "issued": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z?$"
+        },
+        "expires": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z?$"
+        },
+        "by": {
+          "type": "string"
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 64,
+          "minLength": 1
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 4000
+        },
+        "answers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 32
+              },
+              "answer": {
+                "type": "string",
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "id",
+              "answer"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 8
+        },
+        "device": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "nonce",
+        "issued",
+        "expires",
+        "by",
+        "repo"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "message"
+          ],
+          "properties": {
+            "message": {
+              "type": "string",
+              "pattern": "\\S"
+            }
+          }
+        },
+        {
+          "required": [
+            "answers"
+          ],
+          "properties": {
+            "answers": {
+              "type": "array",
+              "contains": {
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "answer": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fleet_decide_inputs": {
+      "type": "object",
+      "properties": {
+        "Kind": {
+          "enum": [
+            "decision",
+            "reply"
+          ]
+        },
+        "ApprovalId": {
+          "type": "string"
+        },
+        "Repo": {
+          "type": "string"
+        },
+        "Decision": {
+          "enum": [
+            "approved",
+            "denied",
+            ""
+          ]
+        },
+        "Reason": {
+          "type": "string"
+        },
+        "Message": {
+          "type": "string"
+        },
+        "AnswersJson": {
+          "type": "string"
+        },
+        "Digest": {
+          "type": "string",
+          "pattern": "^([0-9a-f]{64})?$"
+        },
+        "ExpiresSeconds": {
+          "type": "number"
+        },
+        "Device": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Kind",
+        "ApprovalId",
+        "Repo",
+        "Decision",
+        "Reason",
+        "Message",
+        "AnswersJson",
+        "Digest",
+        "ExpiresSeconds",
+        "Device"
+      ],
+      "additionalProperties": false,
+      "description": "FleetDecide's Power Apps (V2) inputs, in the order they are added (text, text_1 ... text_7, number, text_8). ExpiresSeconds is the heartbeat's expire_s; 0 means 900."
+    },
+    "fleet_decide_response": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "nonce": {
+          "type": "string"
+        },
+        "inboxFile": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ok",
+        "nonce",
+        "inboxFile",
+        "error"
+      ],
+      "additionalProperties": false,
+      "description": "Respond to a PowerApp or flow: four outputs."
+    },
+    "FleetAttention": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        },
+        "Project": {
+          "type": "string"
+        },
+        "Ticket": {
+          "type": "string"
+        },
+        "State": {
+          "type": "string",
+          "enum": [
+            "starting",
+            "running",
+            "waiting_approval",
+            "needs_human",
+            "blocked",
+            "idle",
+            "done",
+            "error"
+          ]
+        },
+        "Role": {
+          "type": "string",
+          "enum": [
+            "running",
+            "waiting",
+            "human",
+            "done",
+            "idle"
+          ]
+        },
+        "NeedsHuman": {
+          "type": "string"
+        },
+        "Says": {
+          "type": "string"
+        },
+        "LastSaid": {
+          "type": "string"
+        },
+        "AgeSeconds": {
+          "type": "string"
+        },
+        "At": {
+          "type": "string"
+        },
+        "Generated": {
+          "type": "string"
+        },
+        "ApprovalId": {
+          "type": "string"
+        },
+        "ApprovalsJson": {
+          "type": "string"
+        },
+        "QuestionsJson": {
+          "type": "string"
+        },
+        "RunNumber": {
+          "type": "string"
+        },
+        "RunOrigin": {
+          "type": "string"
+        },
+        "RunLive": {
+          "type": "string"
+        },
+        "Model": {
+          "type": "string"
+        },
+        "SpendLine": {
+          "type": "string"
+        },
+        "SpendTotal": {
+          "type": "string"
+        },
+        "SpendToday": {
+          "type": "string"
+        },
+        "SpendBudget": {
+          "type": "string"
+        },
+        "Turns": {
+          "type": "string"
+        },
+        "Supervised": {
+          "type": "string"
+        },
+        "External": {
+          "type": "string"
+        },
+        "Digest": {
+          "type": "string"
+        },
+        "Seq": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Title",
+        "Project",
+        "Ticket",
+        "State",
+        "Role",
+        "NeedsHuman",
+        "Says",
+        "LastSaid",
+        "AgeSeconds",
+        "At",
+        "Generated",
+        "ApprovalId",
+        "ApprovalsJson",
+        "QuestionsJson",
+        "RunNumber",
+        "RunOrigin",
+        "RunLive",
+        "Model",
+        "SpendLine",
+        "SpendTotal",
+        "SpendToday",
+        "SpendBudget",
+        "Turns",
+        "Supervised",
+        "External",
+        "Digest",
+        "Seq"
+      ],
+      "additionalProperties": false,
+      "description": "One row of the FleetAttention list: every column text."
+    },
+    "FleetApprovals": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        },
+        "Repo": {
+          "type": "string"
+        },
+        "Ticket": {
+          "type": "string"
+        },
+        "ApprovalKind": {
+          "type": "string"
+        },
+        "Summary": {
+          "type": "string"
+        },
+        "PayloadPreview": {
+          "type": "string"
+        },
+        "PayloadTruncated": {
+          "type": "string"
+        },
+        "PayloadBytes": {
+          "type": "string"
+        },
+        "Digest": {
+          "type": "string"
+        },
+        "Created": {
+          "type": "string"
+        },
+        "Expires": {
+          "type": "string"
+        },
+        "WaitingSeconds": {
+          "type": "string"
+        },
+        "Status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "sent",
+            "approved",
+            "denied",
+            "rejected",
+            "expired"
+          ]
+        },
+        "DecidedBy": {
+          "type": "string"
+        },
+        "DecidedAt": {
+          "type": "string"
+        },
+        "Reason": {
+          "type": "string"
+        },
+        "Via": {
+          "type": "string",
+          "enum": [
+            "",
+            "laptop",
+            "mobile"
+          ]
+        },
+        "Late": {
+          "type": "string"
+        },
+        "Nonce": {
+          "type": "string"
+        },
+        "ResultCode": {
+          "type": "string"
+        },
+        "ResultText": {
+          "type": "string"
+        },
+        "SourceFile": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Title",
+        "Repo",
+        "Ticket",
+        "ApprovalKind",
+        "Summary",
+        "PayloadPreview",
+        "PayloadTruncated",
+        "PayloadBytes",
+        "Digest",
+        "Created",
+        "Expires",
+        "WaitingSeconds",
+        "Status",
+        "DecidedBy",
+        "DecidedAt",
+        "Reason",
+        "Via",
+        "Late",
+        "Nonce",
+        "ResultCode",
+        "ResultText",
+        "SourceFile"
+      ],
+      "additionalProperties": false,
+      "description": "One row of the FleetApprovals list: every column text."
+    },
+    "FleetDecisions": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        },
+        "Kind": {
+          "type": "string",
+          "enum": [
+            "decision",
+            "reply"
+          ]
+        },
+        "ApprovalId": {
+          "type": "string"
+        },
+        "Repo": {
+          "type": "string"
+        },
+        "Decision": {
+          "type": "string"
+        },
+        "Reason": {
+          "type": "string"
+        },
+        "Message": {
+          "type": "string"
+        },
+        "AnswersJson": {
+          "type": "string"
+        },
+        "Digest": {
+          "type": "string"
+        },
+        "By": {
+          "type": "string"
+        },
+        "Device": {
+          "type": "string"
+        },
+        "Issued": {
+          "type": "string"
+        },
+        "Expires": {
+          "type": "string"
+        },
+        "InboxFile": {
+          "type": "string"
+        },
+        "Result": {
+          "type": "string",
+          "enum": [
+            "sent",
+            "applied",
+            "rejected"
+          ]
+        },
+        "ResultCode": {
+          "type": "string"
+        },
+        "ResultText": {
+          "type": "string"
+        },
+        "ResultAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Title",
+        "Kind",
+        "ApprovalId",
+        "Repo",
+        "Decision",
+        "Reason",
+        "Message",
+        "AnswersJson",
+        "Digest",
+        "By",
+        "Device",
+        "Issued",
+        "Expires",
+        "InboxFile",
+        "Result",
+        "ResultCode",
+        "ResultText",
+        "ResultAt"
+      ],
+      "additionalProperties": false,
+      "description": "One row of the FleetDecisions list: every column text."
+    },
+    "FleetNotifications": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        },
+        "Repo": {
+          "type": "string"
+        },
+        "Ticket": {
+          "type": "string"
+        },
+        "State": {
+          "type": "string"
+        },
+        "Severity": {
+          "type": "string",
+          "enum": [
+            "action",
+            "alert",
+            "info"
+          ]
+        },
+        "TitleText": {
+          "type": "string"
+        },
+        "Body": {
+          "type": "string"
+        },
+        "At": {
+          "type": "string"
+        },
+        "Seq": {
+          "type": "string"
+        },
+        "Quiet": {
+          "type": "string"
+        },
+        "ApprovalId": {
+          "type": "string"
+        },
+        "SourceFile": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Title",
+        "Repo",
+        "Ticket",
+        "State",
+        "Severity",
+        "TitleText",
+        "Body",
+        "At",
+        "Seq",
+        "Quiet",
+        "ApprovalId",
+        "SourceFile"
+      ],
+      "additionalProperties": false,
+      "description": "One row of the FleetNotifications list: every column text."
+    },
+    "FleetHeartbeat": {
+      "type": "object",
+      "properties": {
+        "Title": {
+          "type": "string"
+        },
+        "At": {
+          "type": "string"
+        },
+        "EverySeconds": {
+          "type": "string"
+        },
+        "ExpireSeconds": {
+          "type": "string"
+        },
+        "Contract": {
+          "type": "string"
+        },
+        "Operator": {
+          "type": "string"
+        },
+        "Bridge": {
+          "type": "string"
+        },
+        "LaptopId": {
+          "type": "string"
+        },
+        "ServeUp": {
+          "type": "string"
+        },
+        "DeskStreams": {
+          "type": "string"
+        },
+        "Repos": {
+          "type": "string"
+        },
+        "NeedsHuman": {
+          "type": "string"
+        },
+        "ApprovalsPending": {
+          "type": "string"
+        },
+        "Notifications24h": {
+          "type": "string"
+        },
+        "Rejected24h": {
+          "type": "string"
+        },
+        "InboxLastSeen": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "Title",
+        "At",
+        "EverySeconds",
+        "ExpireSeconds",
+        "Contract",
+        "Operator",
+        "Bridge",
+        "LaptopId",
+        "ServeUp",
+        "DeskStreams",
+        "Repos",
+        "NeedsHuman",
+        "ApprovalsPending",
+        "Notifications24h",
+        "Rejected24h",
+        "InboxLastSeen"
+      ],
+      "additionalProperties": false,
+      "description": "One row of the FleetHeartbeat list: every column text."
+    }
+  }
+}

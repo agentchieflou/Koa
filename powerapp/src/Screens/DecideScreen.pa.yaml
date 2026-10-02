@@ -1,0 +1,166 @@
+Screens:
+  DecideScreen:
+    Properties:
+      Width: =Max(App.Width, App.MinScreenWidth)
+      Height: =Max(App.Height, App.MinScreenHeight)
+      Fill: =RGBA(250, 250, 250, 1)
+      LoadingSpinner: =LoadingSpinner.Controls
+      OnVisible: |-
+        =Set(busy, false);
+        Reset(txtReason)
+    Children:
+      - conDecideRoot:
+          Control: GroupContainer
+          Variant: AutoLayout
+          Properties:
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =8
+            LayoutMinWidth: =0
+            LayoutMinHeight: =0
+            Width: =Parent.Width
+            Height: =Parent.Height
+            PaddingBottom: =24
+          Children:
+            - cmpHeaderDecide:
+                Control: CanvasComponent
+                ComponentName: FleetHeader
+                Properties:
+                  Width: =Parent.Width
+                  Height: =64
+                  FillPortions: =0
+                  Title: =If(decideChoice = "denied", "Deny", "Approve")
+                  Status: =selApproval.Repo & If(IsBlank(selApproval.Ticket), "", " · " & selApproval.Ticket)
+                  ShowBack: =true
+                  ShowSettings: =false
+                  OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
+                  OnRefresh: |-
+                    =Refresh(FleetApprovals);
+                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title))
+                  OnSettings: =false
+            - conDecideAccent:
+                Control: GroupContainer
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =3
+                  FillPortions: =0
+                  Fill: =App.Theme.Colors.Primary
+            - cmpKvDecideKind:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Kind"
+                  Value: =selApproval.ApprovalKind
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvDecideSummary:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Summary"
+                  Value: =selApproval.Summary
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =96
+                  FillPortions: =0
+            - cmpKvDecideRepo:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Repo"
+                  Value: =selApproval.Repo & If(IsBlank(selApproval.Ticket), "", " · " & selApproval.Ticket)
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - cmpKvDecideDigest:
+                Control: CanvasComponent
+                ComponentName: KeyValueRow
+                Properties:
+                  Label: ="Digest"
+                  Value: =Left(selApproval.Digest, 12) & "…"
+                  Wrap: =false
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - lblDecideHint:
+                Control: ModernText
+                Properties:
+                  Text: =If(decideChoice = "denied", "A denial needs a reason; the agent quotes it into its friction log.", "A comment is optional; the laptop records it with your approval.")
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =40
+                  FillPortions: =0
+            - txtReason:
+                Control: ModernTextInput
+                Properties:
+                  Default: =""
+                  Placeholder: =If(decideChoice = "denied", "Reason (required to deny)", "Comment (optional)")
+                  Type: =TextInputType.Multiline
+                  TriggerOutput: =TriggerOutput.Keypress
+                  MaxLength: =500
+                  Required: =decideChoice = "denied"
+                  DisplayMode: =If(busy, DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: =If(decideChoice = "denied", "Reason for the denial, required", "Comment for the approval, optional")
+                  Width: =Parent.Width - 32
+                  Height: =120
+                  FillPortions: =0
+            - btnDecideSend:
+                Control: ModernButton
+                Properties:
+                  Text: =If(decideChoice = "denied", "Send denial", "Send approval")
+                  Appearance: =ButtonAppearance.Primary
+                  DisplayMode: =If(busy || IsBlank(selApproval) || (decideChoice = "denied" && IsBlank(Trim(txtReason.Text))), DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: =If(decideChoice = "denied", "Send the denial to the laptop", "Send the approval to the laptop")
+                  Width: =Parent.Width - 32
+                  Height: =52
+                  FillPortions: =0
+                  OnSelect: |-
+                    =Set(busy, true);
+                    IfError(
+                      With({r: FleetDecide.Run("decision", selApproval.Title, selApproval.Repo, decideChoice, Trim(txtReason.Text), "", "", selApproval.Digest, ExpireSeconds, Host.OSType)},
+                        If(r.ok,
+                          Notify("Decision sent — the laptop applies it within a few minutes", NotificationType.Success, 4000);
+                          Refresh(FleetApprovals);
+                          Refresh(FleetDecisions);
+                          Navigate(HomeScreen, ScreenTransition.UnCover),
+                          Notify("Not sent: " & r.error, NotificationType.Error))),
+                      Notify("Not sent: " & FirstError.Message, NotificationType.Error));
+                    Set(busy, false)
+            - spnDecide:
+                Control: ModernSpinner
+                Properties:
+                  Label: ="Sending…"
+                  AccessibleLabel: ="Sending the decision"
+                  Visible: =busy
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+            - btnDecideCancel:
+                Control: ModernButton
+                Properties:
+                  Text: ="Cancel"
+                  Appearance: =ButtonAppearance.Secondary
+                  DisplayMode: =If(busy, DisplayMode.Disabled, DisplayMode.Edit)
+                  AccessibleLabel: ="Cancel and go back"
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0
+                  OnSelect: =Back()
+            - lblDecideNote:
+                Control: ModernText
+                Properties:
+                  Text: ="The laptop applies this only after it has checked the digest, your identity and the expiry. Nothing is decided on the phone."
+                  Size: =14
+                  Color: =RGBA(97, 97, 97, 1)
+                  Wrap: =true
+                  Width: =Parent.Width - 32
+                  Height: =48
+                  FillPortions: =0

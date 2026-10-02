@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "kind": "decision",
+  "nonce": "9f2c4b7e1d3a48c2b6e5f0a1d2c3b4e5",
+  "issued": "2026-09-25T16:05:12Z",
+  "expires": "2026-09-25T16:20:12Z",
+  "by": "operator@example.com",
+  "id": "luna-jira-create-20260925T160301Z-a1c9",
+  "digest": "a1c9e2b4d6f8a0c2e4b6d8f0a2c4e6b8d0f2a4c6e8b0d2f4a6c8e0b2d4f6a8c0",
+  "decision": "approved",
+  "reason": "",
+  "device": "ios-phone"
+}

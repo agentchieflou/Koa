@@ -1,0 +1,21 @@
+# The mobile contract this repository builds to, pinned by tag and sha256 (this-next-please#600).
+# tests/test_contract.py fails when a file below does not hash to its line, so the contract changes here
+# only by replacing the files AND this pin together, from a published tag. Lines are `key: value`, then
+# `<sha256>  <path relative to contract/>` (the `sha256sum` format, so `sha256sum -c` can read those lines).
+tag: mobile-contract-v1
+source: agentchieflou/this-next-please@913d157765ef8a7944d21a8167b15771edfd133f
+# The tag is published by this-next-please#599. Until it is, the source commit above is the pin, and its
+# contract/released/fleet-mobile.v1.schema.json is byte-identical to the schema pinned here.
+contract: 1
+77620abfb2327a88489aeda2c2342de5a213db3cf786ef5ac14288f83b09d1ff  fleet-mobile.v1.schema.json
+cabe8ca9e13a0f0066ad0ef065891f709dec412b9e78f3f018b5402d4c061a3c  examples/approval-rdsd-uat-7f3a.json
+6743847d75433e2a0a50f2a4468573760fb65f961713a026587826750b7d2696  examples/attention-luna-187.json
+c43ac28cc67df4d6cfa966d119abf13fc04ec9b7f3d4fe3730e49161162904fe  examples/decision-luna-a1c9.json
+0ac831a116097513da0083c5d59e5d5f7d330125b467006d4dbc81809912c1c1  examples/heartbeat-20260926-0915.json
+d7b1d70e7efaae04a4ec63d436b086d42ef7418744524d8f1722de164576ea39  examples/inbox-decision-9f2c4b7e.json
+d80802cfe25a5bb1e148c61ab493c073d25e968632cb99792ab66348b6b020b1  examples/inbox-reply-4b8e1f3a.json
+49d438a2276018d5eeea5f925bac4120bad8ba6ab15826cb54484ad30a0b794c  examples/notification-luna-needs_human-187.json
+5b30a49ae7b5e343936553f577b3ca8b13f517106764d99a550de8b98d5673f3  examples/pairing-5e1c9a7b.json
+4ef0cf3a88334e9fb19839d0f33066983ed6c6b2a9b0326a8ead40e0998ddcec  examples/result-4b8e1f3a-reply.json
+312676804eb1d312e650a9806c8db94112e2571c1a5ea2b934fefdde27684921  examples/result-9f2c4b7e.json
+619470e1fbcfa75d79d8886073506cee0b4a4f17ba78226d992ff3ba2934da3d  examples/result-c0d3e6f9-rejected.json
