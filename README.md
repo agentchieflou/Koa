@@ -1,4 +1,18 @@
-# The mobile lane: FleetAgent
+# Koa
+
+Mobile Fleet - Knees of Ants: the phone and tablet side of the fleet. **FleetAgent**, a Power Apps canvas
+app, the two Power Automate flows that carry records between the laptop's OneDrive folder and five
+SharePoint lists, and the workbook that creates those lists.
+
+Imported from this-next-please@913d157765ef8a7944d21a8167b15771edfd133f (`mobile/` and
+`tests/test_mobile_powerapp.py`, history kept; this-next-please#600). The laptop side, the bridge
+(`ad-fleet mobile ...`), stays in this-next-please; the two meet only at the contract pinned in
+`contract/`. Nothing here imports the laptop's Python package.
+
+To run the first round trip (a prompt typed on the phone reaching an agent on the laptop), follow
+[TESTING.md](TESTING.md).
+
+## The mobile lane: FleetAgent
 
 The laptop's fleet bridge (`ad-fleet mobile init`, then the bridge loop) writes an outbox of small
 JSON records under a OneDrive folder: one attention row per repository, a mirror of every approval
@@ -10,24 +24,35 @@ identity and the expiry. The app decides nothing: every state, colour and senten
 the laptop's own word, and the only rule of its own is "three missed heartbeats means not syncing".
 
 ```
-mobile/
-  README.md                  this build sheet
-  powerapp/
-    NOTES.md                 every decision taken where the research left something unverified
-    src/                     the app, one entity per file, exactly as Studio lays sources out
-      App.pa.yaml            StartScreen, BackEnabled, OnError, Formulas (typed by hand, step 6)
-      _EditorState.pa.yaml   screen and component order
-      Screens/*.pa.yaml      HomeScreen, AgentScreen, ApprovalScreen, DecideScreen, ReplyScreen, SettingsScreen
-      Components/*.pa.yaml   EmptyState, KeyValueRow, FleetHeader
-    themes/FleetTheme.yaml   the theme to paste in the Themes pane
-    sample/*.json            three to five rows per list, to seed a first look
-    schema/                  the official v3.0 schema (unmodified) and its licence note
-tests/test_mobile_powerapp.py   the CI guard over everything above
+README.md                    this build sheet
+TESTING.md                   the first round trips: a reply (a prompt) and an approval, phone to laptop
+AGENTS.md                    for coding agents working in this repository
+contract/
+  PIN                        the pinned tag, its source commit and the sha256 of every file below
+  fleet-mobile.v1.schema.json  the laptop's records, the inbox records, the five lists, FleetDecide's signature
+  examples/*.json            one record per kind, the Parse JSON samples
+powerapp/
+  NOTES.md                   every decision taken where the research left something unverified
+  src/                       the app, one entity per file, exactly as Studio lays sources out
+    App.pa.yaml              StartScreen, BackEnabled, OnError, Formulas (typed by hand, step 6)
+    _EditorState.pa.yaml     screen and component order
+    Screens/*.pa.yaml        HomeScreen, AgentScreen, ApprovalScreen, DecideScreen, ReplyScreen, SettingsScreen
+    Components/*.pa.yaml     EmptyState, KeyValueRow, FleetHeader
+  themes/FleetTheme.yaml     the theme to paste in the Themes pane
+  sample/*.json              three to five rows per list, to seed a first look
+  schema/                    the official v3.0 schema (unmodified) and its licence note
+flows/                       FleetOutboxToLists and FleetDecide, their build and import sheets
+data/                        FleetAgent.xlsx, the list source and Excel fallback, and its generator
+tests/
+  test_mobile_powerapp.py    the guard over powerapp/
+  test_contract.py           the pin, the examples, the lists, FleetDecide and the workbook against the contract
+  test_flows.py              every Parse JSON schema in the flows against every pinned example
 ```
 
 The list columns, the flow signature and the deep-link parameters are the shared contract (v1) the
-flows author and the laptop bridge build to; the columns are listed in `tests/test_mobile_powerapp.py`
-and the lists themselves are created by `mobile/data/README.md` (another author's sheet).
+flows author and the laptop bridge build to: `contract/fleet-mobile.v1.schema.json`, pinned by
+`contract/PIN`. The columns are also listed in `tests/test_mobile_powerapp.py` (and held equal to
+the contract by `tests/test_contract.py`), and the lists themselves are created by `data/README.md`.
 
 ## The Studio build sheet
 
@@ -38,7 +63,7 @@ carry.
 
 1. **Create the five lists** on the SharePoint site the flows write to: `FleetAttention`,
    `FleetApprovals`, `FleetDecisions`, `FleetNotifications`, `FleetHeartbeat`, with the columns in
-   `mobile/data/README.md`. Every column is text (single line unless the sheet says multi-line) and
+   `data/README.md`. Every column is text (single line unless the sheet says multi-line) and
    `Title` is the key. To seed a first look, load the rows in `powerapp/sample/*.json`; replace the
    heartbeat's `Operator` with your own account name, or the app will warn about a mismatch (which is
    itself a fair first test of the banner).
@@ -58,8 +83,8 @@ carry.
    `error`).
 4. **Theme.** Themes pane > Add a theme > Paste theme > paste the whole of `powerapp/themes/FleetTheme.yaml`
    > select `FleetTheme`. The seed colour `#58A6FF` is the accent of the desk's `dark` palette in
-   `agentdata/theme.py`; the app uses `App.Theme.Colors.Primary` only for the thin strip under each
-   header, and neutral colours for all text (see Contrast below).
+   this-next-please's `agentdata/theme.py`; the app uses `App.Theme.Colors.Primary` only for the
+   thin strip under each header, and neutral colours for all text (see Contrast below).
 5. **Paste, in this order** (each file is one paste; the order makes every reference resolve):
    1. Components, through the Components tab of the tree view: right-click > Paste code, one file
       each, in the order `Components/EmptyState.pa.yaml`, `Components/KeyValueRow.pa.yaml`,
@@ -131,7 +156,7 @@ carry.
 ## Contrast
 
 Every text colour in the app is a neutral RGBA chosen against the fill it sits on, measured with
-`agentdata.theme.contrast_ratio`:
+this-next-please's `agentdata.theme.contrast_ratio`:
 
 | Text | On | Ratio |
 | --- | --- | --- |
@@ -149,11 +174,14 @@ always carried by the word on the badge, never by its colour alone.
 ## Checking the sources without Studio
 
 ```bash
-python -m pytest -q tests/test_mobile_powerapp.py
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
-holds the sources to the schema's shape and to the app's ground rules with pyyaml alone. The full
-Draft 7 validation against `powerapp/schema/pa.schema.yaml` needs `jsonschema` (in the `dev` extra):
+holds the sources to the schema's shape and to the app's ground rules, and the lists, the flows and
+the workbook to the pinned contract. CI runs the same on Ubuntu and on Windows with
+`core.autocrlf=true`. The full
+Draft 7 validation against `powerapp/schema/pa.schema.yaml` needs `jsonschema` (in `requirements-dev.txt`):
 merge every `src/**/*.pa.yaml` into one document, as the schema says all files are logically
 combined, and validate it with `jsonschema.Draft7Validator(schema).iter_errors(merged)`; skip
 `check_schema`, because the official schema's PCF-name regex does not compile under Python's `re`
