@@ -1,0 +1,23 @@
+# Weekly: is there a mobile-contract tag newer than the one contract/PIN names? It reports, it never fails
+# (this-next-please#600): adopting a new contract is a PR that replaces contract/ and PIN together.
+name: contract-watch
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  newer-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: compare the pinned tag with this-next-please's mobile-contract tags
+        run: python .github/scripts/contract_watch.py
