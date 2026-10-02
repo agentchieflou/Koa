@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build ``mobile/data/FleetAgent.xlsx``: five Excel tables that seed the five FleetAgent lists.
+"""Build ``data/FleetAgent.xlsx``: five Excel tables that seed the five FleetAgent lists.
 
 Run from the repository root::
 
-    python mobile/data/make_workbook.py
+    python data/make_workbook.py
 
 One worksheet per list, each holding an Excel *table* of the same name (``FleetAttention`` ...) whose
 header row is the contract's columns in order, followed by three sample rows. Two uses:
@@ -35,7 +35,7 @@ try:
     from openpyxl import Workbook, load_workbook
     from openpyxl.utils import get_column_letter
     from openpyxl.worksheet.table import Table, TableStyleInfo
-except ImportError:  # pragma: no cover - building needs it; importing ROWS (tests/test_mobile_contract.py) does not
+except ImportError:  # pragma: no cover - building needs it; importing ROWS (tests/test_contract.py) does not
     Workbook = None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -91,7 +91,7 @@ APPROVAL_APPROVED = "luna-jira-create-20260925T160301Z-a1c9"
 APPROVAL_DENIED = "dpm-reports-pncli-write-20260925T110000Z-33be"
 APPROVAL_EXPIRED = "rdsd-uat-jira-transition-20260924T083000Z-0c4d"
 
-# What FleetOutboxToLists writes from contract/examples/*.json (tests/test_mobile_contract.py holds them to it).
+# What FleetOutboxToLists writes from contract/examples/*.json (tests/test_contract.py holds them to it).
 ROWS = {
     "FleetAttention": [
         {

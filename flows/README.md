@@ -13,7 +13,7 @@ Files here:
 | File | What it is |
 |---|---|
 | `FleetOutboxToLists.definition.json`, `FleetDecide.definition.json` | the two flows in the shape of a solution's `Workflows/<name>-<guid>.json` (`properties.connectionReferences` + `properties.definition`). **The reviewable record.** Every place whose wire shape could not be verified against a Microsoft page carries a `_comment_unverified` sibling key and a row in [Verify on import](#verify-on-import). |
-| `../../contract/examples/*.json` | one record per `kind` (contract v1; moved here from `flows/samples` by #598), for **Use sample payload to generate schema** and for the test plan. The `inbox-*` files are what `FleetDecide` writes; every other file is an outbox record. `../../contract/fleet-mobile.v1.schema.json` is the contract they validate against |
+| `../contract/examples/*.json` | one record per `kind` (contract v1; moved here from `flows/samples` by #598), for **Use sample payload to generate schema** and for the test plan. The `inbox-*` files are what `FleetDecide` writes; every other file is an outbox record. `../contract/fleet-mobile.v1.schema.json` is the contract they validate against |
 | `solution/` (not yet present) | where the operator checks in the exported unmanaged solution zip once a built flow works (see [Import sheet](#import-sheet)) |
 | `../data/` | the list-provisioning workbook and its README (columns, types, Excel fallback) |
 
@@ -120,7 +120,7 @@ The poll interval is the licence's: 5 minutes on Microsoft 365 plans, whatever t
 | Parameter | Value |
 |---|---|
 | Content | `@json(base64ToString(body('Get_file_content')?['$content']))` |
-| Schema | paste `properties.definition.actions.Try.actions.Parse_JSON.inputs.schema` from the definition file. Or **Use sample payload to generate schema** with the outbox examples (`../../contract/examples/*.json` but `inbox-*` and `pairing-*`) merged into one object, then make every property except `kind` nullable (`"type": ["string","null"]` etc.), because each kind only carries its own fields. |
+| Schema | paste `properties.definition.actions.Try.actions.Parse_JSON.inputs.schema` from the definition file. Or **Use sample payload to generate schema** with the outbox examples (`../contract/examples/*.json` but `inbox-*` and `pairing-*`) merged into one object, then make every property except `kind` nullable (`"type": ["string","null"]` etc.), because each kind only carries its own fields. |
 
 ### 4. **Switch on kind** (Control > Switch), On = `@body('Parse_JSON')?['kind']`, six cases, empty Default
 
@@ -388,7 +388,7 @@ For the day the two flows work in the operator's tenant:
    the export adds `metadata.operationMetadataId` GUIDs and connection-reference names of its own). Where they
    differ, the export wins: update the definition files here from the export, and delete the
    `_comment_unverified` keys that the export has settled.
-4. **Check the zip in under `mobile/flows/solution/`** (one zip per export, name with the date), next to these
+4. **Check the zip in under `flows/solution/`** (one zip per export, name with the date), next to these
    definitions. The zip is the importable artifact; the JSON stays the reviewable one.
 5. To import elsewhere (or after a reset): **Solutions > Import solution > Browse** the zip > Next > map the four
    connection references to existing connections (create them first, signed in as the operator) > enter the
@@ -408,7 +408,7 @@ triggers or a whole definition.
 Spots in the definition files whose exact wire shape was **not** verified against a Microsoft page. Each has a
 `_comment_unverified` key next to it naming the row below. The claim that the designer and the importer *ignore*
 unknown keys is itself unverified; if an import or Save complains, strip them first:
-`python -c "import json,sys; strip=lambda o:{k:strip(v) for k,v in o.items() if not k.startswith('_comment')} if isinstance(o,dict) else [strip(i) for i in o] if isinstance(o,list) else o; p=sys.argv[1]; json.dump(strip(json.load(open(p,encoding='utf-8'))),open(p,'w',encoding='utf-8'),indent=2,ensure_ascii=False)" mobile/flows/FleetDecide.definition.json`
+`python -c "import json,sys; strip=lambda o:{k:strip(v) for k,v in o.items() if not k.startswith('_comment')} if isinstance(o,dict) else [strip(i) for i in o] if isinstance(o,list) else o; p=sys.argv[1]; json.dump(strip(json.load(open(p,encoding='utf-8'))),open(p,'w',encoding='utf-8'),indent=2,ensure_ascii=False)" flows/FleetDecide.definition.json`
 (run it on a copy; the committed files keep their comments).
 
 | # | Where | What is assumed | How to verify / fix |
@@ -439,17 +439,17 @@ Prerequisites: both flows on, the five lists created from `../data/FleetAgent.xl
 `FleetAgent/outbox/{attention,approvals,notifications,heartbeat,results}` and `FleetAgent/inbox` existing in the
 operator's OneDrive, the app installed on the phone and opened once, OS notifications allowed.
 
-1. **Outbox to row.** Copy `../../contract/examples/heartbeat-20260926-0915.json` into `FleetAgent/outbox/heartbeat/` (any
+1. **Outbox to row.** Copy `../contract/examples/heartbeat-20260926-0915.json` into `FleetAgent/outbox/heartbeat/` (any
    unique name ending in `.json`). Within one poll (up to 5 minutes) a `FleetOutboxToLists` run appears; the
    `FleetHeartbeat` row `laptop` shows `At` = `2026-09-26T09:15:00Z`, `Repos` = `3`, `ServeUp` = `true`.
    Copy the same file again under a new name: a second run, no change (not newer). Copy
-   `../../contract/examples/attention-luna-187.json` into `attention/`: the `luna` row appears with `NeedsHuman` = `true`,
+   `../contract/examples/attention-luna-187.json` into `attention/`: the `luna` row appears with `NeedsHuman` = `true`,
    `QuestionsJson` holding the question array as text, `Seq` = `187`.
-2. **Approval to push.** Copy `../../contract/examples/approval-rdsd-uat-7f3a.json` into `approvals/`. Expect the
+2. **Approval to push.** Copy `../contract/examples/approval-rdsd-uat-7f3a.json` into `approvals/`. Expect the
    `FleetApprovals` row (`Status` = `pending`, `SourceFile` = the file name) and, on the phone, "An agent is
    waiting for your approval" with the generic Power Apps icon; tapping it opens the app with
    `Param("screen") = "approval"` and `Param("approvalId")` = the id. Copy the file again under another name:
-   no second push. Copy `../../contract/examples/notification-luna-needs_human-187.json` into `notifications/`: row
+   no second push. Copy `../contract/examples/notification-luna-needs_human-187.json` into `notifications/`: row
    `luna:needs_human`, push "Fleet: an agent needs you". Note the elapsed time from copy to push (budget:
    ~1 min best, 4-8 min typical, Q7).
 3. **Decide from the app.** Open the pending approval and approve it. `FleetDecide` responds within seconds
@@ -463,7 +463,7 @@ operator's OneDrive, the app installed on the phone and opened once, OS notifica
    `outbox/results/<nonce>.result.json` (`ok` = true). After the next poll the `FleetApprovals` row reads
    `Status` = `approved`, `DecidedBy` = the UPN, `Late` = `false`, and the `FleetDecisions` row `Result` =
    `applied` with `ResultAt`.
-5. **Rejected path.** Copy `../../contract/examples/result-c0d3e6f9-rejected.json` into `results/` after creating a
+5. **Rejected path.** Copy `../contract/examples/result-c0d3e6f9-rejected.json` into `results/` after creating a
    `FleetDecisions` row titled `c0d3e6f9a2b5c8d1e4f7a0b3c6d9e2f5` and a `FleetApprovals` row whose `Nonce` is
    that value: the decision row turns `rejected` with `ResultCode` = `mobile_expired` and the approval row
    `Status` = `rejected`.

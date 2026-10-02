@@ -11,7 +11,7 @@ here; replace it with a fresh copy and update this note when a newer schema vers
 
 `tests/test_mobile_powerapp.py` reads the schema's control-type pattern and its disallowed-type
 enumerations from this file, and a local check with `jsonschema` (Draft 7) validates the merged
-`src/**/*.pa.yaml` against it; see `mobile/README.md`.
+`src/**/*.pa.yaml` against it; see `README.md`.
 
 ---
 

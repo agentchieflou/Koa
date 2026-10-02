@@ -2,7 +2,7 @@
 
 Every decision below was taken where the research (`research_notes/Mobile fleet scope/`) or the
 Microsoft Learn pages read on 2026-09-26 left something unverified. Each one is a thing to confirm in
-Power Apps Studio on the first paste, in the order the build sheet (`mobile/README.md`) pastes.
+Power Apps Studio on the first paste, in the order the build sheet (`README.md`) pastes.
 Nothing here changes the contract with the flows or the laptop bridge.
 
 1. **No `@version` suffix on any control.** The schema makes the suffix optional and Learn says the
@@ -66,7 +66,7 @@ Nothing here changes the contract with the flows or the laptop bridge.
     `none`, keeps the terminal's colours and has no accent to take.
 19. **`App.Theme.Colors.Primary` is decorative only** (the 3 px strip under each header). At
     2.5:1 against white it fails text contrast, so every text colour is a neutral RGBA; the measured
-    pairs are in `mobile/README.md`.
+    pairs are in `README.md`.
 20. **The History tab shows decided approvals** (`FleetApprovals`, the specification's source); a
     reply's outcome lives in `FleetDecisions` and is shown on `AgentScreen` as "Last reply"
     (`First(SortByColumns(Filter(FleetDecisions, Repo = ...), "Issued", Descending))`).
