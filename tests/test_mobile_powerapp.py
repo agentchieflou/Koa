@@ -1,15 +1,19 @@
-"""The FleetAgent canvas app is authored as Power Apps YAML (schema v3.0) under `mobile/powerapp/src`,
+"""The FleetAgent canvas app is authored as Power Apps YAML (schema v3.0) under `powerapp/src`,
 and nothing in this repository can compile it: Studio does that when the operator pastes the screens.
 What CI can do, with pyyaml alone, is hold the sources to the shape the schema demands and to the
 app's own ground rules, so that a paste fails in Studio only for reasons this file could not see.
 
 Two families of guard. The schema family (root keys, one-key children, control-type pattern, `=`
 formulas, component property kinds, editor state) re-implements the handful of schema rules that
-matter for a hand-authored tree; the full Draft 7 validation is run locally as `mobile/README.md`
+matter for a hand-authored tree; the full Draft 7 validation is run locally as `README.md`
 says, because `jsonschema` is a dev extra and the official schema's PCF pattern does not even compile
 under Python's `re`. The ground-rule family (five lists and one flow, touch sizes, accessible labels,
 one timer, no overlays, no tenant ids, colour by a closed set) is the contract the laptop bridge and
 the flows build to, so a drift here is a drift the phone would show as a wrong screen.
+
+The laptop's vocabulary (states, roles, severities) is read from the pinned contract,
+`contract/fleet-mobile.v1.schema.json`, never from the laptop's Python package: this repository does not
+import `agentdata` (tests/test_contract.py holds it to that).
 """
 from __future__ import annotations
 import glob
@@ -20,15 +24,30 @@ import re
 import pytest
 import yaml
 
-from agentdata.fleet.agentstate import STATES, STATE_ROLES, needs_the_human
-from agentdata.fleet.notify import SEVERITIES
-
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MOBILE = os.path.join(REPO_ROOT, "mobile", "powerapp")
+CONTRACT = os.path.join(REPO_ROOT, "contract", "fleet-mobile.v1.schema.json")
+MOBILE = os.path.join(REPO_ROOT, "powerapp")
 SRC = os.path.join(MOBILE, "src")
 SCHEMA = os.path.join(MOBILE, "schema", "pa.schema.yaml")
 SAMPLE = os.path.join(MOBILE, "sample")
 THEME = os.path.join(MOBILE, "themes", "FleetTheme.yaml")
+
+with open(CONTRACT, encoding="utf-8") as _f:
+    _DEFS = json.load(_f)["$defs"]
+#: agentstate.STATES, agentstate.STATE_ROLES and notify.SEVERITIES on the laptop, as the contract states them:
+#: the roles are the attention record's `if state then role` rules.
+STATES = tuple(_DEFS["state"]["enum"])
+STATE_ROLES = {rule["if"]["properties"]["state"]["const"]: rule["then"]["properties"]["role"]["const"]
+               for rule in _DEFS["attention"]["allOf"]}
+SEVERITIES = tuple(_DEFS["severity"]["enum"])
+#: The desk's `dark` palette accent (agentdata/theme.py `DARK.accent` on the laptop), the theme's seed colour.
+DESK_DARK_ACCENT = "#58A6FF"
+
+
+def needs_the_human(state: str) -> bool:
+    """agentstate.needs_the_human: a state whose role waits on the operator (`waiting` or `human`)."""
+    return STATE_ROLES[state] in ("waiting", "human")
+
 
 ROOT_KEYS = ("App", "Screens", "ComponentDefinitions", "DataSources", "EditorState")
 #: The five lists and the one flow the app may name. Anything else is a data source Studio has not
@@ -572,8 +591,7 @@ def test_the_theme_is_the_documented_paste_shape_without_comments():
     assert {"Font", "BasePaletteColor", "HueTorsion", "Vibrancy"} <= set(theme)
     assert re.fullmatch(r"#[0-9A-Fa-f]{6}", theme["BasePaletteColor"])
     assert -100 <= theme["HueTorsion"] <= 100 and -100 <= theme["Vibrancy"] <= 100
-    from agentdata.theme import DARK
-    assert theme["BasePaletteColor"].upper() == DARK.accent.upper(), "the seed is the desk's dark palette accent"
+    assert theme["BasePaletteColor"].upper() == DESK_DARK_ACCENT, "the seed is the desk's dark palette accent"
 
 
 def test_the_schema_copy_is_the_official_v3_schema_and_the_note_says_so():
@@ -620,8 +638,8 @@ def test_the_sample_rows_keep_the_contract_and_carry_no_secrets():
 
 
 def test_the_mobile_files_are_utf8_lf_without_trailing_whitespace():
-    """The app's own files only: `mobile/data/` and `mobile/flows/` belong to other lanes."""
-    paths = [os.path.join(REPO_ROOT, "mobile", "README.md")] + glob.glob(os.path.join(MOBILE, "**", "*"), recursive=True)
+    """The app's own files only: `data/` and `flows/` belong to other lanes."""
+    paths = [os.path.join(REPO_ROOT, "README.md")] + glob.glob(os.path.join(MOBILE, "**", "*"), recursive=True)
     checked = 0
     for path in paths:
         if not path.endswith((".yaml", ".json", ".md")) or path.endswith("pa.schema.yaml"):
