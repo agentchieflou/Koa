@@ -242,3 +242,23 @@ def test_the_skill_has_the_frontmatter_copilot_reads():
 def test_the_ignored_files_stay_out_of_git():
     ignore = open(os.path.join(KC.REPO_ROOT, ".gitignore"), encoding="utf-8").read().split("\n")
     assert "build/fleet.config.json" in ignore and "build/out/" in ignore
+
+
+def test_canvas_out_logs_a_path_on_another_windows_drive_instead_of_failing(tmp_path, monkeypatch):
+    """Windows CI: the temp directory is on C: and the checkout on D:, where `os.path.relpath` raises ValueError."""
+    real = os.path.relpath
+
+    def across_drives(path, start=os.curdir):
+        if os.path.abspath(start) == P.ROOT and not os.path.abspath(path).startswith(P.ROOT):
+            raise ValueError("path is on mount 'C:', start on mount 'D:'")
+        return real(path, start)
+
+    work = str(tmp_path / "FleetAgent")
+    _blank_app(work)
+    P.canvas_in(work)
+    mirror = tmp_path / "src"
+    shutil.copytree(P.SRC, mirror)
+    monkeypatch.setattr(P, "SRC", str(mirror))
+    monkeypatch.setattr(os.path, "relpath", across_drives)
+    log = P.canvas_out(work)
+    assert any(line.startswith("App.pa.yaml -> ") and str(mirror) in line for line in log)

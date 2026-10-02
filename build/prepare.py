@@ -70,6 +70,15 @@ PARAM = re.compile(r"^@parameters\('(fleet_[A-Za-z]+) \(\1\)'\)$")
 SP_API = "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
 
 
+def _show(path: str) -> str:
+    """A path for a log line: relative to the repository when it can be, absolute when it is on another drive
+    (`os.path.relpath` raises across Windows drives)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return path
+
+
 class Refused(Exception):
     """A precondition the operator or an earlier step must supply; the message says which."""
 
@@ -79,7 +88,7 @@ class Refused(Exception):
 
 def load_config(path: str = CONFIG) -> dict:
     if not os.path.exists(path):
-        raise Refused(f"{os.path.relpath(path, ROOT)} does not exist: copy build/fleet.config.example.json to it "
+        raise Refused(f"{_show(path)} does not exist: copy build/fleet.config.example.json to it "
                       "and fill it in (build/steps/01-prerequisites.md)")
     with open(path, encoding="utf-8-sig") as f:
         cfg = json.load(f)
@@ -350,7 +359,7 @@ def canvas_out(workdir: str) -> list[str]:
             raw = f.read().replace(b"\r\n", b"\n")
         with open(dest, "wb") as f:
             f.write(raw if raw.endswith(b"\n") else raw + b"\n")
-        log.append(f"{rel} -> {os.path.relpath(dest, ROOT)}")
+        log.append(f"{rel} -> {_show(dest)}")
     return log
 
 
