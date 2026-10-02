@@ -340,7 +340,7 @@ Screens:
                                               Control: ModernText
                                               Properties:
                                                 Text: |-
-                                                  =With({s: Value(ThisItem.WaitingSeconds)}, If(IsBlank(s), ThisItem.Created, s < 90, "waiting " & Text(s) & " s", s < 5400, "waiting " & Text(RoundDown(s / 60, 0)) & " min", "waiting " & Text(RoundDown(s / 3600, 0)) & " h"))
+                                                  =With({s: Value(ThisItem.WaitingSeconds)}, If(IsBlank(s), Text(ThisItem.Created), s < 90, "waiting " & Text(s) & " s", s < 5400, "waiting " & Text(RoundDown(s / 60, 0)) & " min", "waiting " & Text(RoundDown(s / 3600, 0)) & " h"))
                                                 Size: =14
                                                 Color: =RGBA(97, 97, 97, 1)
                                                 Wrap: =false

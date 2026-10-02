@@ -160,9 +160,11 @@ Both write every column: `Title`=repo, `Project`, `Ticket`, `State`, `Role`, `Ne
 2. **Approval row is new** (Condition): the length equals 0.
    - Yes: **Create item FleetApprovals** with `Title`=id, `Repo`, `Ticket`, `ApprovalKind` (approval_kind),
      `Summary` (truncated 255), `PayloadPreview` = `@string(coalesce(J(payload_preview), ''))` (object or text),
-     `PayloadTruncated` (bool), `PayloadBytes`, `Digest`, `Created`, `Expires`, `WaitingSeconds` (waiting_s),
+     `PayloadTruncated` (bool), `PayloadBytes`, `Digest`, `Expires`, `WaitingSeconds` (waiting_s),
      `Status` = `pending`, `SourceFile` = `@triggerOutputs()?['body/Name']`, and `DecidedBy`, `DecidedAt`,
-     `Reason`, `Via`, `Late`, `Nonce`, `ResultCode`, `ResultText` empty. Then **Send push notification V2
+     `Reason`, `Via`, `Late`, `Nonce`, `ResultCode`, `ResultText` empty. `Created` is not written: on a SharePoint
+     list it is SharePoint's own read-only creation time, which is when this row was made from the request (see
+     `../data/README.md`). Then **Send push notification V2
      approval** (Power Apps Notification V2): Mobile app = Power Apps, Your app = `fleet_FleetAppId`, Recipients
      Item-1 = `fleet_FleetOperatorEmail`, Message = `An agent is waiting for your approval`, Open app = Yes,
      Parameters = `{"screen":"approval","approvalId":"@{J(id)}"}`.
@@ -431,7 +433,7 @@ unknown keys is itself unverified; if an import or Save complains, strip them fi
 | 16 | `first([])` | returns null (not an error) when Get items finds no row, so the `?['Seq']` / `?['At']` lookups fall back to `'0'` / `''` | seed an attention file for a repo with no row; the Create branch must run without an expression error |
 | 17 | Get my profile (V2) output | property names are camelCase (`userPrincipalName`, `mail`) | the SDK model uses `userPrincipalName`; confirm in the run's outputs |
 | 18 | OneDrive Create file collision | an existing name fails the action instead of overwriting | not reachable with GUID nonces; do not enable any overwrite option |
-| 19 | 255-character single-line columns | `Summary`, `Reason`, `ResultText` are truncated by the flow; `ApprovalsJson` is written whole | if an attention update ever fails on `ApprovalsJson` length (8 x 96-character ids), switch that column to *Multiple lines of text* (plain); no rename needed |
+| 19 | 255-character single-line columns | `Summary`, `Reason`, `ResultText` are truncated by the flow; `ApprovalsJson` is written whole | `build/prepare.py lists` creates `ApprovalsJson` as *Multiple lines of text* (plain) for that reason; a list made by hand from the workbook needs the same change if an attention update ever fails on its length |
 
 ## Test plan
 
