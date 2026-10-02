@@ -3,7 +3,7 @@
 Koa is the phone side of the fleet: the FleetAgent canvas app (`powerapp/`), the two flows (`flows/`), the list
 workbook (`data/`) and the pinned mobile contract (`contract/`). The laptop side, and the rules for agents working
 on it, live in [agentchieflou/this-next-please](https://github.com/agentchieflou/this-next-please) (`AGENTS.md`,
-`docs/developing-with-agents.md`, `docs/plan-mobile.md`, `docs/fleet-mobile.md`). Read `README.md` here first.
+`docs/developing-with-agents.md`, `docs/plan-mobile.md`, `docs/fleet-mobile.md`). Read `README.md` here first; to build or deploy the app, use the `build-fleetagent` skill (`build/README.md`).
 
 1. **One PR at a time; the operator merges.** No trains here (this-next-please#600, D11). Conventional Commits.
 2. **The contract is pinned, never edited.** `contract/` changes only by adopting a published

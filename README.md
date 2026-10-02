@@ -25,6 +25,8 @@ the laptop's own word, and the only rule of its own is "three missed heartbeats 
 
 ```
 README.md                    this build sheet
+build/                       the Copilot build: README (the operator's part), steps/01-07 (the agent's), prepare.py
+.github/skills/              build-fleetagent, the skill a Copilot agent loads to run build/
 TESTING.md                   the first round trips: a reply (a prompt) and an approval, phone to laptop
 AGENTS.md                    for coding agents working in this repository
 contract/
@@ -55,6 +57,11 @@ flows author and the laptop bridge build to: `contract/fleet-mobile.v1.schema.js
 the contract by `tests/test_contract.py`), and the lists themselves are created by `data/README.md`.
 
 ## The Studio build sheet
+
+**The quickest way is the Copilot build, [build/README.md](build/README.md).** A GitHub Copilot agent
+with Microsoft's canvas-apps and power-automate plugins creates the lists, both flows and the app from these
+sources, and stops only for the clicks no tool can make. The sheet below is the same work by hand, kept as the
+fallback for a tenant that blocks agent plugins.
 
 Everything below is done once, by hand, in Power Apps Studio. Nothing in this folder is imported as
 a file: whole screens are pasted through Code view (GA since March 2025), the App object is typed
@@ -141,7 +148,7 @@ carry.
     `powerapp/NOTES.md` lists every place where the research could not verify a property form; if a
     paste fails on one of those lines, that list says what to try.
 
-## Two other ways in, not used here
+## Other ways in
 
 - **`pac canvas pack --layout SourceCode`** builds an `.msapp` from a `Src/*.pa.yaml` tree offline
   (`pac canvas pack --sources <dir> --msapp FleetAgent.msapp --layout SourceCode`), which Studio then
@@ -150,8 +157,8 @@ carry.
 - **The Canvas Authoring MCP server and the `canvas-apps` plugin** (`Microsoft.PowerApps.CanvasAuthoring.McpServer`,
   `/plugin install canvas-apps@power-platform-skills`) compile local `.pa.yaml` files straight into a
   live coauthoring session, including the App object. It needs .NET 10, coauthoring enabled on the
-  app, and still leaves data sources and display settings to Studio; it is the path to move to once
-  the hand paste has been done once and the version suffixes are known.
+  app, and still leaves data sources and display settings to Studio. **This is the path the Copilot
+  build takes** (`build/steps/06-app.md`), with the App object pushed instead of typed.
 
 ## Contrast
 
