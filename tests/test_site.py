@@ -1,7 +1,7 @@
 """The Data Czars site (`site/`): the list spec and the site scripts made from it, the formatters, the scanned context
 and what it becomes (rows, choices, filled-in prompts), the provisioning, intake and report flows, the laptop's intake
 runner, the navigation, the page sheets, the site skill, the agents and the artwork. Nothing here reaches SharePoint
-or Jira; what only the tenant can prove is `site/README.md`'s table of rows S1 to S14.
+or Jira; what only the tenant can prove is `site/README.md`'s table of rows S1 to S15.
 """
 from __future__ import annotations
 import copy
@@ -13,11 +13,12 @@ import re
 import struct
 import uuid
 import xml.dom.minidom
+import zipfile
 
 import pytest
 
 import koa_contract as KC
-from test_build import _check_flowagent_rules
+from test_build import _check_definition_rules
 
 SITE = os.path.join(KC.REPO_ROOT, "site")
 SITE_URL = "https://contoso.sharepoint.com/sites/OSP-Data-Czars"
@@ -290,14 +291,54 @@ def _check_payloads(actions: dict, ctx: dict) -> None:
         assert not body.startswith("@") and "@{" not in body
 
 
-def test_the_provisioning_flow_keeps_flowagents_rules_and_carries_every_script_and_row():
+def test_the_provisioning_flow_keeps_the_import_rules_and_carries_every_script_and_row():
     package = P.provisioning_flow(SITE_URL, LISTS, EXAMPLE)
-    _check_flowagent_rules(package)
+    _check_definition_rules(package)
     actions = package["definition"]["actions"]
     _check_payloads(actions, EXAMPLE)
     apply = actions["For_each_script"]["actions"]["Apply_script"]["inputs"]["parameters"]
     assert apply["parameters/uri"] == P.EXECUTE and apply["parameters/method"] == "POST" and apply["dataset"] == SITE_URL
     assert "contoso" not in json.dumps(P.scripts(LISTS)), "the structure's scripts carry no site address"
+
+
+def _run_report():
+    """The Report a clean run writes: every script's actions applied, every list at least its starter rows."""
+    scripts = [{"list": name, "actions": [{"ErrorCode": 0, "ErrorMessage": None, "Outcome": 0, "Title": f"Create or update list {name}"}]}
+               for name, _ in P.scripts(LISTS, EXAMPLE)]
+    return {"scripts": scripts, "rows": [{"list": e["list"], "rows": len(e["rows"])} for e in P.seed(LISTS, EXAMPLE)]}
+
+
+def test_the_provisioning_flow_ends_in_a_report_that_check_run_reads(tmp_path):
+    top = P.provisioning_flow(SITE_URL, LISTS, EXAMPLE)["definition"]["actions"]
+    assert [n for n, a in top.items() if a["type"] == "InitializeVariable"] == ["Initialize_outcomes", "Initialize_rows"]
+    last = [n for n in top if not any(n in b.get("runAfter", {}) for b in top.values())]
+    assert last == ["Report"] and top["Report"]["inputs"] == {"scripts": "@variables('Outcomes')", "rows": "@variables('Rows')"}
+    assert top["For_each_script"]["actions"]["Add_outcome_to_report"]["inputs"]["value"]["actions"] == "@body('Apply_script')?['value']"
+    assert P.check_run(_run_report(), LISTS, EXAMPLE) == []
+    broken = _run_report()
+    broken["scripts"][1]["actions"].append({"ErrorCode": -2147024891, "ErrorMessage": "Access denied.", "Outcome": 1,
+                                            "Title": "Add field Headline"})
+    del broken["scripts"][0]
+    broken["rows"] = [r for r in broken["rows"] if r["list"] != "FAQ"]
+    problems = "\n".join(P.check_run(broken, LISTS, EXAMPLE))
+    for words in ("Products: its script did not run", "Releases: Add field Headline failed: Access denied.", "FAQ: no rows"):
+        assert words in problems
+    saved = tmp_path / "provision-report.json"
+    saved.write_text(json.dumps({"body": _run_report()}), encoding="utf-8")
+    assert P.read_report(str(saved)) == _run_report()
+
+
+def test_every_site_flow_is_written_as_a_package_to_import(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "OUT", str(tmp_path))
+    for package in (P.provisioning_flow(SITE_URL, LISTS, EXAMPLE), P.intake_out_flow(SITE_URL),
+                    P.intake_back_flow(SITE_URL, "b!results"), P.tag_reports_flow(SITE_URL)):
+        written = P._flow_files(package)
+        assert [os.path.basename(w) for w in written] == [f"{package['name']}.zip", f"{package['name']}.json"]
+        with zipfile.ZipFile(os.path.join(tmp_path, f"{package['name']}.zip")) as z:
+            manifest = json.loads(z.read("manifest.json"))
+        assert manifest["details"]["displayName"] == package["name"]
+        apis = {r["name"] for r in manifest["resources"].values() if r["type"] == "Microsoft.PowerApps/apis"}
+        assert apis == set(package["connectors"])
 
 
 def test_the_console_script_does_what_the_flow_does():
@@ -321,12 +362,12 @@ def _columns(list_name: str) -> set[str]:
     return {c["name"] for c in BY_NAME[list_name]["columns"]} | P.BUILT_IN
 
 
-def test_the_intake_and_report_flows_keep_flowagents_rules_and_name_real_columns():
+def test_the_intake_and_report_flows_keep_the_import_rules_and_name_real_columns():
     out = P.intake_out_flow(SITE_URL)
     back = P.intake_back_flow(SITE_URL, "01RESULTSFOLDER")
     tags = P.tag_reports_flow(SITE_URL)
     for package in (out, back, tags):
-        _check_flowagent_rules(package)
+        _check_definition_rules(package)
     sent = {v.split("/")[0] for k, v in P.INTAKE_FIELDS.items() if k != "kind" and not v.startswith("{")}
     assert sent <= _columns("Intake"), sent - _columns("Intake")
     assert out["definition"]["actions"]["Create_intake_file"]["inputs"]["parameters"]["folderPath"] == "/DataCzars/intake"
@@ -616,7 +657,7 @@ def test_the_site_files_are_utf8_lf_without_trailing_whitespace():
 #: the example context, and the `<tenant>` placeholder. A bank address in a tracked file is a fact leaking out.
 PUBLIC_HOSTS = {"github.com", "developer.microsoft.com", "schema.management.azure.com", "teams.microsoft.com",
                 "www.w3.org", "contoso.sharepoint.com", "jira.contoso.com", "confluence.contoso.com",
-                "bitbucket.contoso.com", "access.contoso.com", "<tenant>.sharepoint.com"}
+                "bitbucket.contoso.com", "access.contoso.com", "<tenant>.sharepoint.com", "make.powerautomate.com"}
 
 
 def test_tracked_site_files_name_no_internal_host_or_mailbox():

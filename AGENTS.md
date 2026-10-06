@@ -19,7 +19,11 @@ on it, live in [agentchieflou/this-next-please](https://github.com/agentchieflou
    `python -m pytest -q` before every push; CI runs the same on Ubuntu and Windows (`core.autocrlf=true`).
 7. **What only Studio, the tenant or a phone can prove reads *not yet measured*** until someone ran it, and the
    run is recorded in this-next-please's `docs/windows-verification.md` §Mobile ([TESTING.md](TESTING.md)), or §Site
-   for the site's rows S1 to S14 (`site/README.md`).
+   for the site's rows S1 to S15 (`site/README.md`), or the build's rows B1 to B3
+   (`build/README.md`).
 8. **The site is built from `site/`, never the other way round.** Change `site/lists.json`, a page sheet or
    `site/site.json` first, run `python site/provision.py docs` when the lists change, then apply it to the site. Pages
    use stock web parts only; nothing on the site needs a tenant admin.
+9. **No MCP servers.** The organisation blocks them. Builds run on files and `python` alone: `build/prepare.py` and
+   `site/provision.py` write what the operator imports or pastes in the browser, and read back what they save from a
+   run. Never make a step depend on an MCP tool, an agent plugin or a server's sign-in.

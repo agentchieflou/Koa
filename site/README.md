@@ -38,11 +38,11 @@ a colleague's name or a product's internals, and `tests/test_site.py` refuses th
 | --- | --- | --- |
 | 0. The facts | a Copilot agent scans the repositories; Copilot in Edge reads the Confluence pages; Microsoft Copilot knows the people | 30 min |
 | 1. The look | a site owner, by hand | 10 min |
-| 2. The lists | a Copilot agent through the provisioning flow, or a site owner through the console | 5 min |
+| 2. The lists | a site owner imports and runs the provisioning flow, with a Copilot agent checking its report; or the console | 10 min |
 | 3. The site skill | a site owner, in Copilot in SharePoint | 2 min |
 | 4. The navigation | Copilot in SharePoint, from the prompt below | 5 min |
 | 5. The pages | Copilot in SharePoint, one sheet at a time; a site owner finishes each | 10 min a page |
-| 6. Intake and reports | a Copilot agent creates three flows; the laptop runs `intake.py` | 20 min |
+| 6. Intake and reports | a site owner imports three flows a Copilot agent writes; the laptop runs `intake.py` | 20 min |
 | 7. Copilot and Teams | the team | 30 min |
 | 8. Permissions | a site owner | 10 min |
 
@@ -92,9 +92,13 @@ Spark profiles, links, contacts, releases and questions the scans found, plus th
 Czars site starts with.
 Every way below is safe to run again.
 
-**A. A Copilot agent.** With the `power-automate` plugin installed (`build/README.md` §2), say: *Build the Data Czars
-lists. Use the build-czars-site skill.* It runs `python site/provision.py flow`, creates the one-shot flow
-`CzarsProvisionSite`, runs it twice, checks every outcome, and deletes it.
+**A. Import and run a flow.** `python site/provision.py flow` writes `site/out/CzarsProvisionSite.zip`. In Power
+Automate: **My flows** > **Import** > **Import Package (Legacy)** > upload it > pick your SharePoint connection >
+**Import** > **Open flow** > **Run**. When the run ends, open its last action, **Report**, **Show raw outputs**, and
+save them as `site/out/provision-report.json`; `python site/provision.py check-run site/out/provision-report.json`
+names every script action that did not apply and every list short of its starter rows. A Copilot agent walks you
+through it with the build-czars-site skill (*Build the Data Czars lists. Use the build-czars-site skill.*); it uses
+no MCP server or plugin. Delete the flow afterwards; the command writes it again whenever you need it.
 
 **B. The browser console.** `python site/provision.py console` writes `site/out/provision.console.js`. Open the site
 signed in as an owner, open the developer tools (F12) > **Console**, paste the file, press Enter. It prints one line
@@ -157,8 +161,8 @@ every block.
 
 ## 6. Intake and reports
 
-`intake/README.md`: the folders, the three flows (`python site/provision.py flows --results-folder-id <id>`, created
-by the build-czars-site skill), and the first ticket through `python site/intake/intake.py`.
+`intake/README.md`: the folders, the three flows (`python site/provision.py flows --results-folder-id <id>` writes
+them as packages you import), and the first ticket through `python site/intake/intake.py`.
 
 ## 7. Copilot and Teams
 
@@ -195,6 +199,7 @@ in the same pull request.
 | S12 | a result file merges the Jira key and status into its row | *My tickets* shows the key | not yet measured |
 | S13 | a report copied into `<type>/<yyyy-mm>/` is tagged within the hour | *Latest reports* shows it | not yet measured |
 | S14 | Copilot in Edge reads the open Confluence page (page context allowed on this tenant) | step 0, 3: the answer quotes the page | not yet measured |
+| S15 | **Import Package (Legacy)** accepts the packages `provision.py` writes | step 2, A, and step 6: the import page asks for the connections | not yet measured |
 
 ## Changing the site later
 

@@ -50,7 +50,7 @@ Each of these widens what Copilot can see or reach. None is needed for the site 
 | Copilot connectors for **Jira Data Center** and **Confluence on-premises** | Copilot and every agent can search and cite Jira issues and Confluence pages | Microsoft 365 admin center > Copilot > Connectors; needs the Graph connector agent on a Windows server inside the network and a plugin in Jira and Confluence (Jira DC 8.10 to 10.5.1, Confluence 8.0 or later) |
 | Publish **Czars Desk** to the whole organisation | anyone at the bank finds it in the Agent Store | Microsoft 365 admin center > Agents > Requests |
 | A **Jira custom connector** with an on-premises data gateway | Intake files tickets straight from the cloud, without the laptop (`site/intake/README.md`, route B) | Power Platform admin center; the gateway is installed by IT |
-| **Channel Agent** with the Atlassian MCP server, where Jira or Confluence is Cloud | the team's channel agent reads and writes Jira and Confluence | Teams admin center |
+| **Channel Agent** with the Atlassian MCP server, where Jira or Confluence is Cloud | the team's channel agent reads and writes Jira and Confluence | Teams admin center; moot while the organisation blocks MCP servers, so ask only if that changes |
 
 ## Check
 

@@ -1,7 +1,7 @@
 # Step 07: publish, mirror, hand over
 
-**Who:** the operator publishes and opens the app on the phone; you verify and leave the repository matching what
-Studio holds.
+**Who:** the operator publishes, shares, saves a copy of the app and opens it on the phone; you mirror that copy
+into the repository and verify what the operator reports.
 **Produces:** a published FleetAgent, `powerapp/src` mirroring Studio, and the first round trip ready to run.
 
 ## 1. Theme, publish, phone (operator)
@@ -21,26 +21,32 @@ Send this:
 >    phone then signs its messages with their own account.
 > 5. Send each operator `build/each-operator.md`. Connecting their own laptop and phone takes them about five
 >    minutes. Do it yourself first, if you haven't in step 05.
+> 6. Back in Studio: **File** > **Save as** > **This computer** > **Download**. Save `FleetAgent.msapp` into
+>    `<path>\build\out\`, and reply here when it is there.
 
 Paste the full content of `powerapp/themes/FleetTheme.yaml` under the message.
 
 ## 2. Mirror Studio back into the repository
 
-Studio may have normalised what you pushed: version suffixes, property order, quoting. The repository should hold
-what Studio holds, as long as the tests still pass.
+Studio may have normalised what was pasted: version suffixes, property order, quoting. The repository should hold
+what Studio holds, as long as the tests still pass. The saved `.msapp` carries the app's source as `Src/*.pa.yaml`
+(row B3 in `build/README.md`).
 
-1. Make an empty directory, `build/out/canvas/mirror`, call `sync_canvas` into it, then run
-   `python build/prepare.py canvas-out <absolute path>`.
+1. Run `python build/prepare.py canvas-out build/out/FleetAgent.msapp`. It names every file it wrote.
 2. Run `python -m pytest -q`.
    - **Tests pass:** keep the changes. `git diff --stat powerapp/src` shows them.
    - **Tests fail:** run `git checkout -- powerapp/src` and record in `powerapp/NOTES.md` what Studio changes
      that the tests refuse, with the failing test names. That is a follow-up, not something to force through now.
+   - **`canvas-out` refuses the file:** record what it said in row B3's notes and skip the mirror; the repository's
+     copy, with step 06's fixes, is already what was pasted.
 
 ## 3. Verify end to end
 
-1. `get_run_history` for the building operator's `FleetOutboxToLists (<UPN>)` shows Succeeded runs since step 05,
-   and the latest heartbeat run is less than 15 minutes old.
-2. Ask the operator to open the app (the play link below) and check five things:
+Ask the operator to check two things and reply with what they see:
+
+1. Their own `FleetOutboxToLists (<UPN>)` in **My flows**: Succeeded runs since step 05, the newest less than 15
+   minutes old.
+2. The app, opened from the play link below, on the phone or the laptop:
    - **Settings** shows them as signed in;
    - the laptop's operator matches them, with no mismatch banner;
    - the heartbeat is recent, with no "not syncing" banner;

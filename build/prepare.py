@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
-"""Turn this repository's sources into exactly what the Copilot build needs (build/README.md). Stdlib only.
+"""Turn this repository's sources into exactly what the build needs (build/README.md). Stdlib only.
 
     python build/prepare.py check                 the config is complete for the steps that need it
-    python build/prepare.py lists                 build/out/FleetProvisionLists.json: a flow that creates the five lists
-    python build/prepare.py flows                 build/out/FleetDecide.json, and one FleetOutboxToLists (<UPN>).json
+    python build/prepare.py lists                 build/out/FleetProvisionLists.zip: a flow that creates the five lists
+    python build/prepare.py check-lists <file>    the list flow's Report, saved from its run: every list, column,
+                                                  folder and the Owners-only lock are there
+    python build/prepare.py flows                 build/out/FleetDecide.zip, and one FleetOutboxToLists (<UPN>).zip
                                                   per operator
-    python build/prepare.py canvas-in  <workdir>  copy powerapp/src into the Canvas Authoring MCP working directory
-    python build/prepare.py canvas-out <workdir>  copy a synced working directory back into powerapp/src
+    python build/prepare.py paste [N]             build/out/paste/: the app, one paste at a time, in order; with N,
+                                                  paste N goes on the Windows clipboard
+    python build/prepare.py canvas-out <path>     the app as Studio saved it (a .msapp, or a folder of .pa.yaml files)
+                                                  copied back into powerapp/src
 
-Every flow file it writes is `{name, definition, connectors, connectionRefsTemplate}`: `definition` is what the
-FlowAgent MCP tool `create_flow` takes, `connectors` says which connection each connector needs and in which mode
-(`Embedded` = the operator's own connection, `Invoker` = the person running the app), and the template is the
-`connectionRefs` argument with the connection names left for `pick_or_create_connection` to fill.
+No MCP server and no agent plugin is involved: the build runs where they are blocked. Every flow is written twice:
+
+- `build/out/<name>.zip`, a package for Power Automate's **My flows** > **Import** > **Import Package (Legacy)**,
+  which the operator imports and connects in the browser;
+- `build/out/<name>.json`, the same flow as `{name, definition, connectors, connectionRefsTemplate}`, for reading:
+  `connectors` says which connection each connector needs and in which mode (`Embedded` = the operator's own
+  connection, `Invoker` = the person running the app).
 
 The flow definitions in `flows/` are the reviewed record; this script only applies the deploy-time differences a
 flow outside a solution needs: the `_comment*` review notes removed, the solution environment variables replaced
 by the values in `build/fleet.config.json`, and `authentication` dropped from action inputs (Power Automate injects
-it; FlowAgent's validator refuses it). It never edits `flows/` or `powerapp/`, except `canvas-out`, which is the one
-command meant to write `powerapp/src`.
+it on import). It never edits `flows/` or `powerapp/`, except `canvas-out`, which is the one command meant to write
+`powerapp/src`.
 """
 from __future__ import annotations
 import argparse
@@ -26,8 +33,11 @@ import glob
 import json
 import os
 import re
-import shutil
+import subprocess
 import sys
+import uuid
+import zipfile
+from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD = os.path.join(ROOT, "build")
@@ -78,6 +88,12 @@ EMBEDDED = re.compile(r"parameters\('(fleet_[A-Za-z]+) \(\1\)'\)")
 #: `@concat(...)` of quoted literals only, which is what EMBEDDED leaves of the trigger's folder: folded to a string.
 LITERAL_CONCAT = re.compile(r"^@concat\(((?:'(?:[^']|'')*'(?:, )?)+)\)$")
 SP_API = "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+#: The connectors' names as the import page shows them, so the operator knows which connection to pick.
+API_NAMES = {"shared_sharepointonline": "SharePoint", "shared_office365users": "Office 365 Users",
+             "shared_powerappsnotificationv2": "Power Apps Notification (V2)",
+             "shared_onedriveforbusiness": "OneDrive for Business"}
+#: Fixed ids inside a package, so the same flow always imports under the same resource names.
+PACKAGE_IDS = uuid.uuid5(uuid.NAMESPACE_URL, "https://github.com/agentchieflou/Koa/build/package")
 
 
 def _show(path: str) -> str:
@@ -294,6 +310,16 @@ def provisioning_flow(cfg: dict) -> dict:
                                    "ownersOnly": "@and(equals(length(body('Get_assignments_after')?['value']), 1), "
                                                  "equals(first(body('Get_assignments_after')?['value'])?['PrincipalId'], "
                                                  "body('Get_owner_group')?['Id']))"}},
+        "Get_fields_after": _sp("GET", f"{securable}/fields?$select=InternalName&$top=500", site,
+                                run_after={"Owners_only": ["Succeeded"]}),
+        "Select_fields_after": {"type": "Select", "runAfter": {"Get_fields_after": ["Succeeded"]},
+                                "inputs": {"from": "@body('Get_fields_after')?['value']",
+                                           "select": "@item()?['InternalName']"}},
+        "Add_to_report": {"type": "AppendToArrayVariable", "runAfter": {"Select_fields_after": ["Succeeded"]},
+                          "inputs": {"name": "Report", "value": {
+                              "list": "@items('For_each_securable')?['list']",
+                              "fields": "@body('Select_fields_after')",
+                              "ownersOnly": "@outputs('Owners_only')?['ownersOnly']"}}},
     }
     definition = {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
@@ -304,7 +330,10 @@ def provisioning_flow(cfg: dict) -> dict:
                                 "inputs": {"schema": {"type": "object", "properties": {}, "required": []}}}},
         "actions": {
             "Spec": {"type": "Compose", "runAfter": {}, "inputs": provisioning_spec(library)},
-            "Get_lists": _sp("GET", "_api/web/lists?$select=Title&$top=5000", site, run_after={"Spec": ["Succeeded"]}),
+            "Initialize_report": {"type": "InitializeVariable", "runAfter": {"Spec": ["Succeeded"]},
+                                  "inputs": {"variables": [{"name": "Report", "type": "array", "value": []}]}},
+            "Get_lists": _sp("GET", "_api/web/lists?$select=Title&$top=5000", site,
+                             run_after={"Initialize_report": ["Succeeded"]}),
             "Select_list_titles": {"type": "Select", "runAfter": {"Get_lists": ["Succeeded"]},
                                    "inputs": {"from": "@body('Get_lists')?['value']", "select": "@item()?['Title']"}},
             "For_each_list": {"type": "Foreach", "foreach": "@outputs('Spec')",
@@ -324,11 +353,59 @@ def provisioning_flow(cfg: dict) -> dict:
             "For_each_securable": {"type": "Foreach", "foreach": "@outputs('Spec')",
                                    "runAfter": {"Get_full_control": ["Succeeded"]},
                                    "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": lock_actions},
+            "Get_folders_after": _sp("GET", f"{lib}?$select=Name&$top=500", site,
+                                     run_after={"For_each_securable": ["Succeeded"]}),
+            "Select_folders_after": {"type": "Select", "runAfter": {"Get_folders_after": ["Succeeded"]},
+                                     "inputs": {"from": "@body('Get_folders_after')?['value']",
+                                                "select": "@item()?['Name']"}},
+            "Report": {"type": "Compose", "runAfter": {"Select_folders_after": ["Succeeded"]},
+                       "inputs": {"lists": "@variables('Report')", "folders": "@body('Select_folders_after')"}},
         },
         "description": "FleetAgent: creates the five lists, their columns and indexes, the bridge library and each "
-                       "operator's folder, and locks all six to the site's Owners; safe to run again.",
+                       "operator's folder, and locks all six to the site's Owners; safe to run again. Its last "
+                       "action, Report, is what build/prepare.py check-lists reads.",
     }
     return _package("FleetProvisionLists", definition, {"shared_sharepointonline": "Embedded"})
+
+
+def read_report(path: str) -> dict:
+    """The Report action's output as the operator saved it from the run: the value itself, or Power Automate's
+    raw outputs (`{"body": ...}`) around it."""
+    if not os.path.exists(path):
+        raise Refused(f"{_show(path)} does not exist: save the Report action's output there (build/steps/02-lists.md)")
+    with open(path, encoding="utf-8-sig") as f:
+        try:
+            report = json.load(f)
+        except json.JSONDecodeError as e:
+            raise Refused(f"{_show(path)} is not JSON ({e}): copy the Report output whole, braces included")
+    if isinstance(report, dict) and set(report) == {"body"}:
+        report = report["body"]
+    if not isinstance(report, dict) or not isinstance(report.get("lists"), list):
+        raise Refused(f"{_show(path)} is not the Report action's output: it has no lists")
+    return report
+
+
+def check_lists(report: dict, cfg: dict) -> list[str]:
+    """Every problem the Report shows, in words; empty when the five lists, their columns, the library, every
+    operator's folder and the Owners-only lock are all there."""
+    problems = []
+    seen = {entry.get("list"): entry for entry in report["lists"] if isinstance(entry, dict)}
+    for entry in provisioning_spec(cfg["library"]):
+        name = entry["list"]
+        got = seen.get(name)
+        if got is None:
+            problems.append(f"{name}: not in the report; the run did not reach it")
+            continue
+        missing = [c["name"] for c in entry["columns"] if c["name"] not in set(got.get("fields") or [])]
+        if missing:
+            problems.append(f"{name}: missing {', '.join(missing)}")
+        if got.get("ownersOnly") is not True:
+            problems.append(f"{name}: not Owners-only; someone besides the site's Owners group can still read it")
+    folders = {str(f).lower() for f in report.get("folders") or []}
+    for op in cfg["operators"]:
+        if op not in folders:
+            problems.append(f"{cfg['library']}: no folder {op}")
+    return problems
 
 
 # ------------------------------------------------------------------------------------ the two flows
@@ -393,43 +470,76 @@ def _package(name: str, definition: dict, modes: dict) -> dict:
     hosts = {m.group(1) for m in re.finditer(r'"connectionName": "([^"]+)"', json.dumps(definition))}
     assert hosts == set(modes), f"{name}: connections {sorted(hosts)} but references {sorted(modes)}"
     return {"name": name, "definition": definition, "connectors": modes,
-            "connectionRefsTemplate": {key: {"connectionName": "<pick_or_create_connection>", "source": mode,
+            "connectionRefsTemplate": {key: {"connectionName": "<picked when the package is imported>", "source": mode,
                                              "id": f"/providers/Microsoft.PowerApps/apis/{key}", "tier": "NotSpecified"}
                                        for key, mode in modes.items()}}
 
 
-def write_out(package: dict) -> str:
-    os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, f"{package['name']}.json")
+def import_package(package: dict, created: str | None = None) -> dict[str, bytes]:
+    """The files of a package for **Import Package (Legacy)**, laid out as Power Automate exports one: a root
+    manifest naming the flow and, per connector, the API and a connection the operator picks while importing."""
+    name = package["name"]
+    ids = uuid.uuid5(PACKAGE_IDS, name)
+    flow, flow_name = str(uuid.uuid5(ids, "resource/flow")), str(uuid.uuid5(ids, "flow"))
+    api = {key: str(uuid.uuid5(ids, f"resource/api/{key}")) for key in package["connectors"]}
+    connection = {key: str(uuid.uuid5(ids, f"resource/connection/{key}")) for key in package["connectors"]}
+    resources = {flow: {"type": "Microsoft.Flow/flows", "suggestedCreationType": "New",
+                        "creationType": "Existing, New, Update", "details": {"displayName": name},
+                        "configurableBy": "User", "hierarchy": "Root",
+                        "dependsOn": [r for key in package["connectors"] for r in (api[key], connection[key])]}}
+    for key in package["connectors"]:
+        title = API_NAMES.get(key, key)
+        resources[api[key]] = {"id": f"/providers/Microsoft.PowerApps/apis/{key}", "name": key,
+                               "type": "Microsoft.PowerApps/apis", "suggestedCreationType": "Existing",
+                               "details": {"displayName": title}, "configurableBy": "System", "hierarchy": "Child",
+                               "dependsOn": []}
+        resources[connection[key]] = {"type": "Microsoft.PowerApps/apis/connections", "suggestedCreationType": "Existing",
+                                      "creationType": "Existing", "details": {"displayName": title},
+                                      "configurableBy": "User", "hierarchy": "Child", "dependsOn": [api[key]]}
+    created = created or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.0000000Z")
+    manifest = {"schema": "1.0", "details": {"displayName": name, "description": package["definition"].get("description", ""),
+                                             "createdTime": created, "packageTelemetryId": str(uuid.uuid5(ids, "telemetry")),
+                                             "creator": "N/A", "sourceEnvironment": ""},
+                "resources": resources}
+    definition = {"name": flow_name, "id": f"/providers/Microsoft.Flow/flows/{flow_name}", "type": "Microsoft.Flow/flows",
+                  "properties": {"apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows", "displayName": name,
+                                 "definition": package["definition"],
+                                 "connectionReferences": {key: {"connectionName": key, "source": mode,
+                                                                "id": f"/providers/Microsoft.PowerApps/apis/{key}",
+                                                                "tier": "NotSpecified"}
+                                                          for key, mode in package["connectors"].items()},
+                                 "flowFailureAlertSubscribed": False}}
+    dump = lambda data: json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    base = f"Microsoft.Flow/flows/{flow}/"
+    return {"manifest.json": dump(manifest),
+            "Microsoft.Flow/flows/manifest.json": dump({"packageSchemaVersion": "1.0", "flowAssets": {"assetPaths": [flow]}}),
+            base + "definition.json": dump(definition),
+            base + "apisMap.json": dump(api),
+            base + "connectionsMap.json": dump(connection)}
+
+
+def write_out(package: dict, out: str = OUT) -> list[str]:
+    """`<name>.zip` to import and `<name>.json` to read, side by side."""
+    os.makedirs(out, exist_ok=True)
+    path = os.path.join(out, f"{package['name']}.json")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(package, f, indent=2, ensure_ascii=False)
         f.write("\n")
-    return path
+    archive = os.path.join(out, f"{package['name']}.zip")
+    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
+        for rel, data in import_package(package).items():
+            z.writestr(rel, data)
+    return [archive, path]
 
 
 # ------------------------------------------------------------------------------------ the app
 
 
-def _source_files() -> dict[str, str]:
-    """Working-directory name -> repository path: screens flat at the root, components under Components/, as the
-    Canvas Authoring MCP server lays an app out (and as Studio's Src folder does)."""
-    out = {"App.pa.yaml": os.path.join(SRC, "App.pa.yaml"), "_EditorState.pa.yaml": os.path.join(SRC, "_EditorState.pa.yaml")}
-    for path in sorted(glob.glob(os.path.join(SRC, "Screens", "*.pa.yaml"))):
-        out[os.path.basename(path)] = path
-    for path in sorted(glob.glob(os.path.join(SRC, "Components", "*.pa.yaml"))):
-        out["Components/" + os.path.basename(path)] = path
-    return out
-
-
-def _yaml_files(workdir: str) -> list[str]:
-    found = []
-    for path in glob.glob(os.path.join(workdir, "**", "*"), recursive=True):
-        if os.path.isfile(path):
-            rel = os.path.relpath(path, workdir).replace(os.sep, "/")
-            if not rel.endswith(".pa.yaml"):
-                raise Refused(f"{workdir} holds {rel}: the MCP working directory must hold .pa.yaml files only")
-            found.append(rel)
-    return sorted(found)
+#: The App object's properties, in the order they are typed into Studio's formula bar (code view cannot paste the
+#: App object). Formulas first, so the screens' named formulas resolve; StartScreen last, because it names screens.
+APP_PROPERTIES = ("Formulas", "OnError", "BackEnabled", "StartScreen")
+#: The screens in the order that leaves the fewest names unresolved while pasting (README.md, step 5).
+PASTE_SCREENS = ("SettingsScreen", "ReplyScreen", "DecideScreen", "ApprovalScreen", "AgentScreen", "HomeScreen")
 
 
 def _screens_order() -> list[str]:
@@ -439,37 +549,121 @@ def _screens_order() -> list[str]:
     return re.findall(r"^\s*-\s*(\S+)\s*$", block, re.M)
 
 
-def canvas_in(workdir: str) -> list[str]:
-    """Put the repository's app into a working directory `sync_canvas` filled from the blank app."""
-    workdir = os.path.abspath(workdir)
-    if os.path.abspath(ROOT) == workdir:
-        raise Refused("never use the repository root as the MCP working directory; use build/out/canvas/FleetAgent")
-    present = _yaml_files(workdir) if os.path.isdir(workdir) else []
-    if "App.pa.yaml" not in present:
-        raise Refused(f"{workdir} has no App.pa.yaml: run sync_canvas into it first (build/steps/06-app.md)")
-    log = []
-    keep = set(_screens_order())
-    for rel in present:
-        name = rel[:-len(".pa.yaml")]
-        if "/" not in rel and name not in keep and name not in ("App", "_EditorState"):
-            os.remove(os.path.join(workdir, rel))                 # the blank app's Screen1
-            log.append(f"removed {rel} (a screen the app does not have)")
-    for rel, src in _source_files().items():
-        dest = os.path.join(workdir, *rel.split("/"))
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        shutil.copyfile(src, dest)
-        log.append(f"wrote {rel}")
-    return log
+def _components_order() -> list[str]:
+    with open(os.path.join(SRC, "_EditorState.pa.yaml"), encoding="utf-8") as f:
+        block = f.read().split("ComponentDefinitionsOrder:", 1)[1]
+    return re.findall(r"^\s*-\s*(\S+)\s*$", block, re.M)
 
 
-def canvas_out(workdir: str) -> list[str]:
-    """Copy a synced working directory back over powerapp/src, so the repository mirrors what Studio holds."""
-    workdir = os.path.abspath(workdir)
-    present = _yaml_files(workdir)
-    if "App.pa.yaml" not in present:
-        raise Refused(f"{workdir} has no App.pa.yaml: sync_canvas into an empty directory first")
+def app_properties() -> dict[str, str]:
+    """Each App property as it goes into the formula bar: the formula without its leading `=`."""
+    with open(os.path.join(SRC, "App.pa.yaml"), encoding="utf-8") as f:
+        lines = f.read().split("\n")
+    out, name, block = {}, None, []
+    for line in lines[2:]:                                    # after `App:` and `  Properties:`
+        if m := re.match(r"^    ([A-Za-z]+): (.*)$", line):
+            if name:
+                out[name] = "\n".join(block).rstrip("\n")
+            name, value = m.group(1), m.group(2)
+            block = [] if value == "|-" else [value]
+        elif name and (line.startswith("      ") or not line.strip()):
+            block.append(line[6:])
+    if name:
+        out[name] = "\n".join(block).rstrip("\n")
+    missing = [p for p in APP_PROPERTIES if p not in out]
+    if missing:
+        raise Refused(f"powerapp/src/App.pa.yaml has no {', '.join(missing)}")
+    return {p: out[p][1:] if out[p].startswith("=") else out[p] for p in APP_PROPERTIES}
+
+
+def paste_plan() -> list[dict]:
+    """Everything the operator pastes into Studio, in order: the components, the screens, then the App object's
+    properties. Each item is one paste of one whole file."""
+    plan = []
+    for name in _components_order():
+        plan.append({"name": name, "source": os.path.join(SRC, "Components", f"{name}.pa.yaml"), "file": f"{name}.pa.yaml",
+                     "where": "Tree view > Components tab > right-click the empty area > Paste code"})
+    if sorted(PASTE_SCREENS) != sorted(_screens_order()):
+        raise Refused("PASTE_SCREENS no longer names the app's screens: update it from powerapp/src/_EditorState.pa.yaml")
+    for name in PASTE_SCREENS:
+        plan.append({"name": name, "source": os.path.join(SRC, "Screens", f"{name}.pa.yaml"), "file": f"{name}.pa.yaml",
+                     "where": "Tree view > Screens tab > right-click the empty area > Paste code"})
+    for prop, text in app_properties().items():
+        plan.append({"name": f"App.{prop}", "text": text, "file": f"App.{prop}.txt",
+                     "where": f"Tree view > select App > property list: {prop} > click into the formula bar, "
+                              "select all, paste"})
+    for n, item in enumerate(plan, 1):
+        item["n"] = n
+        item["file"] = f"{n:02d}-{item['file']}"
+    return plan
+
+
+def write_paste(out: str | None = None) -> list[dict]:
+    out = out or os.path.join(OUT, "paste")
+    os.makedirs(out, exist_ok=True)
+    plan = paste_plan()
+    for item in plan:
+        if "source" in item:
+            with open(item["source"], "rb") as f:
+                data = f.read()
+        else:
+            data = (item["text"] + "\n").encode("utf-8")
+        item["path"] = os.path.join(out, item["file"])
+        with open(item["path"], "wb") as f:
+            f.write(data)
+    return plan
+
+
+def to_clipboard(path: str) -> bool:
+    """Put a file's text on the Windows clipboard (PowerShell's Set-Clipboard keeps it Unicode); False elsewhere."""
+    if os.name != "nt":
+        return False
+    command = "Set-Clipboard -Value ([System.IO.File]::ReadAllText($env:FLEET_PASTE))"
+    done = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", command],
+                          env={**os.environ, "FLEET_PASTE": path}, capture_output=True)
+    return done.returncode == 0
+
+
+def _from_msapp(path: str) -> dict[str, bytes]:
+    """The `.pa.yaml` files Studio keeps inside a saved `.msapp`, under its `Src` folder, keyed as canvas_out
+    expects them (screens at the root, components under `Components/`)."""
+    out = {}
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            parts = info.filename.replace("\\", "/").split("/")
+            if len(parts) < 2 or parts[0].lower() != "src" or not parts[-1].endswith(".pa.yaml"):
+                continue
+            rel = "/".join(parts[1:])
+            if parts[1].lower() in ("component", "components"):
+                rel = "Components/" + "/".join(parts[2:])
+            out[rel] = z.read(info)
+    if "App.pa.yaml" not in out:
+        raise Refused(f"{_show(path)} has no Src/App.pa.yaml: save the app in Studio first, then download it again "
+                      "(build/steps/07-finish.md)")
+    return out
+
+
+def _from_folder(workdir: str) -> dict[str, bytes]:
+    out = {}
+    for path in glob.glob(os.path.join(workdir, "**", "*.pa.yaml"), recursive=True):
+        rel = os.path.relpath(path, workdir).replace(os.sep, "/")
+        if rel.lower().startswith("src/"):
+            rel = rel[4:]
+        if rel.lower().startswith("component/"):
+            rel = "Components/" + rel.split("/", 1)[1]
+        with open(path, "rb") as f:
+            out[rel] = f.read()
+    if "App.pa.yaml" not in out:
+        raise Refused(f"{_show(workdir)} has no App.pa.yaml: give the saved .msapp, or the folder holding its Src files")
+    return out
+
+
+def canvas_out(source: str) -> list[str]:
+    """Copy the app as Studio saved it back over powerapp/src, so the repository mirrors what Studio holds."""
+    source = os.path.abspath(source)
+    files = _from_msapp(source) if os.path.isfile(source) else _from_folder(source)
     log = []
-    for rel in present:
+    for rel, raw in sorted(files.items()):
         if rel.startswith("Components/"):
             dest = os.path.join(SRC, "Components", rel.split("/", 1)[1])
         elif rel in ("App.pa.yaml", "_EditorState.pa.yaml"):
@@ -477,9 +671,8 @@ def canvas_out(workdir: str) -> list[str]:
         elif "/" not in rel:
             dest = os.path.join(SRC, "Screens", rel)
         else:
-            raise Refused(f"{rel}: an unexpected folder in the synced app")
-        with open(os.path.join(workdir, rel), "rb") as f:
-            raw = f.read().replace(b"\r\n", b"\n")
+            raise Refused(f"{rel}: an unexpected folder in the saved app")
+        raw = raw.replace(b"\r\n", b"\n")
         with open(dest, "wb") as f:
             f.write(raw if raw.endswith(b"\n") else raw + b"\n")
         log.append(f"{rel} -> {_show(dest)}")
@@ -494,9 +687,10 @@ def main(argv=None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("check")
     sub.add_parser("lists")
+    sub.add_parser("check-lists").add_argument("report")
     sub.add_parser("flows")
-    for name in ("canvas-in", "canvas-out"):
-        sub.add_parser(name).add_argument("workdir")
+    sub.add_parser("paste").add_argument("n", nargs="?", type=int)
+    sub.add_parser("canvas-out").add_argument("source")
     args = p.parse_args(argv)
     try:
         if args.cmd == "check":
@@ -510,21 +704,39 @@ def main(argv=None) -> int:
         elif args.cmd == "lists":
             cfg = load_config()
             require(cfg, "lists")
-            print(write_out(provisioning_flow(cfg)))
+            print("\n".join(write_out(provisioning_flow(cfg))))
+        elif args.cmd == "check-lists":
+            cfg = load_config()
+            require(cfg, "lists")
+            problems = check_lists(read_report(args.report), cfg)
+            print("\n".join(problems) if problems else
+                  f"lists: ready ({len(LISTS)} lists and {cfg['library']}, every column, every operator's folder, "
+                  "Owners only)")
+            return 1 if problems else 0
         elif args.cmd == "flows":
             cfg = load_config()
             require(cfg, "flows", only=("siteUrl", "library"))
-            print(write_out(deploy_flow("FleetDecide", cfg)))
+            print("\n".join(write_out(deploy_flow("FleetDecide", cfg))))
             if cfg.get("appId"):
                 require(cfg, "flows")
                 for operator in cfg["operators"]:
-                    print(write_out(deploy_flow("FleetOutboxToLists", cfg, operator)))
+                    print("\n".join(write_out(deploy_flow("FleetOutboxToLists", cfg, operator))))
             else:
                 print("FleetOutboxToLists: waits for appId (build/steps/04-app-shell.md)")
-        elif args.cmd == "canvas-in":
-            print("\n".join(canvas_in(args.workdir)))
+        elif args.cmd == "paste":
+            plan = write_paste()
+            if args.n is None:
+                for item in plan:
+                    print(f"{item['n']:2d}. {item['name']:<16} {item['where']}")
+                print(f"files: {_show(os.path.dirname(plan[0]['path']))}")
+            else:
+                if not 1 <= args.n <= len(plan):
+                    raise Refused(f"paste {args.n}: there are {len(plan)} pastes, 1 to {len(plan)}")
+                item = plan[args.n - 1]
+                where = "on the clipboard" if to_clipboard(item["path"]) else f"in {_show(item['path'])}: open it, copy all"
+                print(f"paste {item['n']} of {len(plan)}, {item['name']}: {where}. In Studio: {item['where']}.")
         elif args.cmd == "canvas-out":
-            print("\n".join(canvas_out(args.workdir)))
+            print("\n".join(canvas_out(args.source)))
     except Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2
