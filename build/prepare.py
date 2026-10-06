@@ -3,7 +3,8 @@
 
     python build/prepare.py check                 the config is complete for the steps that need it
     python build/prepare.py lists                 build/out/FleetProvisionLists.json: a flow that creates the five lists
-    python build/prepare.py flows                 build/out/FleetDecide.json and build/out/FleetOutboxToLists.json
+    python build/prepare.py flows                 build/out/FleetDecide.json, and one FleetOutboxToLists (<UPN>).json
+                                                  per operator
     python build/prepare.py canvas-in  <workdir>  copy powerapp/src into the Canvas Authoring MCP working directory
     python build/prepare.py canvas-out <workdir>  copy a synced working directory back into powerapp/src
 
@@ -50,23 +51,32 @@ DESCRIPTIONS = {
     "FleetApprovals": "FleetAgent: one row per approval request, written by the flows.",
     "FleetDecisions": "FleetAgent: one row per phone decision or reply, written by FleetDecide and FleetOutboxToLists.",
     "FleetNotifications": "FleetAgent: the laptop's notifications, written by FleetOutboxToLists.",
-    "FleetHeartbeat": "FleetAgent: the laptop's heartbeat, one row (Title = laptop).",
+    "FleetHeartbeat": "FleetAgent: each operator's laptop heartbeat, one row per operator (Title = the operator's UPN).",
 }
+#: Columns indexed on every list: every flow lookup filters on Title and Operator together, and an index keeps that
+#: working past SharePoint's 5,000-item list view threshold (notifications grow with three operators).
+INDEXED = ("Title", "Operator")
+#: SharePoint's built-in role type for Full Control (SP.RoleType.Administrator).
+FULL_CONTROL = 5
 
 #: The solution environment variables the flows reference, and the config key that replaces each.
 ENV_VARS = {
     "fleet_FleetSiteUrl": "siteUrl",
-    "fleet_FleetOutboxFolderId": "outboxFolderId",
-    "fleet_FleetInboxFolderPath": "inboxFolderPath",
+    "fleet_FleetLibrary": "library",
     "fleet_FleetAppId": "appId",
-    "fleet_FleetOperatorEmail": "operator",
+    "fleet_FleetOperator": "operators",          # one value per copy of FleetOutboxToLists: that copy's operator
 }
 #: What each step needs from build/fleet.config.json, and which step of build/steps/ supplies it.
 NEEDS = {
-    "lists": {"siteUrl": "01"},
-    "flows": {"siteUrl": "01", "operator": "01", "inboxFolderPath": "01", "outboxFolderId": "05", "appId": "04"},
+    "lists": {"siteUrl": "01", "library": "01", "operators": "01"},
+    "flows": {"siteUrl": "01", "library": "01", "operators": "01", "appId": "04"},
 }
+UPN = re.compile(r"[^@\s/\\#%:*?<>|\"]+@[^@\s/\\#%:*?<>|\"]+\.[^@\s/\\#%:*?<>|\"]+")
 PARAM = re.compile(r"^@parameters\('(fleet_[A-Za-z]+) \(\1\)'\)$")
+#: The same reference inside a larger expression, e.g. `@concat('/', parameters('fleet_FleetLibrary (...)'), ...)`.
+EMBEDDED = re.compile(r"parameters\('(fleet_[A-Za-z]+) \(\1\)'\)")
+#: `@concat(...)` of quoted literals only, which is what EMBEDDED leaves of the trigger's folder: folded to a string.
+LITERAL_CONCAT = re.compile(r"^@concat\(((?:'(?:[^']|'')*'(?:, )?)+)\)$")
 SP_API = "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
 
 
@@ -92,7 +102,10 @@ def load_config(path: str = CONFIG) -> dict:
                       "and fill it in (build/steps/01-prerequisites.md)")
     with open(path, encoding="utf-8-sig") as f:
         cfg = json.load(f)
-    return {k: (v.strip() if isinstance(v, str) else v) for k, v in cfg.items() if not k.startswith("_")}
+    cfg = {k: (v.strip() if isinstance(v, str) else v) for k, v in cfg.items() if not k.startswith("_")}
+    if isinstance(cfg.get("operators"), list):
+        cfg["operators"] = [str(op).strip().lower() for op in cfg["operators"] if str(op).strip()]
+    return cfg
 
 
 def require(cfg: dict, step: str, only: tuple[str, ...] = ()) -> None:
@@ -101,16 +114,26 @@ def require(cfg: dict, step: str, only: tuple[str, ...] = ()) -> None:
     if missing:
         raise Refused(f"build/fleet.config.json is missing {', '.join(missing)}")
     for key, value in cfg.items():
+        if isinstance(value, list) and any("contoso" in str(v).lower() for v in value):
+            raise Refused(f"{key} still holds the example values: put this tenant's values in build/fleet.config.json")
         if isinstance(value, str) and "contoso" in value.lower():
             raise Refused(f"{key} is still the example value {value!r}: put this tenant's value in build/fleet.config.json")
     site = cfg.get("siteUrl", "")
     if site and not re.fullmatch(r"https://[A-Za-z0-9.-]+\.sharepoint\.(com|us|cn|de)/(sites|teams)/[^/?#]+", site):
         raise Refused(f"siteUrl {site!r} is not a SharePoint site address such as "
                       "https://contoso.sharepoint.com/sites/FleetAgent (no trailing slash, no page)")
-    if cfg.get("operator") and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", cfg["operator"]):
-        raise Refused(f"operator {cfg['operator']!r} is not a UPN such as you@contoso.com")
-    if cfg.get("inboxFolderPath") and not cfg["inboxFolderPath"].startswith("/"):
-        raise Refused("inboxFolderPath is a OneDrive path from the root, such as /FleetAgent/inbox")
+    operators = cfg.get("operators")
+    if operators is not None:
+        if not isinstance(operators, list) or not 1 <= len(operators) <= 10:
+            raise Refused("operators is a list of 1 to 10 UPNs: everyone whose fleet shares the site")
+        for op in operators:
+            if not UPN.fullmatch(op) or op != op.lower():
+                raise Refused(f"operators: {op!r} is not a lowercase UPN such as you@contoso.com; it names that "
+                              "operator's bridge folder, so it cannot hold / \\ # % : * ? < > | or a space")
+        if len(set(operators)) != len(operators):
+            raise Refused("operators lists someone twice")
+    if cfg.get("library") and not re.fullmatch(r"[A-Za-z][A-Za-z0-9]{0,49}", cfg["library"]):
+        raise Refused(f"library {cfg['library']!r} must be letters and digits, starting with a letter (FleetAgent)")
     if cfg.get("appId") and not re.fullmatch(r"[0-9a-fA-F-]{36}", cfg["appId"]):
         raise Refused(f"appId {cfg['appId']!r} is not the app's GUID (the app-id at the end of the Studio URL)")
 
@@ -144,7 +167,9 @@ def field_xml(name: str, multi: bool) -> str:
     return f"<Field Type='Text' Name='{name}' StaticName='{name}' DisplayName='{name}' MaxLength='255' />"
 
 
-def provisioning_spec() -> list[dict]:
+def provisioning_spec(library: str = "FleetAgent") -> list[dict]:
+    """The five lists (columns from the contract, indexed on Title and Operator) and the document library that holds
+    one bridge folder per operator. Every entry is also a securable the flow locks to the site's Owners."""
     multi = multi_columns()
     spec = []
     for name, cols in columns().items():
@@ -157,13 +182,23 @@ def provisioning_spec() -> list[dict]:
              "body": json.dumps({"parameters": {"__metadata": {"type": "SP.XmlSchemaFieldCreationInformation"},
                                                 "SchemaXml": field_xml(col, col in multi[name]), "Options": 25}},
                                 separators=(",", ":"))}
-            for col in cols if col not in BUILT_IN]})
+            for col in cols if col not in BUILT_IN],
+            "indexed": [col for col in INDEXED if col in cols]})
+    library_create = {"__metadata": {"type": "SP.List"}, "BaseTemplate": 101, "Title": library,
+                      "Description": "FleetAgent: one bridge folder per operator, named by the operator's UPN."}
+    spec.append({"list": library, "create": json.dumps(library_create, separators=(",", ":")), "columns": [],
+                 "indexed": []})
     return spec
 
 
-def _sp(method: str, uri: str, site: str, body: str | None = None, run_after: dict | None = None) -> dict:
+def _sp(method: str, uri: str, site: str, body: str | None = None, run_after: dict | None = None,
+        verb: str | None = None) -> dict:
+    """Send an HTTP request to SharePoint. `verb` is a MERGE or DELETE tunnelled through POST (X-HTTP-Method)."""
     headers = {"Accept": "application/json;odata=nometadata"}
     params = {"dataset": site, "parameters/method": method, "parameters/uri": uri, "parameters/headers": headers}
+    if verb:
+        headers["X-HTTP-Method"] = verb
+        headers["IF-MATCH"] = "*"
     if body is not None:
         headers["Content-Type"] = "application/json;odata=verbose"
         params["parameters/body"] = body
@@ -172,16 +207,21 @@ def _sp(method: str, uri: str, site: str, body: str | None = None, run_after: di
                                 "apiId": SP_API}, "parameters": params}}
 
 
+def _missing(collection: str, item: str) -> dict:
+    return {"and": [{"not": {"contains": [f"@body('{collection}')", item]}}]}
+
+
 def provisioning_flow(cfg: dict) -> dict:
-    """A one-shot manual flow that creates whatever of the five lists and their columns is missing, and leaves
-    everything that exists alone, so running it twice changes nothing."""
-    site = cfg["siteUrl"]
+    """A one-shot manual flow, safe to run again: it creates whatever is missing of the five lists, their columns
+    and indexes, the bridge library and each operator's folder in it, then locks every one of them to the site's
+    Owners group (Full Control, nothing else) and reads the permissions back as its evidence."""
+    site, library, operators = cfg["siteUrl"], cfg["library"], cfg["operators"]
     each_list = "@items('For_each_list')?['list']"
     by_title = "_api/web/lists/getbytitle('@{items('For_each_list')?['list']}')"
     column_actions = {
         "Column_is_missing": {
             "type": "If", "runAfter": {},
-            "expression": {"and": [{"not": {"contains": ["@body('Select_field_names')", "@items('For_each_column')?['name']"]}}]},
+            "expression": _missing("Select_field_names", "@items('For_each_column')?['name']"),
             "actions": {"Create_column": _sp("POST", f"{by_title}/fields/CreateFieldAsXml", site,
                                              body="@items('For_each_column')?['body']")},
             "else": {"actions": {}},
@@ -190,7 +230,7 @@ def provisioning_flow(cfg: dict) -> dict:
     list_actions = {
         "List_is_missing": {
             "type": "If", "runAfter": {},
-            "expression": {"and": [{"not": {"contains": ["@body('Select_list_titles')", each_list]}}]},
+            "expression": _missing("Select_list_titles", each_list),
             "actions": {"Create_list": _sp("POST", "_api/web/lists", site, body="@items('For_each_list')?['create']")},
             "else": {"actions": {}},
         },
@@ -201,6 +241,59 @@ def provisioning_flow(cfg: dict) -> dict:
         "For_each_column": {"type": "Foreach", "foreach": "@items('For_each_list')?['columns']",
                             "runAfter": {"Select_field_names": ["Succeeded"]},
                             "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": column_actions},
+        "For_each_index": {"type": "Foreach", "foreach": "@items('For_each_list')?['indexed']",
+                           "runAfter": {"For_each_column": ["Succeeded"]},
+                           "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": {
+                               "Index_column": _sp("POST", f"{by_title}/fields/getbyinternalnameortitle("
+                                                           "'@{items('For_each_index')}')", site, verb="MERGE",
+                                                   body='{"__metadata":{"type":"SP.Field"},"Indexed":true}')}},
+    }
+    lib = f"_api/web/lists/getbytitle('{library}')/rootfolder/folders"
+    operator_actions = {
+        "Folder_is_missing": {
+            "type": "If", "runAfter": {},
+            "expression": _missing("Select_folder_names", "@items('For_each_operator')"),
+            "actions": {"Create_folder": _sp("POST", f"{lib}/add(url='@{{items('For_each_operator')}}')", site)},
+            "else": {"actions": {}},
+        },
+    }
+    securable = "_api/web/lists/getbytitle('@{items('For_each_securable')?['list']}')"
+    owners, full = "@{body('Get_owner_group')?['Id']}", "@{body('Get_full_control')?['Id']}"
+    assignment_actions = {
+        "Not_the_owners": {
+            "type": "If", "runAfter": {},
+            "expression": {"and": [{"not": {"equals": ["@items('For_each_assignment')?['PrincipalId']",
+                                                         "@body('Get_owner_group')?['Id']"]}}]},
+            "actions": {"Remove_assignment": _sp(
+                "POST", f"{securable}/roleassignments/getbyprincipalid(@{{items('For_each_assignment')?['PrincipalId']}})",
+                site, verb="DELETE")},
+            "else": {"actions": {}},
+        },
+    }
+    lock_actions = {
+        "Get_inheritance": _sp("GET", f"{securable}?$select=HasUniqueRoleAssignments", site),
+        "Still_inherits": {
+            "type": "If", "runAfter": {"Get_inheritance": ["Succeeded"]},
+            "expression": {"and": [{"equals": ["@body('Get_inheritance')?['HasUniqueRoleAssignments']", False]}]},
+            "actions": {"Break_inheritance": _sp(
+                "POST", f"{securable}/breakroleinheritance(copyRoleAssignments=false,clearSubscopes=true)", site)},
+            "else": {"actions": {}},
+        },
+        "Grant_owners": _sp("POST", f"{securable}/roleassignments/addroleassignment(principalid={owners},"
+                                    f"roledefid={full})", site, run_after={"Still_inherits": ["Succeeded"]}),
+        "Get_assignments": _sp("GET", f"{securable}/roleassignments?$select=PrincipalId", site,
+                               run_after={"Grant_owners": ["Succeeded"]}),
+        "For_each_assignment": {"type": "Foreach", "foreach": "@body('Get_assignments')?['value']",
+                                "runAfter": {"Get_assignments": ["Succeeded"]},
+                                "runtimeConfiguration": {"concurrency": {"repetitions": 1}},
+                                "actions": assignment_actions},
+        "Get_assignments_after": _sp("GET", f"{securable}/roleassignments?$select=PrincipalId", site,
+                                     run_after={"For_each_assignment": ["Succeeded"]}),
+        "Owners_only": {"type": "Compose", "runAfter": {"Get_assignments_after": ["Succeeded"]},
+                        "inputs": {"list": "@items('For_each_securable')?['list']",
+                                   "ownersOnly": "@and(equals(length(body('Get_assignments_after')?['value']), 1), "
+                                                 "equals(first(body('Get_assignments_after')?['value'])?['PrincipalId'], "
+                                                 "body('Get_owner_group')?['Id']))"}},
     }
     definition = {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
@@ -210,15 +303,30 @@ def provisioning_flow(cfg: dict) -> dict:
         "triggers": {"manual": {"type": "Request", "kind": "Button",
                                 "inputs": {"schema": {"type": "object", "properties": {}, "required": []}}}},
         "actions": {
-            "Spec": {"type": "Compose", "runAfter": {}, "inputs": provisioning_spec()},
+            "Spec": {"type": "Compose", "runAfter": {}, "inputs": provisioning_spec(library)},
             "Get_lists": _sp("GET", "_api/web/lists?$select=Title&$top=5000", site, run_after={"Spec": ["Succeeded"]}),
             "Select_list_titles": {"type": "Select", "runAfter": {"Get_lists": ["Succeeded"]},
                                    "inputs": {"from": "@body('Get_lists')?['value']", "select": "@item()?['Title']"}},
             "For_each_list": {"type": "Foreach", "foreach": "@outputs('Spec')",
                               "runAfter": {"Select_list_titles": ["Succeeded"]},
                               "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": list_actions},
+            "Get_folders": _sp("GET", f"{lib}?$select=Name&$top=500", site, run_after={"For_each_list": ["Succeeded"]}),
+            "Select_folder_names": {"type": "Select", "runAfter": {"Get_folders": ["Succeeded"]},
+                                    "inputs": {"from": "@body('Get_folders')?['value']", "select": "@item()?['Name']"}},
+            "For_each_operator": {"type": "Foreach", "foreach": list(operators),
+                                  "runAfter": {"Select_folder_names": ["Succeeded"]},
+                                  "runtimeConfiguration": {"concurrency": {"repetitions": 1}},
+                                  "actions": operator_actions},
+            "Get_owner_group": _sp("GET", "_api/web/associatedownergroup?$select=Id,Title", site,
+                                   run_after={"For_each_operator": ["Succeeded"]}),
+            "Get_full_control": _sp("GET", f"_api/web/roledefinitions/getbytype({FULL_CONTROL})?$select=Id,Name", site,
+                                    run_after={"Get_owner_group": ["Succeeded"]}),
+            "For_each_securable": {"type": "Foreach", "foreach": "@outputs('Spec')",
+                                   "runAfter": {"Get_full_control": ["Succeeded"]},
+                                   "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": lock_actions},
         },
-        "description": "FleetAgent: creates the five lists and their columns on the site; safe to run again.",
+        "description": "FleetAgent: creates the five lists, their columns and indexes, the bridge library and each "
+                       "operator's folder, and locks all six to the site's Owners; safe to run again.",
     }
     return _package("FleetProvisionLists", definition, {"shared_sharepointonline": "Embedded"})
 
@@ -248,13 +356,28 @@ def _deploy(node, values: dict, used: set):
     if isinstance(node, str) and (m := PARAM.match(node)):
         used.add(m.group(1))
         return values[m.group(1)]
+    if isinstance(node, str) and node.startswith("@") and EMBEDDED.search(node):
+        def literal(m):
+            used.add(m.group(1))
+            return "'" + values[m.group(1)].replace("'", "''") + "'"
+        folded = EMBEDDED.sub(literal, node)
+        if m := LITERAL_CONCAT.match(folded):
+            return "".join(part.replace("''", "'") for part in re.findall(r"'((?:[^']|'')*)'", m.group(1)))
+        return folded
     return node
 
 
-def deploy_flow(name: str, cfg: dict) -> dict:
+def outbox_name(operator: str) -> str:
+    """Each operator's copy of FleetOutboxToLists, by name: one copy per operator keeps each copy's requests inside
+    the per-flow daily limit, and under that operator's own limit once its primary owner is changed to them."""
+    return f"FleetOutboxToLists ({operator})"
+
+
+def deploy_flow(name: str, cfg: dict, operator: str = "") -> dict:
     with open(os.path.join(FLOWS, f"{name}.definition.json"), encoding="utf-8") as f:
         source = _strip_comments(json.load(f))["properties"]
-    values = {var: cfg.get(key, "") for var, key in ENV_VARS.items()}
+    values = {var: cfg.get(key, "") for var, key in ENV_VARS.items() if key != "operators"}
+    values["fleet_FleetOperator"] = operator
     used: set = set()
     definition = _deploy(copy.deepcopy(source["definition"]), values, used)
     definition["parameters"] = {k: v for k, v in definition["parameters"].items() if not k.startswith("fleet_")}
@@ -263,7 +386,7 @@ def deploy_flow(name: str, cfg: dict) -> dict:
         raise Refused(f"{name} needs {', '.join(unset)} in build/fleet.config.json")
     modes = {key: {"embedded": "Embedded", "invoker": "Invoker"}[ref["runtimeSource"]]
              for key, ref in source["connectionReferences"].items()}
-    return _package(name, definition, modes)
+    return _package(outbox_name(operator) if operator else name, definition, modes)
 
 
 def _package(name: str, definition: dict, modes: dict) -> dict:
@@ -390,12 +513,14 @@ def main(argv=None) -> int:
             print(write_out(provisioning_flow(cfg)))
         elif args.cmd == "flows":
             cfg = load_config()
-            require(cfg, "flows", only=("siteUrl", "operator", "inboxFolderPath"))
+            require(cfg, "flows", only=("siteUrl", "library"))
             print(write_out(deploy_flow("FleetDecide", cfg)))
-            if cfg.get("outboxFolderId") and cfg.get("appId"):
-                print(write_out(deploy_flow("FleetOutboxToLists", cfg)))
+            if cfg.get("appId"):
+                require(cfg, "flows")
+                for operator in cfg["operators"]:
+                    print(write_out(deploy_flow("FleetOutboxToLists", cfg, operator)))
             else:
-                print("FleetOutboxToLists: waits for appId (build/steps/04-app-shell.md) and outboxFolderId (build/steps/05-outbox-flow.md)")
+                print("FleetOutboxToLists: waits for appId (build/steps/04-app-shell.md)")
         elif args.cmd == "canvas-in":
             print("\n".join(canvas_in(args.workdir)))
         elif args.cmd == "canvas-out":

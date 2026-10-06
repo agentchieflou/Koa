@@ -2,9 +2,15 @@
 
 This folder lets a GitHub Copilot agent build everything on the Microsoft 365 side, end to end:
 
-- the five SharePoint lists;
-- the two flows, `FleetDecide` and `FleetOutboxToLists`;
+- the five SharePoint lists, and the library that holds each operator's bridge folder, all readable by the site's
+  Owners only;
+- the flows: `FleetDecide`, which every operator's phone calls, and one copy of `FleetOutboxToLists` per operator,
+  which reads only that operator's folder;
 - the FleetAgent canvas app, built from the sources in `powerapp/src`.
+
+Several operators share it: each runs their own fleet on their own laptop, and everyone sees one app. The build is
+done once, by one of them. Then each operator connects their own laptop and phone with
+[each-operator.md](each-operator.md), which takes about five minutes.
 
 The agent does the building. You put the files in place, sign in when a window asks, and do the few clicks that
 Microsoft does not allow any tool to do. Those clicks are listed below, and the agent stops and tells you when
@@ -24,7 +30,7 @@ The agent works through Microsoft's own plugins for coding agents, from
 | --- | --- | --- |
 | This repository, the whole of it | any folder on the Windows laptop, for example `C:\src\Koa` (`git clone https://github.com/agentchieflou/Koa`, or unzip GitHub's *Download ZIP*) | the agent reads `powerapp/`, `flows/`, `contract/` and `build/` from here |
 | `build/fleet.config.example.json` | copy it to `build/fleet.config.json` in the same folder; leave the values for the agent to fill in | git ignores the copy; it holds this tenant's addresses, never a secret |
-| the bridge folder | nothing to copy: `ad-fleet mobile init` creates `%OneDriveCommercial%\FleetAgent` (step 01 checks it) | the flows watch its `outbox\` and write its `inbox\` |
+| the bridge folders | nothing to copy: step 02 creates one per operator in the site's `FleetAgent` library, and each operator syncs their own as a OneDrive shortcut ([each-operator.md](each-operator.md)) | the flows watch every `outbox\` and write the sender's own `inbox\` |
 
 Nothing else needs moving. The agent finds its instructions without being told where to look:
 
@@ -77,14 +83,25 @@ The agent stops, tells you exactly what to click, and waits for you each time:
 | When | You do | Time |
 | --- | --- | --- |
 | step 01 | sign in when `az login` and each MCP server open a browser window | 1 min |
-| step 01 | give the SharePoint site address the lists will live on. Any site where you can create lists works; to make one, go to SharePoint home > **Create site** > **Team site** > `FleetAgent` | 2 min |
-| steps 02, 03, 05 | approve each connection consent window the first time a connector is used: SharePoint, OneDrive for Business, Office 365 Users, Power Apps Notification | 1 min |
+| step 01 | give the SharePoint site's address and every operator's UPN. The site must be a team or communication site where all of you are **Owners**; cloud connections cannot reach a personal site's "My lists" | 2 min |
+| steps 02, 03, 05 | approve each connection consent window the first time a connector is used: SharePoint, Office 365 Users, Power Apps Notification | 1 min |
 | step 04 | create the blank app in Studio and change four settings (step 04 lists each click), then paste the Studio URL into the chat | 3 min |
+| step 05 | change each operator's copy of `FleetOutboxToLists` to be owned by that operator (step 05 lists each click), so each copy runs on its owner's daily request limit | 3 min |
 | step 06 | in Studio, add the five lists and the `FleetDecide` flow through **Data** > **Add data**. The canvas plugin itself says no tool can do this | 2 min |
-| step 07 | paste the theme (optional), **Publish**, **Share** with yourself, and open the app once on the phone | 3 min |
+| step 07 | paste the theme (optional), **Publish**, **Share** the app with the other operators, and add them to `FleetDecide`'s run-only users | 5 min |
+| after the build, each operator | add a shortcut to their own bridge folder, point their laptop's bridge at it, and open the app once on the phone ([each-operator.md](each-operator.md)) | 5 min |
 
-Everything else is the agent's: the lists and their columns, both flows and their connections, the folder id, every
+Everything else is the agent's: the lists, their columns and indexes, the bridge library and folders, the
+Owners-only lock and its proof, the flows and their connections, every
 screen, component and formula of the app, the compile-and-fix loop, and the repository's tests.
+
+## Owners only
+
+Step 02 cuts the five lists and the library off from the site's permissions and grants the site's **Owners** group
+Full Control, and nobody else. It then reads the permissions back and fails the step if anyone else is left. Every
+flow and the app act as one of the operators, who are all Owners, so nothing breaks. Anyone else, including a site
+Member or someone the app is shared with by mistake, sees no lists and no files. One consequence: whoever becomes
+an Owner of the site later can read every operator's fleet.
 
 ## The Created column
 
@@ -95,8 +112,8 @@ Every SharePoint list already has a column called `Created`: the date and time t
 - `FleetOutboxToLists` no longer writes it;
 - the app reads `Created` in a way that works for SharePoint's date and for the Excel fallback's text.
 
-The row is created when the flow sees the request, which is within one OneDrive sync of the request's own
-`created`.
+The row is created when the flow sees the request, which is within one OneDrive sync and one trigger poll of the
+request's own `created`.
 
 ## When the agent stops
 

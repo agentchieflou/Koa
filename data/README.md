@@ -14,6 +14,10 @@ The script is deterministic (fixed dates, no random values, pinned document prop
 re-run produces identical bytes and the committed file never churns. Its last step re-opens the workbook and
 asserts the five tables, their references and their headers.
 
+Several operators share the lists. Every row carries an `Operator` column, the UPN of the operator whose laptop
+wrote it, and a row is identified by `Operator` and `Title` together: two operators can both have a `luna` repo.
+`FleetHeartbeat` holds one row per operator, titled with that operator's UPN.
+
 Two uses:
 
 1. **Microsoft Lists > Create a list > From Excel** builds each list with the right columns (below).
@@ -35,8 +39,8 @@ Repeat once per table (five times), in Microsoft Lists (or the SharePoint site's
    `Seq`, `SpendTotal` ...) are offered as *Number*: change them to *Single line of text*; every column is text
    in this contract (numbers and booleans travel as text, so the app and the flows never fight Excel or
    SharePoint type coercion). `At`/`Issued`/`Expires` stay text too, never *Date and time*.
-3. The first column, `Title`, becomes the list's Title column (the list's key: repo alias, approval id, nonce,
-   notification key, or `laptop`). If the dialog maps it to a separate text column instead, delete that column
+3. The first column, `Title`, becomes the list's Title column (the list's key with `Operator`: repo alias,
+   approval id, nonce, notification key, or the operator's UPN). If the dialog maps it to a separate text column instead, delete that column
    after creation and keep SharePoint's own `Title` (the flows write `Title` by that internal name).
 4. Name = the table's name, exactly (`FleetAttention` ...). The flows and the app address lists by these names.
 5. **Create**. Then, for every *Multiple lines of text* column: column header > **Column settings > Edit** >
@@ -44,13 +48,43 @@ Repeat once per table (five times), in Microsoft Lists (or the SharePoint site's
    would wrap them in HTML).
 6. **Delete the three sample rows.** They exist to fix the column types and to show a reader what a row looks
    like; a live list must not start with `luna`, `rdsd-uat` or `dpm-reports` in it, and `FleetHeartbeat` holds
-   exactly one row (`laptop`), upserted by the flow.
+   one row per operator, upserted by that operator's copy of `FleetOutboxToLists`.
+7. **Index** `Title` and `Operator`: **List settings** > **Indexed columns** > **Create a new index**, once for
+   each. Every flow lookup filters on both, and the index keeps it working past SharePoint's 5,000-item list view
+   threshold.
+8. Lock the list to the site's Owners: [Owners only](#owners-only).
 
 Import can create the column order differently from the table; order does not matter to the flows or the app
 (both address columns by name). What matters is the internal name: create the columns with these names on the
 first try, because SharePoint freezes the internal name at creation and a later rename only changes the display
 name (a column created as `Needs human` and renamed `NeedsHuman` has the internal name `Needs_x0020_human`, and
 `Title eq` style filters and `item/NeedsHuman` writes would miss it).
+
+## Owners only
+
+The lists and the `FleetAgent` library hold every operator's fleet: repository names, agents' questions,
+approvals' payloads. They are readable by the site's **Owners** group only, with Full Control, and by nobody
+else. Step 02 of the Copilot build does this with a flow and reads the result back; by hand, for each of the five
+lists and the library:
+
+1. **Settings** (the gear) > **List settings** (**Library settings** for the library) > **Permissions for this
+   list** (**Permissions for this document library**).
+2. **Stop Inheriting Permissions** > **OK**.
+3. Select every entry but the site's Owners group (*\<site\> Owners*: usually *Members* and *Visitors*) >
+   **Remove User Permissions**.
+4. The Owners group must read **Full Control**. If not, select it > **Edit User Permissions** > **Full Control**.
+5. Check: the page lists exactly one entry, the Owners group with Full Control.
+
+Consequences:
+
+- **Every operator must be a site Owner.** Somebody who is not cannot see the lists, so the app shows them
+  nothing, and their laptop cannot sync their folder.
+- **Anyone later made a site Owner can read every operator's fleet.** Keep the Owners group to the operators.
+- **Sharing the app does not share the data.** When Power Apps offers to share the lists with the app, decline:
+  the operators already have access as Owners.
+- **Each operator's laptop syncs only their own folder** (a OneDrive shortcut to `FleetAgent/<their UPN>`,
+  `../build/each-operator.md`), but as Owners they could open the others' folders in the browser. The folders
+  separate the laptops, not the people.
 
 ## Columns per list
 
@@ -89,6 +123,7 @@ is the contract's longest value; the flow truncates the three single-line column
 | `External` | text | 5 | `external` | "somebody else's session": the app disables reply |
 | `Digest` | text | 64 | `digest` | sha256 hex, change detection only |
 | `Seq` | text | 10 | `seq` | file sequence; the flow only updates when the file's `seq` is not older than the row's |
+| `Operator` | text | 254 | (folder) | the UPN of the operator whose laptop wrote the file: the copy of `FleetOutboxToLists` that read it |
 
 ### `FleetApprovals` (Title = approval id; source files `approvals/<id>.json`, `approvals/<id>.decision.json`, `results/<nonce>.result.json`)
 
@@ -116,6 +151,7 @@ is the contract's longest value; the flow truncates the three single-line column
 | `ResultCode` | text | 32 | result `code` | filled when the laptop rejected the phone's decision |
 | `ResultText` | text | 255 | result `error` + `hint` | truncated by the flow |
 | `SourceFile` | text | 120 | (trigger) | name of the outbox file that created the row |
+| `Operator` | text | 254 | (folder) | whose approval it is; `FleetDecide` only marks an approval of the sender's own |
 
 ### `FleetDecisions` (Title = nonce; created by `FleetDecide`, updated from `results/<nonce>.result.json`)
 
@@ -139,6 +175,7 @@ is the contract's longest value; the flow truncates the three single-line column
 | `ResultCode` | text | 32 | result file | `mobile_expired, mobile_digest_mismatch, ...` |
 | `ResultText` | text | 255 | result file | `error` + `hint` |
 | `ResultAt` | text | 20 | result file | |
+| `Operator` | text | 254 | Get my profile (V2) | the sender's UPN, lowercase: whose laptop the inbox file went to |
 
 ### `FleetNotifications` (Title = key; source `notifications/<at>-<repo>-<state>-<seq>.json`)
 
@@ -156,17 +193,18 @@ is the contract's longest value; the flow truncates the three single-line column
 | `Quiet` | text | 5 | `quiet` | quiet hours: row written, no push |
 | `ApprovalId` | text | 96 | `approval_id` | |
 | `SourceFile` | text | 120 | (trigger) | |
+| `Operator` | text | 254 | (folder) | whose laptop sent it; the push goes to that operator alone |
 
-### `FleetHeartbeat` (Title = `laptop`; exactly one row; source `heartbeat/<yyyymmdd-hhmm>.json` every 300 s)
+### `FleetHeartbeat` (Title = the operator's UPN; one row per operator; source `heartbeat/<yyyymmdd-hhmm>.json` every 300 s)
 
 | Column | Type | Max | JSON field | Notes |
 |---|---|---|---|---|
-| `Title` | text | 6 | (constant) | `laptop` |
+| `Title` | text | 254 | (folder) | the operator's UPN, lowercase, the same as `Operator`'s; the app reads its own as `LookUp(FleetHeartbeat, Title = Me)` |
 | `At` | text | 20 | `at` | the phone's "laptop not syncing" rule: `now - At > 3 x EverySeconds` |
 | `EverySeconds` | text | 6 | `every_s` | 300 |
 | `ExpireSeconds` | text | 6 | `expire_s` | what the app passes to `FleetDecide` as `ExpiresSeconds` |
 | `Contract` | text | 4 | `contract` | 1 |
-| `Operator` | text | 254 | `operator` | the UPN the laptop accepts in `by` |
+| `Operator` | text | 254 | `operator` | the UPN the laptop accepts in `by`; the app's mismatch banner compares it with the signed-in user |
 | `Bridge` | text | 64 | `bridge` | the laptop's version string |
 | `LaptopId` | text | 64 | `laptop_id` | random hex, never the hostname |
 | `ServeUp` | text | 5 | `serve_up` | |
@@ -181,7 +219,9 @@ is the contract's longest value; the flow truncates the three single-line column
 ## The Excel Online (Business) fallback
 
 When there is no SharePoint site, the same workbook (with the sample rows deleted) is the store, through the
-Excel Online (Business) connector (Standard, unblockable). Facts from the connector reference, and what each one
+Excel Online (Business) connector (Standard, unblockable). It serves **one operator**: its lookups filter on one
+key column (`Title`), so two operators' rows with the same `Title` would collide, and a workbook in one person's
+OneDrive cannot be locked to a group of Owners. Facts from the connector reference, and what each one
 means here (research Q3):
 
 | Fact | Consequence |
@@ -193,7 +233,7 @@ means here (research Q3):
 | **List rows present in a table** returns 256 rows by default; `$filter` supports only `eq, ne, contains, startswith, endswith`, one filter per column, on a key column | every flow lookup is `Title eq '<key>'` on one column, which fits; turn on Pagination if a table ever passes 256 rows |
 | Key Column name is case-sensitive; several key matches update only the first row | the key column is `Title` in every table; rows are unique by `Title` by construction |
 | `__PowerAppsId__`: Power Apps adds a hidden column of that name to a table it connects to, to give rows an identity (up to 64,000 rows auto-populated when *Insert auto generated id into Excel table* is chosen) | let it; the flows never write it and the column list above is unchanged for them; do not delete it |
-| The connector has **no automated row trigger** (only the instant *For a selected row*) | nothing is lost: the app never relies on a row-added trigger, it calls `FleetDecide` directly, and `FleetOutboxToLists` is triggered by OneDrive files, not by rows |
+| The connector has **no automated row trigger** (only the instant *For a selected row*) | nothing is lost: the app never relies on a row-added trigger, it calls `FleetDecide` directly, and `FleetOutboxToLists` is triggered by the laptop's files, not by rows |
 | A read-only action can still create a new file version | ignore version history noise on the workbook |
 
 Action mapping for the fallback: SharePoint **Get items** (`Title eq '<key>'`, Top 1) -> Excel **List rows
@@ -205,7 +245,8 @@ Key Value the key; "columns left blank will not be updated", so pass every colum
 ## The sample rows
 
 Three rows per table, all fictional: repo aliases `luna`, `rdsd-uat`, `dpm-reports`; tickets `RDSD-118`,
-`RDSD-131`, `RDSD-140`, `DPM-77`; the operator is always `operator@example.com`; digests, nonces and the laptop id
+`RDSD-131`, `RDSD-140`, `DPM-77`; the operator is always `operator@example.com` (the app's samples in
+`../powerapp/sample/` add one `colleague@example.com` row for the team view); digests, nonces and the laptop id
 are arbitrary hex. No hostname, path, token or real name appears anywhere in the workbook (the same allow-list
 rule the laptop's exporter follows). They show, per list, the states the app must render: an agent that needs a
 human with an open question, one waiting for an approval, one running unsupervised; a pending, an approved

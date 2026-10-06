@@ -27,13 +27,13 @@ Do them in order. Do each one completely: run the step's **Check** and record th
 
 | Step | File | Who | Produces |
 | --- | --- | --- | --- |
-| 01 | `build/steps/01-prerequisites.md` | you; the operator signs in | tools checked, `build/fleet.config.json` filled (environment, siteUrl, operator, folder paths) |
-| 02 | `build/steps/02-lists.md` | you | the five lists with every column |
+| 01 | `build/steps/01-prerequisites.md` | you; the operator signs in | tools checked, `build/fleet.config.json` filled (environment, siteUrl, library, operators) |
+| 02 | `build/steps/02-lists.md` | you | the five lists with every column and index, the bridge library with one folder per operator, all six locked to the site's Owners |
 | 03 | `build/steps/03-decide-flow.md` | you | `FleetDecide`, on |
 | 04 | `build/steps/04-app-shell.md` | the operator, guided by you | a blank Tablet app with coauthoring on; `studioUrl`, `appId` |
-| 05 | `build/steps/05-outbox-flow.md` | you | `outboxFolderId`; `FleetOutboxToLists`, on |
+| 05 | `build/steps/05-outbox-flow.md` | you; the operator changes owners | one `FleetOutboxToLists (<UPN>)` per operator, on, each reading only that operator's folder and owned by them |
 | 06 | `build/steps/06-app.md` | the operator adds data; you push the app | every screen, component and the App object in Studio, compiling clean |
-| 07 | `build/steps/07-finish.md` | the operator publishes; you verify | a published app, the repository mirrored and tested, the first round trip ready |
+| 07 | `build/steps/07-finish.md` | the operator publishes and shares; you verify | a published app shared with every operator, the repository mirrored and tested, the first round trip ready |
 
 ## State file
 

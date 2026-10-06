@@ -5,7 +5,7 @@ Screens:
       Height: =Max(App.Height, App.MinScreenHeight)
       Fill: =RGBA(250, 250, 250, 1)
       LoadingSpinner: =LoadingSpinner.Controls
-      OnVisible: =Set(selApproval, LookUp(FleetApprovals, Title = Coalesce(selApproval.Title, Param("approvalId"))))
+      OnVisible: =Set(selApproval, LookUp(FleetApprovals, Title = Coalesce(selApproval.Title, Param("approvalId")) && Operator = Coalesce(selApproval.Operator, Me)))
     Children:
       - conApprovalRoot:
           Control: GroupContainer
@@ -36,7 +36,7 @@ Screens:
                   OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
                   OnRefresh: |-
                     =Refresh(FleetApprovals);
-                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title))
+                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title && Operator = selApproval.Operator))
                   OnSettings: =false
             - conApprovalAccent:
                 Control: GroupContainer
@@ -238,7 +238,7 @@ Screens:
                       Properties:
                         Text: ="Approve…"
                         Appearance: =ButtonAppearance.Primary
-                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now(), DisplayMode.Edit, DisplayMode.Disabled)
+                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now() && selApproval.Operator = Me, DisplayMode.Edit, DisplayMode.Disabled)
                         AccessibleLabel: ="Approve, then confirm on the next screen"
                         Height: =52
                         FillPortions: =1
@@ -250,7 +250,7 @@ Screens:
                       Properties:
                         Text: ="Deny…"
                         Appearance: =ButtonAppearance.Secondary
-                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now(), DisplayMode.Edit, DisplayMode.Disabled)
+                        DisplayMode: =If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now() && selApproval.Operator = Me, DisplayMode.Edit, DisplayMode.Disabled)
                         AccessibleLabel: ="Deny, then give a reason on the next screen"
                         Height: =52
                         FillPortions: =1
@@ -260,11 +260,11 @@ Screens:
             - lblApprovalDisabledWhy:
                 Control: ModernText
                 Properties:
-                  Text: =If(IsBlank(selApproval), "No approval selected.", selApproval.Status <> "pending", "Already " & selApproval.Status & "; nothing to decide.", DateTimeValue(selApproval.Expires) <= Now(), "Past the approval's expiry; the agent has already given up waiting.", "")
+                  Text: =If(IsBlank(selApproval), "No approval selected.", selApproval.Operator <> Me, "This is " & selApproval.Operator & "'s approval; only they can decide it.", selApproval.Status <> "pending", "Already " & selApproval.Status & "; nothing to decide.", DateTimeValue(selApproval.Expires) <= Now(), "Past the approval's expiry; the agent has already given up waiting.", "")
                   Size: =14
                   Color: =RGBA(97, 97, 97, 1)
                   Wrap: =true
-                  Visible: =IsBlank(selApproval) || selApproval.Status <> "pending" || DateTimeValue(selApproval.Expires) <= Now()
+                  Visible: =IsBlank(selApproval) || selApproval.Operator <> Me || selApproval.Status <> "pending" || DateTimeValue(selApproval.Expires) <= Now()
                   Width: =Parent.Width - 32
                   Height: =40
                   FillPortions: =0

@@ -50,19 +50,20 @@ COLUMNS = {
         "Title", "Project", "Ticket", "State", "Role", "NeedsHuman", "Says", "LastSaid", "AgeSeconds", "At",
         "Generated", "ApprovalId", "ApprovalsJson", "QuestionsJson", "RunNumber", "RunOrigin", "RunLive", "Model",
         "SpendLine", "SpendTotal", "SpendToday", "SpendBudget", "Turns", "Supervised", "External", "Digest", "Seq",
+        "Operator",
     ],
     "FleetApprovals": [
         "Title", "Repo", "Ticket", "ApprovalKind", "Summary", "PayloadPreview", "PayloadTruncated", "PayloadBytes",
         "Digest", "Created", "Expires", "WaitingSeconds", "Status", "DecidedBy", "DecidedAt", "Reason", "Via", "Late",
-        "Nonce", "ResultCode", "ResultText", "SourceFile",
+        "Nonce", "ResultCode", "ResultText", "SourceFile", "Operator",
     ],
     "FleetDecisions": [
         "Title", "Kind", "ApprovalId", "Repo", "Decision", "Reason", "Message", "AnswersJson", "Digest", "By",
-        "Device", "Issued", "Expires", "InboxFile", "Result", "ResultCode", "ResultText", "ResultAt",
+        "Device", "Issued", "Expires", "InboxFile", "Result", "ResultCode", "ResultText", "ResultAt", "Operator",
     ],
     "FleetNotifications": [
         "Title", "Repo", "Ticket", "State", "Severity", "TitleText", "Body", "At", "Seq", "Quiet", "ApprovalId",
-        "SourceFile",
+        "SourceFile", "Operator",
     ],
     "FleetHeartbeat": [
         "Title", "At", "EverySeconds", "ExpireSeconds", "Contract", "Operator", "Bridge", "LaptopId", "ServeUp",
@@ -210,25 +211,32 @@ ROWS = {
     # same row at three successive heartbeats and exist only to seed the column types.
     "FleetHeartbeat": [
         {
-            "Title": "laptop", "At": "2026-09-26T09:05:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
+            "Title": OPERATOR, "At": "2026-09-26T09:05:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
             "Contract": "1", "Operator": OPERATOR, "Bridge": "agentdata 0.9.0", "LaptopId": LAPTOP_ID,
             "ServeUp": "true", "DeskStreams": "1", "Repos": "3", "NeedsHuman": "0", "ApprovalsPending": "0",
             "Notifications24h": "8", "Rejected24h": "0", "InboxLastSeen": "2026-09-26T09:04:58Z",
         },
         {
-            "Title": "laptop", "At": "2026-09-26T09:10:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
+            "Title": OPERATOR, "At": "2026-09-26T09:10:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
             "Contract": "1", "Operator": OPERATOR, "Bridge": "agentdata 0.9.0", "LaptopId": LAPTOP_ID,
             "ServeUp": "true", "DeskStreams": "2", "Repos": "3", "NeedsHuman": "0", "ApprovalsPending": "0",
             "Notifications24h": "8", "Rejected24h": "0", "InboxLastSeen": "2026-09-26T09:09:58Z",
         },
         {
-            "Title": "laptop", "At": "2026-09-26T09:15:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
+            "Title": OPERATOR, "At": "2026-09-26T09:15:00Z", "EverySeconds": "300", "ExpireSeconds": "900",
             "Contract": "1", "Operator": OPERATOR, "Bridge": "agentdata 0.9.0", "LaptopId": LAPTOP_ID,
             "ServeUp": "true", "DeskStreams": "2", "Repos": "3", "NeedsHuman": "1", "ApprovalsPending": "1",
             "Notifications24h": "9", "Rejected24h": "0", "InboxLastSeen": "2026-09-26T09:14:58Z",
         },
     ],
 }
+
+
+# Several operators can share one site's lists (Koa's multi-operator layout): every row of the four lists that do not
+# already carry the operator names it in `Operator`, which the flows write from their own configuration.
+for _table in ("FleetAttention", "FleetApprovals", "FleetDecisions", "FleetNotifications"):
+    for _row in ROWS[_table]:
+        _row["Operator"] = OPERATOR
 
 
 def build(path: str) -> None:

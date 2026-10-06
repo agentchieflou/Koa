@@ -1414,6 +1414,11 @@
         },
         "Seq": {
           "type": "string"
+        },
+        "Operator": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "The operator whose laptop wrote the row (fleet.mobile.operator, a UPN), so several operators' fleets share one site's lists. Written by the flows from their own configuration, never by the laptop; optional, so a single-operator deployment may leave it out."
         }
       },
       "required": [
@@ -1446,7 +1451,7 @@
         "Seq"
       ],
       "additionalProperties": false,
-      "description": "One row of the FleetAttention list: every column text."
+      "description": "One row of the FleetAttention list: every column text. With several operators on one site, a row is identified by Operator and Title together."
     },
     "FleetApprovals": {
       "type": "object",
@@ -1529,6 +1534,11 @@
         },
         "SourceFile": {
           "type": "string"
+        },
+        "Operator": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "The operator whose laptop wrote the row (fleet.mobile.operator, a UPN), so several operators' fleets share one site's lists. Written by the flows from their own configuration, never by the laptop; optional, so a single-operator deployment may leave it out."
         }
       },
       "required": [
@@ -1556,7 +1566,7 @@
         "SourceFile"
       ],
       "additionalProperties": false,
-      "description": "One row of the FleetApprovals list: every column text."
+      "description": "One row of the FleetApprovals list: every column text. With several operators on one site, a row is identified by Operator and Title together."
     },
     "FleetDecisions": {
       "type": "object",
@@ -1623,6 +1633,11 @@
         },
         "ResultAt": {
           "type": "string"
+        },
+        "Operator": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "The operator whose laptop wrote the row (fleet.mobile.operator, a UPN), so several operators' fleets share one site's lists. Written by the flows from their own configuration, never by the laptop; optional, so a single-operator deployment may leave it out."
         }
       },
       "required": [
@@ -1646,7 +1661,7 @@
         "ResultAt"
       ],
       "additionalProperties": false,
-      "description": "One row of the FleetDecisions list: every column text."
+      "description": "One row of the FleetDecisions list: every column text. With several operators on one site, a row is identified by Operator and Title together."
     },
     "FleetNotifications": {
       "type": "object",
@@ -1691,6 +1706,11 @@
         },
         "SourceFile": {
           "type": "string"
+        },
+        "Operator": {
+          "type": "string",
+          "maxLength": 254,
+          "description": "The operator whose laptop wrote the row (fleet.mobile.operator, a UPN), so several operators' fleets share one site's lists. Written by the flows from their own configuration, never by the laptop; optional, so a single-operator deployment may leave it out."
         }
       },
       "required": [
@@ -1708,7 +1728,7 @@
         "SourceFile"
       ],
       "additionalProperties": false,
-      "description": "One row of the FleetNotifications list: every column text."
+      "description": "One row of the FleetNotifications list: every column text. With several operators on one site, a row is identified by Operator and Title together."
     },
     "FleetHeartbeat": {
       "type": "object",
@@ -1781,7 +1801,7 @@
         "InboxLastSeen"
       ],
       "additionalProperties": false,
-      "description": "One row of the FleetHeartbeat list: every column text."
+      "description": "One row of the FleetHeartbeat list: every column text. With several operators on one site, there is one row per operator and Title is that operator's UPN (the same value as Operator); a single-operator deployment keeps Title = laptop."
     }
   }
 }

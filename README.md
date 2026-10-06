@@ -1,8 +1,9 @@
 # Koa
 
 Mobile Fleet - Knees of Ants: the phone and tablet side of the fleet. **FleetAgent**, a Power Apps canvas
-app, the two Power Automate flows that carry records between the laptop's OneDrive folder and five
-SharePoint lists, and the workbook that creates those lists.
+app, the Power Automate flows that carry records between each operator's laptop and five SharePoint
+lists, and the workbook that creates those lists. Several operators share one site; each sees their own
+fleet, and the team's read-only.
 
 Imported from this-next-please@913d157765ef8a7944d21a8167b15771edfd133f (`mobile/` and
 `tests/test_mobile_powerapp.py`, history kept; this-next-please#600). The laptop side, the bridge
@@ -15,11 +16,12 @@ To run the first round trip (a prompt typed on the phone reaching an agent on th
 ## The mobile lane: FleetAgent
 
 The laptop's fleet bridge (`ad-fleet mobile init`, then the bridge loop) writes an outbox of small
-JSON records under a OneDrive folder: one attention row per repository, a mirror of every approval
-request, every notification, and a heartbeat. Power Automate flows move those records into five
-SharePoint lists and send a push. **FleetAgent**, the canvas app in `powerapp/`, shows those rows on
+JSON records into the operator's own folder of the site's `FleetAgent` library, synced to the laptop as a
+OneDrive shortcut: one attention row per repository, a mirror of every approval request, every
+notification, and a heartbeat. Power Automate flows (one copy per operator) move those records into five
+SharePoint lists, each row stamped with its `Operator`, and send a push to that operator. **FleetAgent**, the canvas app in `powerapp/`, shows those rows on
 a phone or a tablet and carries the operator's decision or reply back through one flow, which writes
-a file into the bridge's inbox. The laptop applies it only after checking the digest, the operator's
+a file into the sender's own bridge inbox. The laptop applies it only after checking the digest, the operator's
 identity and the expiry. The app decides nothing: every state, colour and sentence on its screens is
 the laptop's own word, and the only rule of its own is "three missed heartbeats means not syncing".
 
@@ -71,9 +73,11 @@ carry.
 1. **Create the five lists** on the SharePoint site the flows write to: `FleetAttention`,
    `FleetApprovals`, `FleetDecisions`, `FleetNotifications`, `FleetHeartbeat`, with the columns in
    `data/README.md`. Every column is text (single line unless the sheet says multi-line) and
-   `Title` is the key. To seed a first look, load the rows in `powerapp/sample/*.json`; replace the
-   heartbeat's `Operator` with your own account name, or the app will warn about a mismatch (which is
-   itself a fair first test of the banner).
+   `Operator` with `Title` is the key. Lock all five to the site's Owners (`data/README.md` §Owners
+   only). To seed a first look, load the rows in `powerapp/sample/*.json`; replace
+   `operator@example.com` (the heartbeat's `Title` and every `Operator`) with your own UPN, or the
+   app shows you nothing under *My fleet* and warns about a mismatch (which is itself a fair first test
+   of the banner).
 2. **Create the app.** Power Apps > Create > Blank app > Blank canvas app, name `FleetAgent`,
    format **Tablet**. Then Settings:
    - Updates > New: **Modern controls and themes** on; **Enhanced component properties** on.
@@ -112,8 +116,8 @@ carry.
    a type ("template-version conflict" or "must reference the same version"), open code view on any
    control of that type, read the exact `Control:` value it prints, and put that value on every
    instance of the type across all files. Never invent a version and never mix two for one type.
-8. **Save, publish, share** the app with yourself, then open it once in Power Apps mobile on the
-   phone: push notifications reach only a user who has opened the app in the last 30 days.
+8. **Save, publish, share** the app with every operator (as User; decline sharing the lists, which
+   stay Owners-only), then open it once in Power Apps mobile on the phone: push notifications reach only a user who has opened the app in the last 30 days.
 9. **Test checklist.** Use the preview device picker at 390x844, 844x390, 820x1180 and 1180x820
    after publishing (the authoring canvas does not reflow), and then a real phone in both orientations:
    - Home: the tabs switch the four lists; a row tap opens the agent or the approval; on widths of
@@ -123,6 +127,8 @@ carry.
    - Approval: Approve and Deny are disabled once the row is decided or past its expiry; Deny needs
      a reason before Send is enabled; a sent decision shows the flow's `error` verbatim when it fails.
    - Reply: disabled with the laptop's sentence when the session is external.
+   - *Show the team's* on Home lists the sample's `colleague@example.com` row, and Approve, Deny
+     and Reply are disabled on it, naming whose it is.
    - Deep links: a push with `screen=approval&approvalId=<id>` opens the approval; with
      `screen=agent&repo=<alias>` the agent. Parameters are read at launch only; a link into an app
      that is already open needs `restartApp=true` (see `research_notes/Mobile fleet scope/notifications_intune_powerapps.md`).

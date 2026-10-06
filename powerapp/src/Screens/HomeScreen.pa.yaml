@@ -71,7 +71,7 @@ Screens:
                       Control: ModernText
                       Properties:
                         Text: |-
-                          =If(OperatorMismatch, "Signed in as " & Operator & " but the laptop accepts decisions from " & Lower(Heartbeat.Operator) & ". ", "") & If(LaptopStale, If(IsBlank(Heartbeat.At), "No heartbeat from the laptop yet.", "The laptop is not syncing: its last heartbeat was " & HeartbeatAgeSeconds & " s ago."), "")
+                          =If(OperatorMismatch, "Signed in as " & Me & " but the laptop accepts decisions from " & Lower(Heartbeat.Operator) & ". ", "") & If(LaptopStale, If(IsBlank(Heartbeat.At), "No heartbeat from the laptop yet.", "The laptop is not syncing: its last heartbeat was " & HeartbeatAgeSeconds & " s ago."), "")
                         Size: =14
                         Color: =RGBA(36, 36, 36, 1)
                         Wrap: =true
@@ -90,6 +90,16 @@ Screens:
                   Height: =56
                   FillPortions: =0
                   AccessibleLabel: ="Fleet sections"
+            - btnHomeScope:
+                Control: ModernButton
+                Properties:
+                  Text: =If(showTeam, "Showing the team's fleets · show mine", "Showing my fleet · show the team's")
+                  Appearance: =ButtonAppearance.Subtle
+                  AccessibleLabel: =If(showTeam, "Show only my fleet", "Show every operator's fleet, read-only")
+                  Width: =Parent.Width
+                  Height: =48
+                  FillPortions: =0
+                  OnSelect: =Set(showTeam, !showTeam)
             - conHomeBody:
                 Control: GroupContainer
                 Variant: AutoLayout
@@ -129,7 +139,7 @@ Screens:
                             Control: Gallery
                             Variant: Vertical
                             Properties:
-                              Items: =SortByColumns(FleetAttention, "NeedsHuman", SortOrder.Descending, "At", SortOrder.Descending)
+                              Items: =SortByColumns(If(showTeam, FleetAttention, Filter(FleetAttention, Operator = Me)), "NeedsHuman", SortOrder.Descending, "At", SortOrder.Descending)
                               Visible: =tabHome.Selected.Value = "Attention"
                               FillPortions: =1
                               TemplateSize: =112
@@ -264,7 +274,7 @@ Screens:
                             Control: Gallery
                             Variant: Vertical
                             Properties:
-                              Items: =SortByColumns(PendingApprovals, "Created", SortOrder.Descending)
+                              Items: =SortByColumns(If(showTeam, Filter(FleetApprovals, Status = "pending"), PendingApprovals), "Created", SortOrder.Descending)
                               Visible: =tabHome.Selected.Value = "Approvals"
                               FillPortions: =1
                               TemplateSize: =112
@@ -399,7 +409,7 @@ Screens:
                             Control: Gallery
                             Variant: Vertical
                             Properties:
-                              Items: =FirstN(SortByColumns(FleetNotifications, "At", SortOrder.Descending), 50)
+                              Items: =FirstN(SortByColumns(If(showTeam, FleetNotifications, Filter(FleetNotifications, Operator = Me)), "At", SortOrder.Descending), 50)
                               Visible: =tabHome.Selected.Value = "Alerts"
                               FillPortions: =1
                               TemplateSize: =112
@@ -413,7 +423,7 @@ Screens:
                               AccessibleLabel: ="The newest fifty alerts"
                               ItemAccessibleLabel: =ThisItem.Severity & ", " & ThisItem.TitleText & ", " & ThisItem.Body
                               OnSelect: |-
-                                =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo && Operator = ThisItem.Operator));
                                 If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
                             Children:
                               - conAlertsRow:
@@ -456,7 +466,7 @@ Screens:
                                                 Height: =24
                                                 FillPortions: =0
                                                 OnSelect: |-
-                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo && Operator = ThisItem.Operator));
                                                   If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
                                           - lblAlertsBody:
                                               Control: ModernText
@@ -469,7 +479,7 @@ Screens:
                                                 Height: =44
                                                 FillPortions: =0
                                                 OnSelect: |-
-                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo && Operator = ThisItem.Operator));
                                                   If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
                                           - lblAlertsAge:
                                               Control: ModernText
@@ -481,7 +491,7 @@ Screens:
                                                 Height: =20
                                                 FillPortions: =0
                                                 OnSelect: |-
-                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo && Operator = ThisItem.Operator));
                                                   If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
                                     - conAlertsSide:
                                         Control: GroupContainer
@@ -518,7 +528,7 @@ Screens:
                                                 Height: =48
                                                 FillPortions: =0
                                                 OnSelect: |-
-                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo));
+                                                  =Set(selAttention, LookUp(FleetAttention, Title = ThisItem.Repo && Operator = ThisItem.Operator));
                                                   If(!IsWide, Navigate(AgentScreen, ScreenTransition.Cover))
                         - cmpEmptyHistory:
                             Control: CanvasComponent
@@ -533,7 +543,7 @@ Screens:
                             Control: Gallery
                             Variant: Vertical
                             Properties:
-                              Items: =SortByColumns(Filter(FleetApprovals, Status = "approved" || Status = "denied" || Status = "rejected" || Status = "expired" || Status = "sent"), "Created", SortOrder.Descending)
+                              Items: =SortByColumns(If(showTeam, Filter(FleetApprovals, Status = "approved" || Status = "denied" || Status = "rejected" || Status = "expired" || Status = "sent"), Filter(FleetApprovals, (Status = "approved" || Status = "denied" || Status = "rejected" || Status = "expired" || Status = "sent") && Operator = Me)), "Created", SortOrder.Descending)
                               Visible: =tabHome.Selected.Value = "History"
                               FillPortions: =1
                               TemplateSize: =112
@@ -782,7 +792,7 @@ Screens:
                               Height: =48
                               FillPortions: =0
                               OnSelect: |-
-                                =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId));
+                                =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId && Operator = selAttention.Operator));
                                 Navigate(ApprovalScreen, ScreenTransition.Cover)
             - tmrRefresh:
                 Control: Timer
