@@ -1,6 +1,6 @@
 # Building FleetAgent with a Copilot agent
 
-This folder lets a GitHub Copilot agent build everything on the Microsoft 365 side, end to end:
+This folder lets a GitHub Copilot agent drive the build of everything on the Microsoft 365 side, end to end:
 
 - the five SharePoint lists, and the library that holds each operator's bridge folder, all readable by the site's
   Owners only;
@@ -12,17 +12,10 @@ Several operators share it: each runs their own fleet on their own laptop, and e
 done once, by one of them. Then each operator connects their own laptop and phone with
 [each-operator.md](each-operator.md), which takes about five minutes.
 
-The agent does the building. You put the files in place, sign in when a window asks, and do the few clicks that
-Microsoft does not allow any tool to do. Those clicks are listed below, and the agent stops and tells you when
-each one is due.
-
-The agent works through Microsoft's own plugins for coding agents, from
-[microsoft/power-platform-skills](https://github.com/microsoft/power-platform-skills):
-
-- **canvas-apps**: the Canvas Authoring MCP server. It validates `.pa.yaml` and writes it into a live Power
-  Apps Studio session ([Learn](https://learn.microsoft.com/power-apps/maker/canvas-apps/create-canvas-external-tools)).
-- **power-automate**: the FlowAgent MCP server. It creates, turns on, runs and debugs cloud flows, and finds or
-  creates connections. It signs in through `az login`.
+A GitHub Copilot agent prepares and checks everything; you do the browser work. The organisation blocks MCP
+servers and agent plugins, so the agent never touches Power Automate, Power Apps or SharePoint itself: it writes the
+files you import or paste, tells you exactly what to click, and checks what you paste back from a run or from Studio.
+It stops and tells you when each click is due.
 
 ## 1. Put the files in place
 
@@ -41,29 +34,12 @@ Nothing else needs moving. The agent finds its instructions without being told w
 
 ## 2. Install once
 
-1. **A Copilot agent with plugin support.** Choose one:
-   - **GitHub Copilot CLI**: `npm install -g @github/copilot`, then run `copilot` in the repository folder.
-   - **VS Code** with GitHub Copilot, using Chat in **Agent** mode.
-2. **The .NET 10 SDK** ([download](https://dotnet.microsoft.com/download/dotnet/10.0)). The canvas MCP server runs
-   on it. Check it with `dotnet --list-sdks`: a line must start with `10.`
-3. **Node.js 18 or later.** The FlowAgent MCP server runs on it.
-4. **Azure CLI**: `az login --allow-no-subscriptions`. The laptop usually has this already, for `ad-pbi`.
-5. **The two plugins.**
-   - **In Copilot CLI:**
+1. **A Copilot agent.** Either **VS Code** with GitHub Copilot, using Chat in **Agent** mode, or **GitHub Copilot
+   CLI** (`npm install -g @github/copilot`, then `copilot` in the repository folder). Nothing to add to it: no
+   plugin, no extension, no MCP server.
+2. **Python 3.10 or later** on the laptop, and **Microsoft Edge** signed in with your work account.
 
-     ```
-     /plugin marketplace add microsoft/power-platform-skills
-     /plugin install canvas-apps@power-platform-skills
-     /plugin install power-automate@power-platform-skills
-     ```
-
-   - **In VS Code:** open Extensions, search `@agentPlugins canvas apps` and `@agentPlugins power automate`, and
-     install both (published by Microsoft). If nothing shows up, add `"chat.plugins.enabled": true` to your user
-     settings.
-6. Restart the agent, so it starts the two MCP servers.
-
-If your organisation blocks agent plugins, local MCP servers or `api.nuget.org`, the build cannot run. Step 01
-names the blocked piece, and the manual build sheets (`README.md`, `flows/README.md`, `data/README.md`) still work.
+That is all. You do not need the .NET SDK, `az login`, or any connection made ahead of time.
 
 ## 3. Start the build
 
@@ -71,29 +47,27 @@ In the repository folder, tell the agent:
 
 > Build FleetAgent. Use the build-fleetagent skill.
 
-The agent asks for three things: your SharePoint site's address, your Power Platform environment if you have more
-than one, and the Studio URL once you have made the blank app. It records what it has done in
-`build/out/state.json`, so if a session ends you can say the same sentence again and it continues where it
-stopped.
+The agent asks for your SharePoint site's address, the operators, and your Power Platform environment's name. It
+records what is done in `build/out/state.json`, so if a session ends you can say the same sentence again and it
+continues where it stopped.
 
-## 4. What only you can do
+## 4. What you do
 
 The agent stops, tells you exactly what to click, and waits for you each time:
 
 | When | You do | Time |
 | --- | --- | --- |
-| step 01 | sign in when `az login` and each MCP server open a browser window | 1 min |
-| step 01 | give the SharePoint site's address and every operator's UPN. The site must be a team or communication site where all of you are **Owners**; cloud connections cannot reach a personal site's "My lists" | 2 min |
-| steps 02, 03, 05 | approve each connection consent window the first time a connector is used: SharePoint, Office 365 Users, Power Apps Notification | 1 min |
+| step 01 | give the environment's name, the SharePoint site's address and every operator's UPN. The site must be a team or communication site where all of you are **Owners**; cloud connections cannot reach a personal site's "My lists" | 2 min |
+| step 02 | import `FleetProvisionLists.zip`, pick your SharePoint connection, run it once, and save its last action's output for the agent to check | 5 min |
+| steps 03, 05 | import `FleetDecide.zip` and each `FleetOutboxToLists (<UPN>).zip`, picking connections (SharePoint, Office 365 Users, Power Apps Notification), and turn each flow on | 5 min |
 | step 04 | create the blank app in Studio and change four settings (step 04 lists each click), then paste the Studio URL into the chat | 3 min |
 | step 05 | change each operator's copy of `FleetOutboxToLists` to be owned by that operator (step 05 lists each click), so each copy runs on its owner's daily request limit | 3 min |
-| step 06 | in Studio, add the five lists and the `FleetDecide` flow through **Data** > **Add data**. The canvas plugin itself says no tool can do this | 2 min |
-| step 07 | paste the theme (optional), **Publish**, **Share** the app with the other operators, and add them to `FleetDecide`'s run-only users | 5 min |
+| step 06 | add the five lists and the `FleetDecide` flow through **Data** > **Add data**, then paste the app in thirteen pastes (the agent puts each one on your clipboard) and copy any error Studio shows back to the agent | 20 min |
+| step 07 | paste the theme (optional), **Publish**, **Share** the app with the other operators, add them to `FleetDecide`'s run-only users, and save the app to your laptop once so the agent can mirror it | 5 min |
 | after the build, each operator | add a shortcut to their own bridge folder, point their laptop's bridge at it, and open the app once on the phone ([each-operator.md](each-operator.md)) | 5 min |
 
-Everything else is the agent's: the lists, their columns and indexes, the bridge library and folders, the
-Owners-only lock and its proof, the flows and their connections, every
-screen, component and formula of the app, the compile-and-fix loop, and the repository's tests.
+The agent's part: the config, every file you import or paste, reading back each run's report and each Studio error,
+every fix to the repository's sources and its tests, and the final check.
 
 ## Owners only
 
@@ -117,7 +91,19 @@ request's own `created`.
 
 ## When the agent stops
 
-Each step ends in **Done**, **Waiting for you** (one of the clicks above), or **Blocked**. Blocked means a tool
-refused twice in the same way; the agent names the step, the tool, the error and what it tried. Every step can
-be run again. The list flow, the connections, the flows and the app push all check what exists before they
-change anything.
+Each step ends in **Done**, **Waiting for you** (one of the clicks above), or **Blocked**. Blocked means the same
+import or paste failed twice in the same way; the agent names the step, the file, the error and what it tried. Every
+step can be run again: a package imported with **Update** replaces its flow, and the list flow changes nothing that
+is already right. If your organisation refuses **Import Package (Legacy)** itself, each step names the hand-built
+fallback (`flows/README.md`, `data/README.md`).
+
+## Not yet measured
+
+Only the tenant can prove these. Each reads *not yet measured* until someone has run it and recorded what they saw,
+as `AGENTS.md` rule 7 says:
+
+| Row | What | How to see it | Result |
+| --- | --- | --- | --- |
+| B1 | **Import Package (Legacy)** accepts the packages `prepare.py` writes (laid out as Power Automate exports one) | step 02: the import page lists the flow and asks for a SharePoint connection | not yet measured |
+| B2 | `FleetDecide`'s Office 365 Users connection arrives as **Provided by run-only user** | step 03: **Run only users** shows it so; if not, the step sets it by hand | not yet measured |
+| B3 | a `.msapp` saved from Studio carries the app as `Src/*.pa.yaml`, which `canvas-out` reads | step 07: `canvas-out` names every screen and component | not yet measured |

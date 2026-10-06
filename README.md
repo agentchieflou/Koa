@@ -70,9 +70,10 @@ the contract by `tests/test_contract.py`), and the lists themselves are created 
 ## The Studio build sheet
 
 **The quickest way is the Copilot build, [build/README.md](build/README.md).** A GitHub Copilot agent
-with Microsoft's canvas-apps and power-automate plugins creates the lists, both flows and the app from these
-sources, and stops only for the clicks no tool can make. The sheet below is the same work by hand, kept as the
-fallback for a tenant that blocks agent plugins.
+walks you through this same sheet: it writes the list flow and both flows as packages you import, puts
+each paste below on your clipboard in order, reads back the run reports and Studio's errors, and fixes
+the sources. It uses no MCP server and no agent plugin, which this organisation blocks; every click is
+yours, in the browser. The sheet below is the same work without the agent.
 
 Everything below is done once, by hand, in Power Apps Studio. Nothing in this folder is imported as
 a file: whole screens are pasted through Code view (GA since March 2025), the App object is typed
@@ -169,11 +170,10 @@ carry.
   (`pac canvas pack --sources <dir> --msapp FleetAgent.msapp --layout SourceCode`), which Studio then
   opens with File > Open > Browse. The `pack`/`unpack` commands are deprecated in favour of Git
   integration, and whether they accept a hand-authored tree that was never unpacked is unverified.
-- **The Canvas Authoring MCP server and the `canvas-apps` plugin** (`Microsoft.PowerApps.CanvasAuthoring.McpServer`,
-  `/plugin install canvas-apps@power-platform-skills`) compile local `.pa.yaml` files straight into a
-  live coauthoring session, including the App object. It needs .NET 10, coauthoring enabled on the
-  app, and still leaves data sources and display settings to Studio. **This is the path the Copilot
-  build takes** (`build/steps/06-app.md`), with the App object pushed instead of typed.
+- **The Canvas Authoring MCP server and Microsoft's `canvas-apps` and `power-automate` plugins** would
+  push the `.pa.yaml` files into a live coauthoring session and create the flows directly. This
+  organisation blocks MCP servers and agent plugins, so nothing here uses them: the Copilot build
+  pastes through code view and imports packages instead (`build/README.md`).
 
 ## Contrast
 

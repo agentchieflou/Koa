@@ -38,11 +38,15 @@ The product picked on the form gives the component (`jiraComponent` in the scann
 
 1. **The folders.** In the operator's OneDrive: `DataCzars/intake` and `DataCzars/results`. On the laptop they are
    `%OneDriveCommercial%\DataCzars\...`, the folder `intake.py` uses by default.
-2. **The results folder's id.** With the FlowAgent tools, or in any flow's folder picker, find the id of
-   `DataCzars/results` (the FleetAgent build's step 05 finds the outbox's the same way).
-3. **The flows.** `python site/provision.py flows --results-folder-id <id>` writes `site/out/CzarsIntakeOut.json`,
-   `CzarsIntakeBack.json` and `CzarsTagReports.json`. A Copilot agent creates and turns them on with the
-   `build-czars-site` skill; they use only the SharePoint and OneDrive for Business connectors (Standard).
+2. **The results folder's id.** In Power Automate, start a blank instant flow, add OneDrive for Business **List
+   files in folder**, pick `/DataCzars/results` in its folder picker, then open the action's code (**...** >
+   **Peek code** in the classic designer, **Code view** in the new one) and copy the folder's `id`. Discard the
+   flow; nothing else needs the id.
+3. **The flows.** `python site/provision.py flows --results-folder-id <id>` writes `site/out/CzarsIntakeOut.zip`,
+   `CzarsIntakeBack.zip` and `CzarsTagReports.zip` (each with a `.json` beside it to read). Import each through
+   **My flows** > **Import** > **Import Package (Legacy)**, pick your SharePoint and OneDrive for Business
+   connections, and turn it on; the `build-czars-site` skill walks you through it. They use only those two
+   connectors (Standard).
 4. **A first ticket.** Submit a test issue on Get help; within a minute `intake-<id>.json` appears in the folder.
    `python site/intake/intake.py file <id> --dry-run` shows what would be filed; without `--dry-run` it asks for the
    approval and files it. Within five minutes the row shows the key.

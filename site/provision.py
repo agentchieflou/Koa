@@ -4,12 +4,13 @@
     python site/provision.py context                 merge site/local/context/*.json into site/local/context.json
     python site/provision.py check                   the spec (and the context, when there is one) is sound
     python site/provision.py scripts                 site/out/scripts/NN-<List>.json: one site script per list
-    python site/provision.py flow                    site/out/CzarsProvisionSite.json: a one-shot flow for FlowAgent
+    python site/provision.py flow                    site/out/CzarsProvisionSite.zip: a one-shot flow to import and run
+    python site/provision.py check-run <file>        that flow's Report, saved from its run: every script and row landed
     python site/provision.py console                 site/out/provision.console.js: the same, pasted in the browser
     python site/provision.py pages                   site/out/pages/*.md and site/out/agents/*: prompts with the facts in
     python site/provision.py flows --results-folder-id <id>
-                                                     site/out/CzarsIntakeOut.json, CzarsIntakeBack.json (Intake <-> Jira)
-                                                     and CzarsTagReports.json (usage reports tagged by their folder)
+                                                     site/out/CzarsIntakeOut.zip, CzarsIntakeBack.zip (Intake <-> Jira)
+                                                     and CzarsTagReports.zip (usage reports tagged by their folder)
     python site/provision.py docs                    rewrite site/LISTS.md from the spec
 
 Two inputs, kept apart on purpose because Koa is public:
@@ -27,13 +28,16 @@ with only the caller's rights on the site (not yet measured on this tenant: site
 again updates what it made, every column carries a fixed id, and a row is added only where no row with the same
 Title exists, so the whole provisioning is safe to repeat. Nothing is ever deleted.
 
-The flow file has the shape `build/prepare.py` writes for the FleetAgent build: `{name, definition, connectors,
-connectionRefsTemplate}`, what the FlowAgent MCP tool `create_flow` takes.
+Every flow is written as `build/prepare.py` writes the FleetAgent build's: `<name>.zip` for Power Automate's **My
+flows** > **Import** > **Import Package (Legacy)**, and `<name>.json` (`{name, definition, connectors,
+connectionRefsTemplate}`) to read. No MCP server or agent plugin is involved; the operator imports and runs each flow
+in the browser.
 """
 from __future__ import annotations
 import argparse
 import copy
 import glob
+import importlib.util
 import json
 import os
 import re
@@ -633,7 +637,7 @@ def _sp(method: str, uri: str, site: str, body: str | None = None, run_after: di
 
 def _package(name: str, definition: dict, modes: dict) -> dict:
     return {"name": name, "definition": definition, "connectors": modes,
-            "connectionRefsTemplate": {key: {"connectionName": "<pick_or_create_connection>", "source": mode,
+            "connectionRefsTemplate": {key: {"connectionName": "<picked when the package is imported>", "source": mode,
                                              "id": f"/providers/Microsoft.PowerApps/apis/{key}", "tier": "NotSpecified"}
                                        for key, mode in modes.items()}}
 
@@ -681,6 +685,12 @@ def provisioning_flow(site: str, lists: list[dict], ctx: dict) -> dict:
                          "runAfter": {"Select_titles": ["Succeeded"]},
                          "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": row_actions},
     }
+    seed_actions["Get_titles_after"] = _sp("GET", f"_api/web/lists/getbytitle('{each_list}')/items?$select=Title&$top=5000",
+                                           site, run_after={"For_each_row": ["Succeeded"]})
+    seed_actions["Add_rows_to_report"] = {"type": "AppendToArrayVariable", "runAfter": {"Get_titles_after": ["Succeeded"]},
+                                          "inputs": {"name": "Rows", "value": {
+                                              "list": "@items('For_each_seed_list')?['list']",
+                                              "rows": "@length(body('Get_titles_after')?['value'])"}}}
     script_items, seed_items = _payloads(lists, ctx)
     definition = {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
@@ -691,16 +701,70 @@ def provisioning_flow(site: str, lists: list[dict], ctx: dict) -> dict:
                                 "inputs": {"schema": {"type": "object", "properties": {}, "required": []}}}},
         "actions": {
             "Scripts": {"type": "Compose", "runAfter": {}, "inputs": script_items},
-            "For_each_script": {"type": "Foreach", "foreach": "@outputs('Scripts')", "runAfter": {"Scripts": ["Succeeded"]},
+            "Initialize_outcomes": {"type": "InitializeVariable", "runAfter": {"Scripts": ["Succeeded"]},
+                                    "inputs": {"variables": [{"name": "Outcomes", "type": "array", "value": []}]}},
+            "Initialize_rows": {"type": "InitializeVariable", "runAfter": {"Initialize_outcomes": ["Succeeded"]},
+                                "inputs": {"variables": [{"name": "Rows", "type": "array", "value": []}]}},
+            "For_each_script": {"type": "Foreach", "foreach": "@outputs('Scripts')", "runAfter": {"Initialize_rows": ["Succeeded"]},
                                 "runtimeConfiguration": {"concurrency": {"repetitions": 1}},
-                                "actions": {"Apply_script": _sp("POST", EXECUTE, site, body="@{items('For_each_script')?['body']}")}},
+                                "actions": {
+                                    "Apply_script": _sp("POST", EXECUTE, site, body="@{items('For_each_script')?['body']}"),
+                                    "Add_outcome_to_report": {
+                                        "type": "AppendToArrayVariable", "runAfter": {"Apply_script": ["Succeeded"]},
+                                        "inputs": {"name": "Outcomes", "value": {
+                                            "list": "@items('For_each_script')?['list']",
+                                            "actions": "@body('Apply_script')?['value']"}}}}},
             "Seed": {"type": "Compose", "runAfter": {"For_each_script": ["Succeeded"]}, "inputs": seed_items},
             "For_each_seed_list": {"type": "Foreach", "foreach": "@outputs('Seed')", "runAfter": {"Seed": ["Succeeded"]},
                                    "runtimeConfiguration": {"concurrency": {"repetitions": 1}}, "actions": seed_actions},
+            "Report": {"type": "Compose", "runAfter": {"For_each_seed_list": ["Succeeded"]},
+                       "inputs": {"scripts": "@variables('Outcomes')", "rows": "@variables('Rows')"}},
         },
-        "description": "Data Czars site: applies one site script per list, then adds the missing starter rows; safe to run again.",
+        "description": "Data Czars site: applies one site script per list, then adds the missing starter rows; safe to run "
+                       "again. Its last action, Report, is what site/provision.py check-run reads.",
     }
     return _package("CzarsProvisionSite", definition, {"shared_sharepointonline": "Embedded"})
+
+
+#: ExecuteTemplateScript's outcome for an action that did not apply, as a number or as its name.
+FAILED_OUTCOMES = {1, 3, "Failure", "Exception"}
+
+
+def check_run(report: dict, lists: list[dict], ctx: dict) -> list[str]:
+    """Every problem the provisioning flow's Report shows: a list whose script did not run, a script action that did
+    not apply (quoted as SharePoint said it), or a list with fewer rows than its starter rows."""
+    problems = []
+    outcomes = {e.get("list"): e.get("actions") or [] for e in report.get("scripts") or [] if isinstance(e, dict)}
+    for name, _ in scripts(lists, ctx):
+        if name not in outcomes:
+            problems.append(f"{name}: its script did not run")
+            continue
+        for action in outcomes[name]:
+            if action.get("ErrorCode") not in (0, None) or action.get("Outcome") in FAILED_OUTCOMES:
+                problems.append(f"{name}: {action.get('Title') or 'an action'} failed: "
+                                f"{action.get('ErrorMessage') or action.get('OutcomeText') or action.get('ErrorCode')}")
+    rows = {e.get("list"): e.get("rows") for e in report.get("rows") or [] if isinstance(e, dict)}
+    for entry in seed(lists, ctx):
+        got = rows.get(entry["list"])
+        if not isinstance(got, int) or got < len(entry["rows"]):
+            problems.append(f"{entry['list']}: {got if isinstance(got, int) else 'no'} rows; it starts with {len(entry['rows'])}")
+    return problems
+
+
+def read_report(path: str) -> dict:
+    """The Report action's output as saved from the run: the value itself, or `{"body": ...}` around it."""
+    if not os.path.exists(path):
+        raise Refused(f"{_show(path)} does not exist: save the Report action's output there (site/README.md, step 2)")
+    with open(path, encoding="utf-8-sig") as f:
+        try:
+            report = json.load(f)
+        except json.JSONDecodeError as e:
+            raise Refused(f"{_show(path)} is not JSON ({e}): copy the Report output whole, braces included")
+    if isinstance(report, dict) and set(report) == {"body"}:
+        report = report["body"]
+    if not isinstance(report, dict) or "scripts" not in report:
+        raise Refused(f"{_show(path)} is not the provisioning flow's Report: it has no scripts")
+    return report
 
 
 # ------------------------------------------------------------------------------------ Intake <-> Jira
@@ -933,6 +997,14 @@ def docs(lists: list[dict]) -> str:
 # ------------------------------------------------------------------------------------ files
 
 
+def _flow_files(package: dict) -> list[str]:
+    """`<name>.zip` to import and `<name>.json` to read, written by build/prepare.py's own writer."""
+    spec = importlib.util.spec_from_file_location("prepare", os.path.join(ROOT, "build", "prepare.py"))
+    build = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(build)
+    return [_show(p) for p in build.write_out(package, OUT)]
+
+
 def _write(path: str, text: str) -> str:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
@@ -964,6 +1036,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="provision.py", description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("context")
+    sub.add_parser("check-run").add_argument("report")
     for name in ("check", "scripts", "flow", "console", "pages"):
         p = sub.add_parser(name)
         p.add_argument("--context", help="a context file other than site/local/context.json")
@@ -1005,15 +1078,20 @@ def main(argv=None) -> int:
             ctx = load_context(args.context)
             site = args.site or ctx.get("site", {}).get("url", "")
             if args.cmd == "flow":
-                package = provisioning_flow(site, lists, ctx)
-                print(_show(_write(os.path.join(OUT, f"{package['name']}.json"), json.dumps(package, indent=2, ensure_ascii=False) + "\n")))
+                print("\n".join(_flow_files(provisioning_flow(site, lists, ctx))))
             else:
                 print(_show(_write(os.path.join(OUT, "provision.console.js"), console_script(site, lists, ctx))))
         elif args.cmd == "flows":
             ctx = load_context(args.context)
             site = ctx.get("site", {}).get("url", "")
             for package in (intake_out_flow(site, args.folder), intake_back_flow(site, args.results_folder_id), tag_reports_flow(site)):
-                print(_show(_write(os.path.join(OUT, f"{package['name']}.json"), json.dumps(package, indent=2, ensure_ascii=False) + "\n")))
+                print("\n".join(_flow_files(package)))
+        elif args.cmd == "check-run":
+            ctx = load_context()
+            problems = check_run(read_report(args.report), lists, ctx)
+            print("\n".join(problems) if problems else
+                  f"lists: ready ({len(lists)} scripts applied, every starter row in place)")
+            return 1 if problems else 0
         elif args.cmd == "pages":
             ctx = load_context(args.context)
             for rel, text in rendered_files(ctx).items():

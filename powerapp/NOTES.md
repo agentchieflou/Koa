@@ -90,11 +90,11 @@ Nothing here changes the contract with the flows or the laptop bridge.
     it, and the two formulas that show it read `Text(... .Created)`, which is the same text for the
     Excel fallback's ISO string and a readable local time for SharePoint's date. Sorting by
     `"Created"` is unchanged and delegates on both.
-28. **The Copilot build pushes these files through the Canvas Authoring MCP server**
-    (`build/steps/06-app.md`): screens flat at the working directory's root and components under
-    `Components/`, as the server lays an app out; `build/prepare.py canvas-in` and `canvas-out`
-    convert between that layout and this folder's. Every fix Studio's compiler asks for is made
-    here first and recorded below this item, with the diagnostic it cleared.
+28. **The Copilot build pastes these files through code view** (`build/steps/06-app.md`), with no
+    MCP server: `build/prepare.py paste` puts each component, each screen and each App property on
+    the clipboard in order, and `canvas-out` copies the app back from the `.msapp` Studio saves
+    (its `Src` folder) into this folder's layout. Every fix Studio's App checker asks for is made
+    here first and recorded below this item, with the message it cleared.
 29. **Several operators share the lists; `Me` is the signed-in operator.** `Me = Lower(User().Email)`
     (Learn: `User().Email` returns the UPN, not the SMTP address), lowercase because every flow writes
     `Operator` lowercase. It is `Me`, not `Operator`, because inside `Filter` and `LookUp` on these
