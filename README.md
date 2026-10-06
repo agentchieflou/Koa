@@ -9,8 +9,10 @@ Imported from this-next-please@913d157765ef8a7944d21a8167b15771edfd133f (`mobile
 (`ad-fleet mobile ...`), stays in this-next-please; the two meet only at the contract pinned in
 `contract/`. Nothing here imports the laptop's Python package.
 
-Koa also holds the **Data Czars SharePoint site** (`site/`): its design, its lists and their formatting, a sheet
-per page with the Copilot prompt that builds it, the site's Copilot skill and its agent. Start at
+Koa also holds the **Data Czars SharePoint site** (`site/`), the home of data-czars and the tooling it supports in
+the PAE: its design, its lists and their formatting, a sheet per page with the Copilot prompt that builds it, the
+intake to Jira, the usage reports' landing, the site's Copilot skill and its three agents, and the prompts that scan
+data-czars, usage_tool and the fleet for the facts the pages need (they stay on your machine). Start at
 [site/README.md](site/README.md).
 
 To run the first round trip (a prompt typed on the phone reaching an agent on the laptop), follow
@@ -31,7 +33,8 @@ the laptop's own word, and the only rule of its own is "three missed heartbeats 
 README.md                    this build sheet
 build/                       the Copilot build: README (the operator's part), steps/01-07 (the agent's), prepare.py
 .github/skills/              build-fleetagent (runs build/) and build-czars-site (site/'s lists), skills a Copilot agent loads
-site/                        the Data Czars SharePoint site: design, lists, page sheets, skill, agent (site/README.md)
+.github/prompts/             czars-scan-*: read data-czars, usage_tool and the fleet into site/local/ (never committed)
+site/                        the Data Czars SharePoint site: design, lists, page sheets, intake, skill, agents (site/README.md)
 TESTING.md                   the first round trips: a reply (a prompt) and an approval, phone to laptop
 AGENTS.md                    for coding agents working in this repository
 contract/

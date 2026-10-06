@@ -19,7 +19,7 @@ on it, live in [agentchieflou/this-next-please](https://github.com/agentchieflou
    `python -m pytest -q` before every push; CI runs the same on Ubuntu and Windows (`core.autocrlf=true`).
 7. **What only Studio, the tenant or a phone can prove reads *not yet measured*** until someone ran it, and the
    run is recorded in this-next-please's `docs/windows-verification.md` §Mobile ([TESTING.md](TESTING.md)), or §Site
-   for the site's rows S1 to S10 (`site/README.md`).
+   for the site's rows S1 to S13 (`site/README.md`).
 8. **The site is built from `site/`, never the other way round.** Change `site/lists.json`, a page sheet or
    `site/site.json` first, run `python site/provision.py docs` when the lists change, then apply it to the site. Pages
    use stock web parts only; nothing on the site needs a tenant admin.

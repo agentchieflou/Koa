@@ -1,0 +1,156 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/tile-formatting.schema.json",
+  "height": 262,
+  "width": 290,
+  "hideSelection": true,
+  "formatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-bgColor-white ms-borderColor-neutralLight"
+    },
+    "style": {
+      "box-sizing": "border-box",
+      "margin": "6px",
+      "border-width": "1px",
+      "border-style": "solid",
+      "border-radius": "6px",
+      "overflow": "hidden",
+      "display": "flex",
+      "flex-direction": "column",
+      "width": "278px",
+      "height": "250px",
+      "padding": "16px"
+    },
+    "children": [
+      {
+        "elmType": "div",
+        "style": {
+          "display": "flex",
+          "justify-content": "space-between",
+          "align-items": "center"
+        },
+        "children": [
+          {
+            "elmType": "span",
+            "txtContent": "[$Category]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "12px",
+              "text-transform": "uppercase",
+              "letter-spacing": "0.4px"
+            }
+          },
+          {
+            "elmType": "span",
+            "txtContent": "[$SupportLevel]",
+            "attributes": {
+              "class": "=if([$SupportLevel] == 'Supported', 'ms-bgColor-themeLighter ms-fontColor-themeDarker', if([$SupportLevel] == 'Preview', 'sp-field-severity--warning', if([$SupportLevel] == 'Deprecated', 'sp-field-severity--severeWarning', 'ms-bgColor-neutralLighter ms-fontColor-neutralPrimary')))"
+            },
+            "style": {
+              "padding": "2px 8px",
+              "border-radius": "3px",
+              "font-size": "12px",
+              "font-weight": "600"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$Title]",
+        "attributes": {
+          "class": "ms-fontColor-neutralPrimary"
+        },
+        "style": {
+          "font-size": "17px",
+          "font-weight": "600",
+          "margin-top": "8px",
+          "cursor": "pointer"
+        },
+        "customRowAction": {
+          "action": "defaultClick"
+        }
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$Summary]",
+        "attributes": {
+          "class": "ms-fontColor-neutralSecondary"
+        },
+        "style": {
+          "font-size": "14px",
+          "line-height": "1.5",
+          "margin-top": "6px",
+          "flex-grow": "1",
+          "overflow": "hidden"
+        }
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$HowToStart]",
+        "attributes": {
+          "class": "ms-bgColor-neutralLighter ms-fontColor-neutralPrimary"
+        },
+        "style": {
+          "font-size": "13px",
+          "padding": "6px 8px",
+          "border-radius": "4px",
+          "margin-top": "8px",
+          "display": "=if([$HowToStart] == '', 'none', 'block')"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "display": "flex",
+          "align-items": "center",
+          "margin-top": "10px",
+          "font-size": "13px"
+        },
+        "children": [
+          {
+            "elmType": "a",
+            "txtContent": "Docs",
+            "attributes": {
+              "href": "[$DocsLink]",
+              "target": "_blank",
+              "class": "ms-fontColor-themeDark"
+            },
+            "style": {
+              "margin-right": "14px",
+              "display": "=if([$DocsLink] == '', 'none', 'inline')"
+            }
+          },
+          {
+            "elmType": "a",
+            "txtContent": "Repository",
+            "attributes": {
+              "href": "[$RepoLink]",
+              "target": "_blank",
+              "class": "ms-fontColor-themeDark"
+            },
+            "style": {
+              "margin-right": "14px",
+              "display": "=if([$RepoLink] == '', 'none', 'inline')"
+            }
+          },
+          {
+            "elmType": "a",
+            "txtContent": "Report an issue",
+            "attributes": {
+              "href": "=@currentWeb + '/Lists/Intake/NewForm.aspx'",
+              "target": "_blank",
+              "class": "ms-fontColor-themeDark"
+            },
+            "style": {
+              "margin-left": "auto",
+              "font-weight": "600"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

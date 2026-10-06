@@ -26,7 +26,7 @@
         "children": [
           {
             "elmType": "div",
-            "txtContent": "[$Headline]",
+            "txtContent": "[$Title]",
             "attributes": {
               "class": "ms-fontColor-neutralPrimary"
             },
@@ -42,7 +42,7 @@
           },
           {
             "elmType": "div",
-            "txtContent": "=[$Title] + ' · ' + [$Kind]",
+            "txtContent": "=[$IntakeType] + if([$Product.lookupValue] == '', '', ' · ' + [$Product.lookupValue])",
             "attributes": {
               "class": "ms-fontColor-neutralSecondary"
             },
@@ -52,6 +52,38 @@
             }
           }
         ]
+      },
+      {
+        "elmType": "a",
+        "txtContent": "[$JiraKey]",
+        "attributes": {
+          "href": "[$JiraLink]",
+          "target": "_blank",
+          "class": "ms-fontColor-themeDark"
+        },
+        "style": {
+          "font-family": "Consolas, 'Cascadia Code', monospace",
+          "font-size": "13px",
+          "font-weight": "600",
+          "margin-left": "12px",
+          "flex-shrink": "0",
+          "display": "=if([$JiraKey] == '', 'none', 'inline')"
+        }
+      },
+      {
+        "elmType": "span",
+        "txtContent": "[$Status]",
+        "attributes": {
+          "class": "=if([$Status] == 'New', 'sp-field-severity--low', if([$Status] == 'Sent to Jira', 'sp-field-severity--low', if([$Status] == 'In progress', 'sp-field-severity--low', if([$Status] == 'Waiting on you', 'sp-field-severity--warning', if([$Status] == 'Done', 'sp-field-severity--good', if([$Status] == 'Declined', 'sp-field-severity--severeWarning', ''))))))"
+        },
+        "style": {
+          "padding": "2px 8px",
+          "border-radius": "3px",
+          "font-size": "12px",
+          "font-weight": "600",
+          "margin-left": "12px",
+          "flex-shrink": "0"
+        }
       }
     ]
   }

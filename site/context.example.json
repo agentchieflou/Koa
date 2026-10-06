@@ -1,0 +1,62 @@
+{
+  "site": {
+    "url": "https://contoso.sharepoint.com/sites/OSP-Data-Czars"
+  },
+  "team": {
+    "name": "Data Czars",
+    "mission": "We build and support the tooling that keeps the Contoso Analytics Environment fast, safe and easy to use.",
+    "pae": "The Contoso Analytics Environment: the shared workspaces, data and reports the analytics teams build on.",
+    "audience": "Analysts, report builders and data engineers who work in the analytics environment.",
+    "triageDays": "3",
+    "officeHours": "Thursdays, 2:00 to 3:00 PM, in the team's Teams channel"
+  },
+  "jira": {
+    "flavour": "Data Center",
+    "url": "https://jira.contoso.com",
+    "project": "DCZ",
+    "boardUrl": "https://jira.contoso.com/secure/RapidBoard.jspa?rapidView=101",
+    "issueTypes": {"issue": "Bug", "request": "Task", "question": "Task", "access": "Task"},
+    "components": ["Refresh Monitor", "Workspace Inventory", "Usage Tool"],
+    "labels": ["sharepoint-intake"]
+  },
+  "products": [
+    {"name": "Refresh Monitor", "summary": "Watches every scheduled refresh in the environment and says which ones failed and why.", "category": "Monitoring", "supportLevel": "Supported", "status": "Operational", "version": "2.4.0", "howToStart": "Open the Refresh Monitor report from the Links page.", "docs": {"url": "https://confluence.contoso.com/display/DCZ/Refresh+Monitor", "desc": "Confluence"}, "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"}, "jiraComponent": "Refresh Monitor", "featured": true, "source": "data-czars/README.md"},
+    {"name": "Workspace Inventory", "summary": "Lists every workspace, its owners and what it holds, so nothing in the environment is orphaned.", "category": "Governance", "supportLevel": "Supported", "status": "Operational", "version": "1.9.2", "howToStart": "Run inventory --workspace <name>.", "docs": {"url": "https://confluence.contoso.com/display/DCZ/Workspace+Inventory", "desc": "Confluence"}, "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"}, "jiraComponent": "Workspace Inventory", "featured": true, "source": "data-czars/docs/inventory.md"}
+  ],
+  "usageTool": {
+    "name": "Usage Tool",
+    "summary": "Counts who uses which reports and workspaces, and publishes the monthly usage reports.",
+    "howItWorks": ["Reads the environment's activity log once a day.", "Rolls the activity up by report, workspace and team.", "Writes one workbook per report type at the start of each month."],
+    "reportTypes": [
+      {"name": "Report usage", "description": "Views and viewers per report.", "period": "Monthly", "format": "xlsx"},
+      {"name": "Workspace activity", "description": "Active users and refreshes per workspace.", "period": "Monthly", "format": "xlsx"}
+    ],
+    "schedule": "On the first working day of each month.",
+    "fileNaming": "usage_<report type>_<yyyy-mm>.xlsx",
+    "outputLocation": "A folder on the operator's laptop today.",
+    "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/usage_tool", "desc": "usage_tool"},
+    "source": "usage_tool/README.md"
+  },
+  "fleet": {
+    "summary": "Several agents, one per repository, watched and answered from one window; data-czars and usage_tool are two of them.",
+    "repos": ["data-czars", "usage_tool", "Koa"],
+    "source": "ad-fleet status"
+  },
+  "links": [
+    {"title": "Data Czars Jira board", "url": "https://jira.contoso.com/secure/RapidBoard.jspa?rapidView=101", "category": "Jira", "description": "Every ticket the team is working on.", "shownTo": "Everyone"},
+    {"title": "Data Czars Confluence space", "url": "https://confluence.contoso.com/display/DCZ", "category": "Confluence", "description": "Designs, runbooks and how-tos.", "shownTo": "Everyone"},
+    {"title": "data-czars repository", "url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "category": "Bitbucket", "description": "The supported tooling's source.", "shownTo": "Members"},
+    {"title": "usage_tool repository", "url": "https://bitbucket.contoso.com/projects/DCZ/repos/usage_tool", "category": "Bitbucket", "description": "The usage reports' source.", "shownTo": "Members"}
+  ],
+  "contacts": [
+    {"name": "Avery Example", "email": "avery.example@contoso.com", "role": "Team lead", "topics": "Priorities, access, escalations", "preferredMethod": "Teams chat", "workingHours": "9 to 5 ET", "shownTo": "Everyone"},
+    {"name": "Jordan Sample", "email": "jordan.sample@contoso.com", "role": "Usage reports", "topics": "Usage reports, the usage tool", "preferredMethod": "Email", "workingHours": "8 to 4 ET", "shownTo": "Everyone"}
+  ],
+  "releases": [
+    {"product": "Refresh Monitor", "version": "2.4.0", "headline": "Failed refreshes now name the data source that failed", "kind": "Feature", "notes": "", "date": "2026-09-30"}
+  ],
+  "faq": [
+    {"question": "Where do I report a broken refresh?", "answer": "Get help > Report an issue, product Refresh Monitor. It becomes a Jira ticket on our board.", "topic": "Getting help", "shownTo": "Everyone"}
+  ],
+  "gaps": []
+}

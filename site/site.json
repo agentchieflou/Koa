@@ -3,7 +3,7 @@
     "title": "Data Czars",
     "path": "/sites/OSP-Data-Czars",
     "kind": "Team site connected to a Microsoft 365 group",
-    "description": "Everything Data Czars: the tools and platforms we build for the bank's data work, how to start with them, how to work with us, and who we are."
+    "description": "Data Czars: the tooling we support in the PAE, how to get help with it, the usage reports, and the team."
   },
   "look": {
     "theme": "Teal",
@@ -13,84 +13,61 @@
   },
   "navigation": [
     {"label": "Home", "page": "home"},
-    {"label": "Platform", "page": "platform", "groups": [
-      {"heading": "Tools", "links": [
-        {"label": "Tool catalog", "page": "platform", "anchor": "tool-catalog"},
-        {"label": "Getting started", "page": "platform", "anchor": "get-started-in-four-commands"},
-        {"label": "Status", "page": "platform", "anchor": "status"},
-        {"label": "What's new", "page": "platform", "anchor": "releases"}
-      ]},
-      {"heading": "Agent platform", "links": [
-        {"label": "The fleet", "page": "fleet"},
-        {"label": "FleetAgent on your phone", "page": "fleet", "anchor": "the-fleet-on-your-phone"},
-        {"label": "Skills library", "page": "platform", "anchor": "skills-library"},
-        {"label": "The world (lab)", "page": "fleet", "anchor": "four-ways-to-see-it"}
-      ]},
-      {"heading": "Data and BI", "links": [
-        {"label": "Power BI toolkit", "page": "platform", "anchor": "tool-catalog"},
-        {"label": "Data connectors", "page": "platform", "anchor": "tool-catalog"},
-        {"label": "UAT reconciliation", "page": "platform", "anchor": "tool-catalog"},
-        {"label": "Document AI", "page": "platform", "anchor": "tool-catalog"}
+    {"label": "Products", "page": "products", "groups": [
+      {"heading": "Products", "links": [
+        {"label": "Product catalog", "page": "products", "anchor": "product-catalog"},
+        {"label": "Status", "page": "products", "anchor": "status"},
+        {"label": "What's new", "page": "products", "anchor": "releases"}
       ]}
     ]},
-    {"label": "Work with us", "page": "work-with-us", "groups": [
-      {"heading": "Engage", "links": [
-        {"label": "Services", "page": "work-with-us", "anchor": "how-we-engage"},
-        {"label": "Request work", "page": "work-with-us", "anchor": "request-work"},
-        {"label": "My requests", "page": "work-with-us", "anchor": "my-requests"}
-      ]},
-      {"heading": "Plan", "links": [
-        {"label": "Roadmap", "page": "work-with-us", "anchor": "roadmap"},
-        {"label": "Office hours", "page": "work-with-us", "anchor": "office-hours"},
-        {"label": "FAQ", "page": "work-with-us", "anchor": "questions-people-ask"}
+    {"label": "Usage reports", "page": "usage-reports", "groups": [
+      {"heading": "Reports", "links": [
+        {"label": "Latest reports", "page": "usage-reports", "anchor": "latest-reports"},
+        {"label": "All reports", "page": "usage-reports", "anchor": "all-reports"},
+        {"label": "About the usage tool", "page": "usage-reports", "anchor": "about-the-usage-tool"}
       ]}
     ]},
-    {"label": "Learn", "page": "learn", "groups": [
-      {"heading": "Paths", "links": [
-        {"label": "101: your first week", "page": "learn", "anchor": "learning-paths"},
-        {"label": "201: running a fleet", "page": "learn", "anchor": "learning-paths"},
-        {"label": "301: building skills", "page": "learn", "anchor": "learning-paths"}
+    {"label": "Get help", "page": "get-help", "groups": [
+      {"heading": "Get help", "links": [
+        {"label": "Report an issue", "page": "get-help", "anchor": "report-an-issue"},
+        {"label": "Request something", "page": "get-help", "anchor": "request-something"},
+        {"label": "My tickets", "page": "get-help", "anchor": "my-tickets"},
+        {"label": "FAQ", "page": "get-help", "anchor": "questions-people-ask"}
       ]},
-      {"heading": "Library", "links": [
-        {"label": "Guides and runbooks", "page": "learn", "anchor": "guides-and-runbooks"},
-        {"label": "Standards", "page": "learn", "anchor": "standards"},
-        {"label": "Demos and recordings", "page": "learn", "anchor": "demos-and-recordings"},
-        {"label": "Glossary", "page": "learn", "anchor": "glossary"}
+      {"heading": "For the team", "members": true, "links": [
+        {"label": "Triage", "page": "get-help", "anchor": "for-the-team", "members": true},
+        {"label": "Jira board", "url": "the jira.boardUrl fact", "members": true}
       ]}
     ]},
-    {"label": "Team", "page": "team", "groups": [
-      {"heading": "About", "links": [
-        {"label": "Mission and principles", "page": "team", "anchor": "how-we-work"},
-        {"label": "People", "page": "team", "anchor": "people"},
-        {"label": "Who to ask", "page": "team", "anchor": "who-to-ask"}
-      ]},
-      {"heading": "Members", "members": true, "links": [
-        {"label": "Onboarding", "page": "onboarding", "members": true},
-        {"label": "Decisions", "page": "team", "anchor": "decisions", "members": true},
-        {"label": "Team calendar", "url": "the group calendar", "members": true},
-        {"label": "Notebook", "url": "the site notebook", "members": true}
+    {"label": "Links", "page": "links"},
+    {"label": "Contact", "page": "contact"},
+    {"label": "The fleet", "page": "fleet"},
+    {"label": "Copilot", "page": "copilot", "groups": [
+      {"heading": "Copilot", "links": [
+        {"label": "Ask the Czars", "page": "copilot", "anchor": "ask-the-czars"},
+        {"label": "Prompts that work", "page": "copilot", "anchor": "prompts-that-work"},
+        {"label": "In Teams", "page": "copilot", "anchor": "in-teams"}
       ]}
-    ]},
-    {"label": "Impact", "page": "impact"}
+    ]}
   ],
   "pages": [
     {"id": "home", "file": "pages/home.md", "title": "Home", "url": "SitePages/Home.aspx",
-     "uses": ["Tools/Status", "Tools/Featured", "Releases/Latest", "Metrics/Tiles", "Roadmap/Now"]},
-    {"id": "platform", "file": "pages/platform.md", "title": "Platform", "url": "SitePages/Platform.aspx",
-     "uses": ["Tools/Catalog", "Tools/Status", "Releases/All Items"]},
+     "uses": ["Products/Status", "Products/Featured", "UsageReports/Latest", "Releases/Latest"]},
+    {"id": "products", "file": "pages/products.md", "title": "Products", "url": "SitePages/Products.aspx",
+     "uses": ["Products/Catalog", "Products/Status", "Releases/All Items"]},
+    {"id": "usage-reports", "file": "pages/usage-reports.md", "title": "Usage reports", "url": "SitePages/Usage-reports.aspx",
+     "uses": ["UsageReports/Latest", "UsageReports/By report"]},
+    {"id": "get-help", "file": "pages/get-help.md", "title": "Get help", "url": "SitePages/Get-help.aspx",
+     "uses": ["Intake/Mine", "FAQ/Everyone"]},
+    {"id": "links", "file": "pages/links.md", "title": "Links", "url": "SitePages/Links.aspx",
+     "uses": ["Links/By category"]},
+    {"id": "contact", "file": "pages/contact.md", "title": "Contact", "url": "SitePages/Contact.aspx",
+     "uses": ["Contacts/Cards"]},
     {"id": "fleet", "file": "pages/fleet.md", "title": "The fleet", "url": "SitePages/The-fleet.aspx",
      "uses": []},
-    {"id": "work-with-us", "file": "pages/work-with-us.md", "title": "Work with us", "url": "SitePages/Work-with-us.aspx",
-     "uses": ["Requests/Mine", "Roadmap/Now", "Roadmap/Next", "Roadmap/Later", "FAQ/Partners"]},
-    {"id": "learn", "file": "pages/learn.md", "title": "Learn", "url": "SitePages/Learn.aspx",
-     "uses": ["LearningPaths/101", "LearningPaths/201", "LearningPaths/301", "Guides/Guides", "Guides/Recordings", "Glossary/A to Z"]},
-    {"id": "team", "file": "pages/team.md", "title": "Team", "url": "SitePages/Team.aspx",
-     "uses": ["WhoToAsk/All Items", "Decisions/Log"]},
-    {"id": "impact", "file": "pages/impact.md", "title": "Impact", "url": "SitePages/Impact.aspx",
-     "uses": ["Metrics/Tiles", "Metrics/Method"]},
-    {"id": "onboarding", "file": "pages/onboarding.md", "title": "Onboarding", "url": "SitePages/Onboarding.aspx",
-     "uses": ["Onboarding/All Items", "LearningPaths/101", "FAQ/Members"]}
+    {"id": "copilot", "file": "pages/copilot.md", "title": "Copilot", "url": "SitePages/Copilot.aspx",
+     "uses": ["Prompts/Library"]}
   ],
-  "agent": "agent/ask-the-czars.md",
+  "agents": "agents/README.md",
   "skill": "skills/data-czars-pages/SKILL.md"
 }

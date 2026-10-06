@@ -31,7 +31,7 @@
               "class": "ms-fontColor-neutralPrimary"
             },
             "style": {
-              "font-size": "15px",
+              "font-size": "14px",
               "font-weight": "600",
               "line-height": "1.4"
             }
@@ -44,8 +44,8 @@
             },
             "style": {
               "font-size": "14px",
-              "line-height": "1.55",
               "margin-top": "4px",
+              "line-height": "1.55",
               "white-space": "pre-wrap"
             }
           }

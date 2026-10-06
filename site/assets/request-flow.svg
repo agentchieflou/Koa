@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="360" viewBox="0 0 1600 360" role="img">
-  <title>How a request moves: submit, triage, plan, build, ship and measure</title>
+  <title>What happens next: submit, Jira ticket, triage, work, done</title>
   <rect width="1600" height="360" fill="#E6F2F2"/>
   <rect x="40" y="60" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#4FA0A3" stroke-width="3"/>
   <circle cx="96" cy="128" r="32" fill="#03787C"/>
@@ -9,21 +9,20 @@
   <rect x="352" y="60" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#4FA0A3" stroke-width="3"/>
   <circle cx="408" cy="128" r="32" fill="#03787C"/>
   <text x="408" y="140" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">2</text>
-  <text x="380" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Triage</text>
+  <text x="380" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Jira ticket</text>
   <path d="M636 180 h24 m-10 -10 l10 10 -10 10" stroke="#03787C" stroke-width="4" fill="none"/>
   <rect x="664" y="60" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#4FA0A3" stroke-width="3"/>
   <circle cx="720" cy="128" r="32" fill="#03787C"/>
   <text x="720" y="140" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">3</text>
-  <text x="692" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Plan</text>
+  <text x="692" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Triage</text>
   <path d="M948 180 h24 m-10 -10 l10 10 -10 10" stroke="#03787C" stroke-width="4" fill="none"/>
   <rect x="976" y="60" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#4FA0A3" stroke-width="3"/>
   <circle cx="1032" cy="128" r="32" fill="#03787C"/>
   <text x="1032" y="140" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">4</text>
-  <text x="1004" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Build</text>
+  <text x="1004" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Work</text>
   <path d="M1260 180 h24 m-10 -10 l10 10 -10 10" stroke="#03787C" stroke-width="4" fill="none"/>
   <rect x="1288" y="60" width="280" height="240" rx="12" fill="#FFFFFF" stroke="#4FA0A3" stroke-width="3"/>
   <circle cx="1344" cy="128" r="32" fill="#03787C"/>
   <text x="1344" y="140" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">5</text>
-  <text x="1316" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Ship and</text>
-  <text x="1316" y="256" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">measure</text>
+  <text x="1316" y="214" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="600" fill="#242424">Done</text>
 </svg>

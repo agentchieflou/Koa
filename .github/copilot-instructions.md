@@ -5,7 +5,9 @@ Automate flows (`flows/*.definition.json`), the SharePoint list workbook (`data/
 laptop (`contract/`). `AGENTS.md` holds the repository rules, and they apply to you.
 
 - **To build the Data Czars site's lists,** use the `build-czars-site` skill (`.github/skills/build-czars-site/SKILL.md`);
-  the site's pages, navigation, skill and agent are the operator's, with Copilot in SharePoint (`site/README.md`).
+  the site's pages, navigation, skill and agents are the operator's, with Copilot in SharePoint (`site/README.md`).
+  To gather the facts its pages need, run the `czars-scan-*` prompts (`.github/prompts/`); they write only to
+  `site/local/`, which is never committed.
 - **To build or deploy the app, the lists or the flows,** use the `build-fleetagent` skill
   (`.github/skills/build-fleetagent/SKILL.md`). It walks `build/steps/01`-`07` and keeps its progress in
   `build/out/state.json`.

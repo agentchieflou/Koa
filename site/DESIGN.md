@@ -1,156 +1,150 @@
 # The Data Czars site: the design
 
-`OSP-Data-Czars` on SharePoint is the home of Data Czars, a tools and platform team: the tools and platforms we build
-for the bank's data work, how to start with them, how to work with us, what changed, and who we are. This page is the
-design and the reasons for it. `README.md` beside it is the build sheet; the canvas *Data Czars Site Design* shows
-every page as drawn (ask the operator for the link).
+`OSP-Data-Czars` is the SharePoint home of Data Czars and of the tooling it supports in the PAE, the products built
+in the `data-czars` repository. It is where people find a product and its state, raise an issue with it or ask for
+work (and follow it in Jira without opening Jira), download the usage reports the `usage_tool` repository produces,
+find every place the team works, and reach the right person the way that person prefers. The fleet that works the
+team's tickets has one page of its own. Copilot can do all of it from a chat. `README.md` beside this file is the
+build sheet; the canvas *Data Czars Site Design* shows every page as drawn.
 
-A premier site, for a tools and platform team, is one that behaves like a product: a person finds what they came for
-in one click, every fact on it is current without anyone remembering to edit a page, it answers questions itself,
-and it can show what it is worth. Everything below serves one of those four.
+A premier site, for a tools and platform team, behaves like a product: a person gets what they came for in one
+click, every fact on it is current without anyone remembering to edit a page, it answers and acts from Copilot, and
+the team's own systems (Jira, the fleet, the usage tool) feed it instead of people retyping into it.
 
 ## Who it is for
 
 | Audience | Who | What they come to do | Where it starts |
 | --- | --- | --- | --- |
-| Partners | data teams across the bank (the site's Visitors) | find a tool and start with it; ask for help; request work and follow it | Home, Platform, Work with us |
-| Members | the Data Czars (the Microsoft 365 group) | everything partners do, plus decide, onboard, run the fleet | Team, The fleet, Onboarding |
-| Leadership | sponsors and their staff | see what the platform gives back and what comes next | Impact, Roadmap |
-
-The site is the group's team site, so members are the group and everyone else is added to its Visitors group. What
-only members should see is limited by permissions (a page, a list) or by audience targeting (navigation links, quick
-links, news, events), never by hoping nobody finds a URL.
+| Users of the PAE | people who use the tooling Data Czars supports (the site's Visitors) | check a product's state; report an issue; ask for work; follow their tickets; read the usage reports; reach someone | Home, Get help, Usage reports, Contact |
+| The team | the Data Czars (the Microsoft 365 group) | triage intake; publish reports; keep products, links and contacts current; run the fleet | Get help (For the team), The fleet, the lists |
+| Leaders | sponsors and their staff | see what is supported, what changed, and what usage looks like | Products, Usage reports |
 
 ## Principles
 
-1. **Task first.** Home answers four questions above the fold: what is this, how do I start, how do I get help, what
-   changed. Every page opens with a title area and one sentence saying what it is for.
-2. **Living data, typed once.** Anything that changes (tools, status, releases, roadmap, decisions, numbers,
-   questions, words) is a list row, shown by a formatted list view. A page changes when its purpose does, not when a
-   fact does.
-3. **Built for Copilot.** Clean structure, descriptive titles, a description on every page, metadata on every file,
-   review dates on every guide: the same things that make search work make the site agent's answers good. The site
-   carries its own Copilot skill so everything Copilot builds here keeps the house style.
-4. **Measured, not claimed.** No number appears without a row saying how it is counted and where it comes from.
-   Until the team agrees a method, the number is a placeholder and says so.
-5. **Accessible as drawn.** Every status is a word; colour only helps. Every image has alt text. Headings go in order.
-   Text meets 4.5:1 against what it sits on.
-6. **Stock parts, no admin.** Every page is stock web parts in stock sections on a team site. No SharePoint Framework,
-   no custom script, nothing a site owner cannot do. That keeps it supportable and lets Copilot build it.
-7. **The site is code.** Its lists, views, formatting, page sheets, navigation, skill and agent live in Koa, are
-   reviewed in pull requests and tested in CI. The live site is built from the repository, and a change starts here.
+1. **Task first.** Home answers what this is, how to get help, where the reports are and who to talk to, above the
+   fold. Every page opens with one sentence saying what it is for.
+2. **Fed, not typed.** Products, releases and links come from scanning the repositories; contacts from Microsoft
+   Copilot; Jira keys and statuses from Jira; reports from the usage tool. People edit a row only to correct it.
+3. **One door for help.** Issues, requests, questions and access go through one form and one list, and every one
+   becomes a Jira ticket whose status comes back. Nobody is told "email us".
+4. **People, their way.** Every team member chooses how to be reached; the site honours it with one button.
+5. **Copilot-native.** The site's structure, descriptions and metadata are what its agents read. Three agents divide
+   the work: answers (Ask the Czars), numbers (Usage Analyst), actions (Czars Desk).
+6. **Stock parts, no admin.** Stock web parts in stock sections on a team site; Standard connectors; nothing a site
+   owner cannot do. What an admin could add is listed, not assumed.
+7. **The structure is public, the facts are not.** Koa is public, so it carries the design, the code and the prompts;
+   what the scans find about the team stays on the laptop (`site/local/`) and reaches only the site.
 
 ## Information architecture
 
-Navigation is horizontal with a mega menu: six labels, two levels beneath each, the exact tree in `site.json`.
+Horizontal navigation with a mega menu, the exact tree in `site.json`:
 
-| Label | Groups and links |
+| Label | Links |
 | --- | --- |
 | Home | |
-| Platform | **Tools**: Tool catalog, Getting started, Status, What's new · **Agent platform**: The fleet, FleetAgent on your phone, Skills library, The world (lab) · **Data and BI**: Power BI toolkit, Data connectors, UAT reconciliation, Document AI |
-| Work with us | **Engage**: Services, Request work, My requests · **Plan**: Roadmap, Office hours, FAQ |
-| Learn | **Paths**: 101, 201, 301 · **Library**: Guides and runbooks, Standards, Demos and recordings, Glossary |
-| Team | **About**: Mission and principles, People, Who to ask · **Members** (targeted): Onboarding, Decisions, Team calendar, Notebook |
-| Impact | |
+| Products | Product catalog, Status, What's new |
+| Usage reports | Latest reports, All reports, About the usage tool |
+| Get help | Report an issue, Request something, My tickets, FAQ · **For the team** (targeted): Triage, Jira board |
+| Links | |
+| Contact | |
+| The fleet | |
+| Copilot | Ask the Czars, Prompts that work, In Teams |
 
-Eight pages, twelve lists and one library:
+Eight pages, seven lists and one library:
 
 | Page | Holds | Lists and views it shows |
 | --- | --- | --- |
-| Home | the front door | Tools: Status, Featured · Releases: Latest · Metrics: Tiles · Roadmap: Now |
-| Platform | the catalog, install, releases, status, skills | Tools: Catalog, Status · Releases: All Items |
-| The fleet | the daily loop, FleetAgent embedded, the four views | FleetAgent (Power Apps), shared with the fleet session |
-| Work with us | engage, request, follow, roadmap, FAQ | Requests: Mine · Roadmap: Now, Next, Later · FAQ: Partners |
-| Learn | paths, guides, standards, recordings, glossary | LearningPaths: 101, 201, 301 · Guides · Glossary: A to Z |
-| Team | principles, people, who to ask, decisions | WhoToAsk · Decisions: Log |
-| Impact | adoption, method, stories | Power BI report · Metrics: Tiles, Method |
-| Onboarding | first day, week, month (members only) | Onboarding · LearningPaths: 101 · FAQ: Members |
+| Home | the front door | Products: Status, Featured · UsageReports: Latest · Releases: Latest |
+| Products | the catalog, what changed, status | Products: Catalog, Status · Releases: All Items |
+| Usage reports | the reports and how the tool works | UsageReports: Latest, By report |
+| Get help | the form, what happens next, my tickets, FAQ | Intake: Mine · FAQ: Everyone |
+| Links | every place the team works | Links: By category |
+| Contact | the team, each with their preferred way | Contacts: Cards |
+| The fleet | the agents that work the tickets; FleetAgent embedded | FleetAgent (Power Apps), shared with the fleet session |
+| Copilot | the agents, prompts, Teams and schedules | Prompts: Library |
 
 What goes where:
 
-| It is | It goes in | Because |
+| It is | It goes in | Fed by |
 | --- | --- | --- |
-| a fact that changes (a status, a version, an owner, a date) | a list row | one edit updates every page that shows it, and the agent can cite the row |
-| an announcement | a news post | news rolls up to Home, the news digest and the SharePoint app |
-| a document (guide, runbook, standard, deck, recording) | the Guides library, with Kind, Tool, Review by, Owner | metadata tells a current runbook from an old one |
-| an explanation that rarely changes | a page | pages are for purpose and narrative |
-| a decision | a Decisions row | numbered, never deleted, superseded rows stay |
-| a question asked twice | an FAQ row | partners see their rows; the agent answers from them |
+| a supported product, its state | a `Products` row | the data-czars scan; the owner edits the status |
+| a release | a `Releases` row | the scans (changelog, tags) |
+| an issue, a request, a question, access | an `Intake` row, then a Jira ticket | the Get help form or Czars Desk; the key and status from Jira |
+| a usage report | a file in `UsageReports/<type>/<yyyy-mm>/` | the usage tool; tagged by its folder |
+| a place the team works | a `Links` row | the scans and Microsoft Copilot |
+| a person and how to reach them | a `Contacts` row | Microsoft Copilot; each person sets their preference |
+| a question asked twice | an `FAQ` row | the scans; the team |
+| a prompt that works | a `Prompts` row | the team |
+| an announcement | a news post | the team |
+
+## Help, end to end
+
+Get help's form writes an `Intake` row. A Standard flow hands it to the operator's laptop as a file; `intake.py`
+files it with `ad-jira create`, which uses the project's facts and waits for one approval on the desk or the phone;
+a second flow writes the key, the link and the status back to the row. `intake.py sync` keeps the status following
+Jira. The ticket lands on the same board the fleet works from, so a reported issue can reach an agent working on
+data-czars, and its fix reach the person who reported it, without anyone copying anything. Why through the laptop,
+and the routes that avoid it when IT allows: `intake/README.md`.
+
+## Copilot
+
+- **Ask the Czars**: the site agent in the header, in Microsoft Copilot and in Teams; answers from the site's pages,
+  lists and reports, with citations, and never guesses.
+- **Usage Analyst**: an Agent Builder agent whose knowledge is the report files; code interpreter computes the answer
+  and draws the chart.
+- **Czars Desk**: a Copilot Studio agent whose tools act as the person asking: file a request, list their requests,
+  get the latest report, open the right person's preferred contact.
+- **Copilot in SharePoint** builds the pages from their sheets and keeps the house style through the site skill
+  `data-czars-pages`.
+- Teams tabs and posts, scheduled prompts, the Prompt Gallery, and one request to IT for the Jira and Confluence
+  connectors: `agents/README.md`.
 
 ## Pages
 
-Every page follows one anatomy, which the site skill enforces:
-
-- **Title area**: Image layout with the page's artwork for top-level pages, Plain for the rest; a topic header; one
-  sentence on what the page is for.
-- **Sections**: one, two or three columns, or one-third left or right. No full-width sections (communication sites
-  only) and no flexible sections, so every page reflows the same way on a phone.
-- **Backgrounds**: none behind any List, Document library or Quick chart web part, because those always keep the page
-  background and would sit as white boxes on a coloured band. Neutral and Soft carry text, quick links, people and
-  calls to action; Strong is used once, for Home's last section, which stands in for the footer team sites lack.
-- **Headings**: one per section, sentence case, in a Text web part. They become anchors the mega menu links to.
-- **Web parts**: Hero (Tiles), Quick links, Text, List, Document library, Events, News, People, Call to action,
-  Button, Code snippet, Image, Markdown, Highlighted content, Power BI report, Microsoft PowerApps, Agent Link.
-
-Each page has a sheet in `pages/`: its Copilot prompt, every section and web part with its list and view, the words,
-what to finish by hand, and how to check it.
+Every page follows one anatomy, which the site skill enforces: a title area (Image layout, a topic header, one
+sentence); one-, two- or three-column sections, or one-third left or right, never full-width (communication sites
+only) or flexible; no background behind a List or Document library web part (they keep the page background), Neutral
+or Soft behind text and calls to action, Strong once, for Home's last section, which stands in for the footer team
+sites lack; one heading per section, which becomes the anchor the mega menu links to.
 
 ## Visual system
 
-- **Theme: Teal**, one of SharePoint's built-in themes. It reads as modern and technical, stands apart from the
-  bank's corporate blue sites, and white text on its primary (`#03787C`) is 5.3:1. If the organisation publishes a
-  brand theme in Brand center, that wins; Green (today's theme), Blue and Cobalt are the built-in alternatives, and
-  `assets/make_assets.py --accent` redraws the artwork in any of them.
-- **Header**: Standard layout, no background, the mark as the site logo, the title "Data Czars". The header's Copilot
-  button opens the site agent.
-- **The mark**: three bars that are also a crown, on a rounded square in the theme colour (`assets/logo.svg`). It is
-  the site's logo and thumbnail.
-- **Artwork**: flat geometry in four shades of the theme colour (deep, mid, light, line), no text, no stock photos, no
-  gradients. One motif per subject: a network and bars (the platform), a desk of tiles (the fleet), rising bars and a
-  check (Power BI), a path to an arrow (requests), a spark (what is new), a rising line (impact).
-- **Lists**: formatted, never raw. Statuses are pills with an icon and a word (`formatting/*-status.json`), the catalog
-  and featured tools are cards, the numbers are tiles in the theme colour, releases, roadmap, decisions, FAQ, glossary
-  and learning paths are formatted rows. All formatting uses SharePoint's theme classes, so it follows a theme change.
-- **Type**: SharePoint's own (Segoe UI). Sizes come from the web parts; the design adds none.
+- **Theme: Teal**, a built-in theme: modern, technical, distinct from the bank's blue sites; white text on its
+  primary (`#03787C`) is 5.3:1. An organisation brand theme from Brand center wins if there is one, and
+  `assets/make_assets.py --accent` redraws the artwork in it.
+- **Header**: Standard layout, no background, the mark as logo, the title "Data Czars", the Copilot button opening
+  Ask the Czars.
+- **The mark**: three bars that are also a crown, on a rounded square in the theme colour (`assets/logo.svg`).
+- **Artwork**: flat geometry in shades of the theme colour, no text, no stock photos, one motif per subject.
+- **Lists**: formatted, never raw. Statuses are pills with an icon and a word; products and contacts are cards; a
+  contact card's button follows the person's preference; links group by place with an icon; reports have a Download
+  link. All formatting uses SharePoint's theme classes, so it follows a theme change.
+- **Type**: SharePoint's own. Sizes come from the web parts.
 
 ## Voice
 
-Short sentences, plain words, active voice. Say what the reader can do. Name tools as the Tools list names them.
-Commands go in Code snippet web parts exactly as typed. Never invent a number, date, name or promise: write [N],
-[Date], [Name] until the real one exists. The one promise the site makes in several places, "we triage within [N]
-business days", must read the same number everywhere it appears.
-
-## Copilot and the site agent
-
-- **Copilot in SharePoint** builds the pages from their sheets (`pages/*.md`), the navigation from its prompt, and
-  any list the provisioning cannot. It does not reliably apply list formatting and does not set permissions, so
-  those stay in the provisioning and the sheets' *Finish by hand*.
-- **The site skill** `data-czars-pages` (`skills/data-czars-pages/SKILL.md`) lives in the site's Agent Assets library
-  and loads whenever someone asks Copilot to build or edit on this site: layout rules, web part vocabulary, the lists,
-  the voice.
-- **Ask the Czars** (`agent/ask-the-czars.md`) is the site agent the header opens: grounded in this site only, citing
-  every answer, never guessing a number, never touching requests.
+Short sentences, plain words, active voice; say what the reader can do. Products are named as the Products list names
+them. Never invent a number, a date, a name or a promise. The triage promise, the team's own number of business days,
+reads the same everywhere it appears.
 
 ## Permissions
 
 | Who | Gets | How |
 | --- | --- | --- |
-| Members | edit everywhere | the Microsoft 365 group |
-| Partners | read the site; add and see only their own requests | the site's Visitors group; Requests has item-level read and edit, and Visitors get Contribute on it alone |
-| Members only | Onboarding; the FleetAgent lists | page and list permissions, Visitors removed |
-| Members only, visible | the Members links in Team and the mega menu | audience targeting to the Members group |
+| The team | edit everywhere | the Microsoft 365 group |
+| Users of the PAE | read the site; submit and see their own requests; download reports | the site's Visitors group; `Intake` has item-level read and edit, and Visitors get Contribute on it alone |
+| The team only, visible | Get help's *For the team* links and menu group | audience targeting to the Members group |
+| The team only | FleetAgent's lists | their own permissions |
 
 ## Keeping it premier
 
-- Every page and guide has an owner and a review date. *Improve this site* in Copilot runs monthly: demote pages
-  inactive for 90 days and fix broken links.
-- Page analytics and site usage are read once a month; a page nobody opens is merged or demoted.
-- A change starts in Koa: edit the spec or the sheet, run the tests, open a pull request, then apply it to the site.
+- The scans run again when the repositories change; `provision.py context` and step 2 bring the new rows in.
+- *Improve this site* in Copilot runs monthly: demote pages inactive for 90 days and fix broken links.
+- Page analytics and site usage are read monthly; a page nobody opens is merged or demoted.
+- A change to the site starts in Koa: the spec or the sheet, the tests, a pull request, then the site.
 
 ## Not in this design
 
-- No site footer, full-width section or communication-site feature: this is a team site, and converting it is
-  neither possible (group-connected) nor needed.
-- No custom code, apps or extensions: everything is stock and a site owner can do it.
-- No copy of the FleetAgent lists, flows or app: Koa's `build/` and the fleet session own those; the fleet page only
-  shows them.
+- No site footer, full-width section or communication-site feature: this is a team site.
+- No custom code, app or extension, and no Premium connector.
+- No copy of the FleetAgent lists, flows or app: Koa's `build/` and the fleet session own them.

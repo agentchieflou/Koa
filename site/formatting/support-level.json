@@ -1,0 +1,24 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "div",
+  "style": {
+    "display": "flex",
+    "align-items": "center",
+    "height": "100%"
+  },
+  "children": [
+    {
+      "elmType": "span",
+      "txtContent": "@currentField",
+      "style": {
+        "padding": "2px 8px",
+        "border-radius": "3px",
+        "font-size": "12px",
+        "font-weight": "600"
+      },
+      "attributes": {
+        "class": "=if(@currentField == 'Supported', 'ms-bgColor-themeLighter ms-fontColor-themeDarker', if(@currentField == 'Preview', 'sp-field-severity--warning', if(@currentField == 'Deprecated', 'sp-field-severity--severeWarning', 'ms-bgColor-neutralLighter ms-fontColor-neutralPrimary')))"
+      }
+    }
+  ]
+}

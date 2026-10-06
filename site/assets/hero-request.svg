@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img">
-  <title>A request moving from question to answer</title>
-  <rect width="1600" height="900" fill="#013234"/>
-  <path d="M230 470 C520 170, 820 760, 1290 380" fill="none" stroke="#4FA0A3" stroke-width="6" stroke-dasharray="22 22"/>
-  <circle cx="230" cy="470" r="56" fill="#036669"/><circle cx="700" cy="480" r="40" fill="#036669"/><circle cx="1000" cy="520" r="40" fill="#036669"/>
-  <circle cx="1290" cy="380" r="80" fill="#8EC2C4"/>
-  <path d="M1250 380 h80 M1300 345 l35 35 -35 35" stroke="#013234" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

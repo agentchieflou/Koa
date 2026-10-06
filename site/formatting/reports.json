@@ -9,7 +9,7 @@
     },
     "style": {
       "display": "flex",
-      "align-items": "flex-start",
+      "align-items": "center",
       "box-sizing": "border-box",
       "width": "100%",
       "padding": "12px 14px",
@@ -18,6 +18,19 @@
     },
     "children": [
       {
+        "elmType": "span",
+        "attributes": {
+          "iconName": "ExcelDocument",
+          "class": "ms-fontColor-themePrimary"
+        },
+        "style": {
+          "font-size": "22px",
+          "width": "36px",
+          "flex-shrink": "0",
+          "line-height": "1.2"
+        }
+      },
+      {
         "elmType": "div",
         "style": {
           "flex-grow": "1",
@@ -25,24 +38,22 @@
         },
         "children": [
           {
-            "elmType": "div",
-            "txtContent": "[$Headline]",
+            "elmType": "a",
+            "txtContent": "[$FileLeafRef]",
             "attributes": {
+              "href": "[$FileRef]",
+              "target": "_blank",
               "class": "ms-fontColor-neutralPrimary"
             },
             "style": {
               "font-size": "14px",
               "font-weight": "600",
-              "line-height": "1.4",
-              "cursor": "pointer"
-            },
-            "customRowAction": {
-              "action": "defaultClick"
+              "text-decoration": "none"
             }
           },
           {
             "elmType": "div",
-            "txtContent": "=[$Title] + ' · ' + [$Kind]",
+            "txtContent": "=[$ReportType] + ' · ' + toLocaleDateString([$PeriodStart]) + if([$Scope] == '', '', ' · ' + [$Scope])",
             "attributes": {
               "class": "ms-fontColor-neutralSecondary"
             },
@@ -52,6 +63,20 @@
             }
           }
         ]
+      },
+      {
+        "elmType": "a",
+        "txtContent": "Download",
+        "attributes": {
+          "href": "=@currentWeb + '/_layouts/15/download.aspx?SourceUrl=' + [$FileRef]",
+          "class": "ms-fontColor-themeDark"
+        },
+        "style": {
+          "font-size": "13px",
+          "font-weight": "600",
+          "flex-shrink": "0",
+          "margin-left": "12px"
+        }
       }
     ]
   }
