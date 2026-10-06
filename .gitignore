@@ -5,3 +5,7 @@ __pycache__/
 # The Copilot build (build/README.md): tenant-specific values and generated payloads stay on the laptop.
 build/fleet.config.json
 build/out/
+
+# The Data Czars site (site/README.md): what the scans found, the site address and generated payloads stay on the laptop.
+site/out/
+site/local/

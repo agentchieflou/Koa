@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="460" viewBox="0 0 1920 460" role="img">
+  <title>Products</title>
+  <rect width="1920" height="460" fill="#013234"/>
+  <g fill="#036669"><rect x="1240" y="110" width="70" height="250" rx="8"/><rect x="1340" y="180" width="70" height="180" rx="8"/>
+    <rect x="1440" y="70" width="70" height="290" rx="8"/><rect x="1540" y="220" width="70" height="140" rx="8"/><rect x="1640" y="140" width="70" height="220" rx="8"/></g>
+  <path d="M1210 380 H1740" stroke="#4FA0A3" stroke-width="4"/>
+  <g fill="#8EC2C4"><circle cx="1275" cy="70" r="14"/><circle cx="1475" cy="34" r="16"/><circle cx="1675" cy="96" r="14"/></g>
+</svg>

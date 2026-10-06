@@ -1,7 +1,8 @@
 # Koa: rules for coding agents
 
 Koa is the phone side of the fleet: the FleetAgent canvas app (`powerapp/`), the two flows (`flows/`), the list
-workbook (`data/`) and the pinned mobile contract (`contract/`). The laptop side, and the rules for agents working
+workbook (`data/`) and the pinned mobile contract (`contract/`); and the Data Czars SharePoint site (`site/`, whose build
+sheet is `site/README.md`). The laptop side, and the rules for agents working
 on it, live in [agentchieflou/this-next-please](https://github.com/agentchieflou/this-next-please) (`AGENTS.md`,
 `docs/developing-with-agents.md`, `docs/plan-mobile.md`, `docs/fleet-mobile.md`). Read `README.md` here first; to build or deploy the app, use the `build-fleetagent` skill (`build/README.md`).
 
@@ -17,4 +18,8 @@ on it, live in [agentchieflou/this-next-please](https://github.com/agentchieflou
 6. **Never skip, xfail or loosen a test.** Run `python -m pip install -r requirements-dev.txt` and
    `python -m pytest -q` before every push; CI runs the same on Ubuntu and Windows (`core.autocrlf=true`).
 7. **What only Studio, the tenant or a phone can prove reads *not yet measured*** until someone ran it, and the
-   run is recorded in this-next-please's `docs/windows-verification.md` §Mobile ([TESTING.md](TESTING.md)).
+   run is recorded in this-next-please's `docs/windows-verification.md` §Mobile ([TESTING.md](TESTING.md)), or §Site
+   for the site's rows S1 to S14 (`site/README.md`).
+8. **The site is built from `site/`, never the other way round.** Change `site/lists.json`, a page sheet or
+   `site/site.json` first, run `python site/provision.py docs` when the lists change, then apply it to the site. Pages
+   use stock web parts only; nothing on the site needs a tenant admin.

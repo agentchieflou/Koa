@@ -1,0 +1,140 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/tile-formatting.schema.json",
+  "height": 232,
+  "width": 300,
+  "hideSelection": true,
+  "formatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-bgColor-white ms-borderColor-neutralLight"
+    },
+    "style": {
+      "box-sizing": "border-box",
+      "margin": "6px",
+      "border-width": "1px",
+      "border-style": "solid",
+      "border-radius": "6px",
+      "overflow": "hidden",
+      "display": "flex",
+      "flex-direction": "column",
+      "width": "288px",
+      "height": "220px",
+      "padding": "16px"
+    },
+    "children": [
+      {
+        "elmType": "div",
+        "style": {
+          "display": "flex",
+          "align-items": "center"
+        },
+        "children": [
+          {
+            "elmType": "img",
+            "attributes": {
+              "src": "=@currentWeb + '/_layouts/15/userphoto.aspx?size=M&accountname=' + [$Email]",
+              "alt": "[$Title]"
+            },
+            "style": {
+              "width": "48px",
+              "height": "48px",
+              "border-radius": "50%",
+              "margin-right": "12px",
+              "flex-shrink": "0"
+            }
+          },
+          {
+            "elmType": "div",
+            "style": {
+              "min-width": "0"
+            },
+            "children": [
+              {
+                "elmType": "div",
+                "txtContent": "[$Title]",
+                "attributes": {
+                  "class": "ms-fontColor-neutralPrimary"
+                },
+                "style": {
+                  "font-size": "15px",
+                  "font-weight": "600"
+                }
+              },
+              {
+                "elmType": "div",
+                "txtContent": "[$Role]",
+                "attributes": {
+                  "class": "ms-fontColor-neutralSecondary"
+                },
+                "style": {
+                  "font-size": "13px",
+                  "margin-top": "2px"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "elmType": "div",
+        "txtContent": "=if([$Topics] == '', '', 'Ask me about ' + [$Topics])",
+        "attributes": {
+          "class": "ms-fontColor-neutralSecondary"
+        },
+        "style": {
+          "font-size": "13px",
+          "line-height": "1.45",
+          "margin-top": "10px",
+          "flex-grow": "1",
+          "overflow": "hidden"
+        }
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$WorkingHours]",
+        "attributes": {
+          "class": "ms-fontColor-neutralSecondary"
+        },
+        "style": {
+          "font-size": "13px",
+          "margin-top": "2px",
+          "display": "=if([$WorkingHours] == '', 'none', 'block')"
+        }
+      },
+      {
+        "elmType": "a",
+        "attributes": {
+          "href": "=if([$PreferredMethod] == 'Email', 'mailto:' + [$Email] + '?subject=Data%20Czars', if([$PreferredMethod] == 'Teams call', 'https://teams.microsoft.com/l/call/0/0?users=' + [$Email], if([$PreferredMethod] == 'Book a meeting', 'https://teams.microsoft.com/l/meeting/new?subject=Data%20Czars&attendees=' + [$Email], 'https://teams.microsoft.com/l/chat/0/0?users=' + [$Email] + '&message=Hi%2C%20I%20found%20you%20on%20the%20Data%20Czars%20site.')))",
+          "target": "_blank",
+          "class": "ms-bgColor-themePrimary ms-fontColor-white"
+        },
+        "style": {
+          "display": "flex",
+          "align-items": "center",
+          "justify-content": "center",
+          "margin-top": "10px",
+          "height": "36px",
+          "border-radius": "4px",
+          "font-size": "14px",
+          "font-weight": "600",
+          "text-decoration": "none"
+        },
+        "children": [
+          {
+            "elmType": "span",
+            "attributes": {
+              "iconName": "=if([$PreferredMethod] == 'Email', 'Mail', if([$PreferredMethod] == 'Teams call', 'Phone', if([$PreferredMethod] == 'Book a meeting', 'Calendar', 'Chat')))"
+            },
+            "style": {
+              "margin-right": "8px"
+            }
+          },
+          {
+            "elmType": "span",
+            "txtContent": "=if([$PreferredMethod] == 'Email', 'Send an email', if([$PreferredMethod] == 'Teams call', 'Call in Teams', if([$PreferredMethod] == 'Book a meeting', 'Book a meeting', 'Chat in Teams')))"
+          }
+        ]
+      }
+    ]
+  }
+}

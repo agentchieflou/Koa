@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="460" viewBox="0 0 1920 460" role="img">
+  <title>Steps up to a notebook</title>
+  <rect width="1920" height="460" fill="#013234"/>
+  <g fill="#036669"><rect x="1200" y="300" width="120" height="60" rx="8"/><rect x="1340" y="240" width="120" height="120" rx="8"/>
+    <rect x="1480" y="180" width="120" height="180" rx="8"/></g>
+  <rect x="1620" y="120" width="120" height="240" rx="8" fill="#8EC2C4"/>
+  <path d="M1650 196 l26 22 -26 22 M1690 244 h28" stroke="#013234" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1170 380 H1770" stroke="#4FA0A3" stroke-width="4"/>
+</svg>

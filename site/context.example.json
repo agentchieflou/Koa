@@ -1,0 +1,86 @@
+{
+  "site": {"url": "https://contoso.sharepoint.com/sites/OSP-Data-Czars"},
+  "team": {
+    "name": "Data Czars",
+    "mission": "We build and support the Analytics Kernel and the Spark tooling that make data engineering in the Contoso Analytics Environment fast and safe.",
+    "pae": "The Contoso Analytics Environment: JupyterHub notebooks on a shared Spark cluster, next to the data the analytics teams build on.",
+    "audience": "Analysts and data engineers who write Python and Spark in the analytics environment.",
+    "triageDays": "3",
+    "officeHours": "Thursdays, 2:00 to 3:00 PM, in the team's Teams channel"
+  },
+  "jira": {
+    "flavour": "Data Center",
+    "url": "https://jira.contoso.com",
+    "project": "DCZ",
+    "boardUrl": "https://jira.contoso.com/secure/RapidBoard.jspa?rapidView=101",
+    "issueTypes": {"issue": "Bug", "request": "Task", "question": "Task", "access": "Task"},
+    "components": ["Kernel", "Spark", "Data quality", "Usage Tool"],
+    "labels": ["sharepoint-intake"]
+  },
+  "kernel": {
+    "name": "Analytics Kernel",
+    "summary": "One shared Python kernel for the analytics environment, with Spark, the standard packages and the team's own package ready to use.",
+    "buildsOn": "It builds on the environment's default kernel, so what works there works here.",
+    "includes": ["pandas", "matplotlib", "the team's analytics package"],
+    "connectsTo": ["Hive", "Oracle", "SQL Server", "PostgreSQL"],
+    "setupSteps": ["Request the access under Get access, and wait until all of it is granted.", "Open JupyterHub and start a new Terminal.", "Run the install command from the kernel's docs.", "Open a new notebook and pick Analytics Kernel."],
+    "firstSession": "from analytics import spark_session\n\nspark = spark_session(profile=\"small\")\nspark.sql(\"show databases\").show()",
+    "docs": {"url": "https://confluence.contoso.com/display/DCZ/Analytics+Kernel", "desc": "Confluence"},
+    "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"},
+    "source": "data-czars/PROJECT_CONTEXT.md"
+  },
+  "products": [
+    {"name": "Analytics Kernel", "summary": "One Python kernel with Spark, the standard packages and the team's package ready to use.", "category": "Kernel", "supportLevel": "Supported", "status": "Operational", "version": "2026.09", "howToStart": "In JupyterHub, pick Analytics Kernel for a new notebook.", "docs": {"url": "https://confluence.contoso.com/display/DCZ/Analytics+Kernel", "desc": "Confluence"}, "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"}, "jiraComponent": "Kernel", "featured": true, "source": "data-czars/PROJECT_CONTEXT.md"},
+    {"name": "Spark sessions", "summary": "Starts a Spark session on the cluster with a named profile, already signed in to the data sources.", "category": "Spark", "supportLevel": "Supported", "status": "Operational", "version": "2026.09", "howToStart": "spark = spark_session(profile=\"small\")", "docs": {"url": "https://confluence.contoso.com/display/DCZ/Spark+sessions", "desc": "Confluence"}, "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"}, "jiraComponent": "Spark", "featured": true, "source": "data-czars/PROJECT_CONTEXT.md"},
+    {"name": "Table compare", "summary": "Compares two tables row by row and column by column, and says where they differ.", "category": "Data quality", "supportLevel": "Supported", "status": "Operational", "version": "2026.09", "howToStart": "compare_tables(left, right, keys=[\"id\"])", "docs": {"url": "https://confluence.contoso.com/display/DCZ/Table+compare", "desc": "Confluence"}, "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "desc": "data-czars"}, "jiraComponent": "Data quality", "featured": true, "source": "data-czars/PROJECT_CONTEXT.md"}
+  ],
+  "access": [
+    {"name": "JupyterHub user", "why": "Sign in to JupyterHub, where the kernel runs.", "neededFor": "Using the kernel", "request": {"url": "https://access.contoso.com/request/jupyterhub-user", "desc": "Access requests"}},
+    {"name": "Project directory", "why": "Read and write your team's project folder from a notebook.", "neededFor": "Using the kernel", "request": {"url": "https://access.contoso.com/request/project-directory", "desc": "Access requests"}},
+    {"name": "Bitbucket developer", "why": "Fork the repository, push a branch and open a pull request.", "neededFor": "Contributing code", "request": {"url": "https://access.contoso.com/request/bitbucket-developer", "desc": "Access requests"}}
+  ],
+  "profiles": [
+    {"name": "small", "useWhen": "Exploring, samples, and tables up to a few million rows.", "executors": "2", "executorMemory": "4g", "executorCores": "2", "driverMemory": "2g", "kind": "Standard"},
+    {"name": "medium", "useWhen": "Daily jobs and joins of tens of millions of rows.", "executors": "4", "executorMemory": "8g", "executorCores": "4", "driverMemory": "4g", "kind": "Standard"},
+    {"name": "large", "useWhen": "Wide joins and aggregations over hundreds of millions of rows.", "executors": "8", "executorMemory": "16g", "executorCores": "4", "driverMemory": "8g", "kind": "Standard"},
+    {"name": "wide-shuffle", "useWhen": "Jobs that shuffle far more than they read, such as many-way joins.", "executors": "6", "executorMemory": "12g", "executorCores": "2", "driverMemory": "8g", "kind": "Specialized"}
+  ],
+  "usageTool": {
+    "name": "Usage Tool",
+    "summary": "Counts who uses which reports and workspaces, and publishes the monthly usage reports.",
+    "howItWorks": ["Reads the environment's activity log once a day.", "Rolls the activity up by report, workspace and team.", "Writes one workbook per report type at the start of each month."],
+    "reportTypes": [
+      {"name": "Report usage", "description": "Views and viewers per report.", "period": "Monthly", "format": "xlsx"},
+      {"name": "Workspace activity", "description": "Active users and refreshes per workspace.", "period": "Monthly", "format": "xlsx"}
+    ],
+    "schedule": "On the first working day of each month.",
+    "fileNaming": "usage_<report type>_<yyyy-mm>.xlsx",
+    "outputLocation": "A folder on the operator's laptop today.",
+    "repo": {"url": "https://bitbucket.contoso.com/projects/DCZ/repos/usage_tool", "desc": "usage_tool"},
+    "source": "usage_tool/README.md"
+  },
+  "fleet": {
+    "summary": "Several agents, one per repository, watched and answered from one window; data-czars and usage_tool are two of them.",
+    "repos": ["data-czars", "usage_tool", "Koa"],
+    "source": "ad-fleet status"
+  },
+  "links": [
+    {"title": "Data Czars Jira board", "url": "https://jira.contoso.com/secure/RapidBoard.jspa?rapidView=101", "category": "Jira", "description": "Every ticket the team is working on.", "shownTo": "Everyone"},
+    {"title": "Analytics Kernel docs", "url": "https://confluence.contoso.com/display/DCZ/Analytics+Kernel", "category": "Confluence", "description": "Access, setup, profiles and common errors.", "shownTo": "Everyone"},
+    {"title": "Data Czars Confluence space", "url": "https://confluence.contoso.com/display/DCZ", "category": "Confluence", "description": "Designs, runbooks and how-tos.", "shownTo": "Everyone"},
+    {"title": "data-czars repository", "url": "https://bitbucket.contoso.com/projects/DCZ/repos/data-czars", "category": "Bitbucket", "description": "The kernel's and the package's source.", "shownTo": "Members"},
+    {"title": "usage_tool repository", "url": "https://bitbucket.contoso.com/projects/DCZ/repos/usage_tool", "category": "Bitbucket", "description": "The usage reports' source.", "shownTo": "Members"}
+  ],
+  "contacts": [
+    {"name": "Avery Example", "email": "avery.example@contoso.com", "role": "Team lead", "topics": "Priorities, access, escalations", "preferredMethod": "Teams chat", "workingHours": "9 to 5 ET", "shownTo": "Everyone"},
+    {"name": "Jordan Sample", "email": "jordan.sample@contoso.com", "role": "Usage reports", "topics": "Usage reports, the usage tool", "preferredMethod": "Email", "workingHours": "8 to 4 ET", "shownTo": "Everyone"}
+  ],
+  "releases": [
+    {"product": "Spark sessions", "version": "2026.09", "headline": "A wide-shuffle profile for many-way joins", "kind": "Feature", "notes": "", "date": "2026-09-30"}
+  ],
+  "faq": [
+    {"question": "Spark says my Kerberos ticket has expired", "answer": "Run kinit in a Terminal, then restart the kernel. If it asks for your password every session, reset the keyring as the kernel's docs say and store your credentials again.", "topic": "Common errors", "shownTo": "Everyone"},
+    {"question": "My job was killed for using too much memory", "answer": "Start it again one profile up, or on wide-shuffle if it joins many tables. Get started > Pick a profile says what each one gives you.", "topic": "Common errors", "shownTo": "Everyone"}
+  ],
+  "gaps": []
+}

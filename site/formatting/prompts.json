@@ -1,0 +1,93 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "flex-start",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "14px 16px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "div",
+            "style": {
+              "display": "flex",
+              "align-items": "center",
+              "justify-content": "space-between"
+            },
+            "children": [
+              {
+                "elmType": "span",
+                "txtContent": "[$Title]",
+                "attributes": {
+                  "class": "ms-fontColor-neutralPrimary"
+                },
+                "style": {
+                  "font-size": "14px",
+                  "font-weight": "600"
+                }
+              },
+              {
+                "elmType": "span",
+                "txtContent": "[$UseIn]",
+                "attributes": {
+                  "class": "ms-bgColor-themeLighter ms-fontColor-themeDarker"
+                },
+                "style": {
+                  "padding": "2px 8px",
+                  "border-radius": "3px",
+                  "font-size": "12px",
+                  "font-weight": "600",
+                  "margin-left": "12px"
+                }
+              }
+            ]
+          },
+          {
+            "elmType": "div",
+            "txtContent": "[$PromptText]",
+            "attributes": {
+              "class": "ms-bgColor-neutralLighter ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-family": "Consolas, 'Cascadia Code', monospace",
+              "font-size": "13px",
+              "line-height": "1.5",
+              "white-space": "pre-wrap",
+              "padding": "8px 10px",
+              "border-radius": "4px",
+              "margin-top": "8px"
+            }
+          },
+          {
+            "elmType": "div",
+            "txtContent": "[$Purpose]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "13px",
+              "margin-top": "6px"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

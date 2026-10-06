@@ -1,0 +1,216 @@
+{
+  "lists": [
+    {
+      "name": "Products",
+      "template": 100,
+      "description": "Every product Data Czars supports in the PAE: one row per product, with its state, how to start and where its docs are. Intake and the agent route by it.",
+      "columns": [
+        {"name": "Summary", "type": "Note", "description": "One or two sentences: what the product does for the person using it."},
+        {"name": "Category", "type": "Choice", "choices": ["Other"], "choicesFrom": "products[].category", "required": true},
+        {"name": "SupportLevel", "display": "Support", "type": "Choice", "choices": ["Supported", "Preview", "Deprecated", "Retired"], "default": "Supported", "required": true, "description": "Supported: we fix it. Preview: we fix it, it still changes. Deprecated: plan to move off it."},
+        {"name": "Status", "type": "Choice", "choices": ["Operational", "Degraded", "Maintenance", "Down"], "default": "Operational", "required": true},
+        {"name": "CurrentVersion", "display": "Current version", "type": "Text"},
+        {"name": "HowToStart", "display": "How to start", "type": "Text", "description": "One sentence or one command, exactly as documented."},
+        {"name": "DocsLink", "display": "Docs", "type": "URL"},
+        {"name": "RepoLink", "display": "Repository", "type": "URL"},
+        {"name": "JiraComponent", "display": "Jira component", "type": "Text", "description": "The component an issue with this product is filed under."},
+        {"name": "ProductOwner", "display": "Owner", "type": "User"},
+        {"name": "Featured", "type": "Boolean"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "formatters": {"Status": "formatting/product-status.json", "SupportLevel": "formatting/support-level.json"},
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Category", "SupportLevel", "Status", "CurrentVersion", "JiraComponent", "ProductOwner"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Catalog", "fields": ["Title", "Summary", "Category", "SupportLevel", "HowToStart", "DocsLink", "RepoLink", "ProductOwner"], "query": "<Where><Neq><FieldRef Name=\"SupportLevel\" /><Value Type=\"Choice\">Retired</Value></Neq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 60, "type2": "TILES", "formatter": "formatting/products-catalog.json"},
+        {"name": "Status", "fields": ["Title", "Status", "CurrentVersion"], "query": "<Where><Neq><FieldRef Name=\"SupportLevel\" /><Value Type=\"Choice\">Retired</Value></Neq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 12, "type2": "TILES", "formatter": "formatting/products-status.json"},
+        {"name": "Featured", "fields": ["Title", "Summary", "Category", "SupportLevel", "HowToStart", "DocsLink", "RepoLink", "ProductOwner"], "query": "<Where><Eq><FieldRef Name=\"Featured\" /><Value Type=\"Boolean\">1</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 3, "type2": "TILES", "formatter": "formatting/products-catalog.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Releases",
+      "template": 100,
+      "description": "One row per release of a supported product: what changed and what a user has to do about it.",
+      "columns": [
+        {"name": "Headline", "type": "Text", "required": true},
+        {"name": "Product", "type": "Choice", "choices": ["Other"], "choicesFrom": "products[].name"},
+        {"name": "ReleasedOn", "display": "Released", "type": "DateTime"},
+        {"name": "Kind", "type": "Choice", "choices": ["Feature", "Fix", "Breaking", "Security", "Notes"], "default": "Feature"},
+        {"name": "ReleaseNotes", "display": "Notes", "type": "Note"},
+        {"name": "UpdateSteps", "display": "What you need to do", "type": "Note", "description": "Empty when users need to do nothing."},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Headline", "Product", "Kind", "ReleasedOn"], "query": "<OrderBy><FieldRef Name=\"ReleasedOn\" Ascending=\"FALSE\" /><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true, "formatter": "formatting/releases.json"},
+        {"name": "Latest", "fields": ["Title", "Headline", "Kind"], "query": "<OrderBy><FieldRef Name=\"ReleasedOn\" Ascending=\"FALSE\" /><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 5, "formatter": "formatting/releases.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Access",
+      "template": 100,
+      "description": "What a person must be granted before they can use the kernel or change its code: one row per entitlement, why it is needed and where to request it.",
+      "columns": [
+        {"name": "Why", "type": "Note", "description": "What the entitlement lets the person do, in one sentence."},
+        {"name": "NeededFor", "display": "Needed for", "type": "Choice", "choices": ["Using the kernel", "Contributing code"], "default": "Using the kernel", "required": true},
+        {"name": "RequestLink", "display": "Where to request it", "type": "URL"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "NeededFor", "Why", "RequestLink"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "replace": true},
+        {"name": "Checklist", "fields": ["Title", "Why", "NeededFor", "RequestLink"], "query": "<OrderBy><FieldRef Name=\"NeededFor\" Ascending=\"FALSE\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/access-checklist.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "SparkProfiles",
+      "template": 100,
+      "description": "The Spark resource profiles the kernel's session helper offers: one row per profile, what it asks the cluster for and when to use it.",
+      "columns": [
+        {"name": "UseWhen", "display": "Use it when", "type": "Text", "required": true},
+        {"name": "Executors", "type": "Text"},
+        {"name": "ExecutorMemory", "display": "Executor memory", "type": "Text"},
+        {"name": "ExecutorCores", "display": "Cores per executor", "type": "Text"},
+        {"name": "DriverMemory", "display": "Driver memory", "type": "Text"},
+        {"name": "Kind", "type": "Choice", "choices": ["Standard", "Specialized"], "default": "Standard", "required": true},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "UseWhen", "Executors", "ExecutorMemory", "ExecutorCores", "DriverMemory", "Kind"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "replace": true},
+        {"name": "Pick a profile", "fields": ["Title", "UseWhen", "Executors", "ExecutorMemory", "ExecutorCores", "DriverMemory", "Kind"], "query": "<OrderBy><FieldRef Name=\"Kind\" Ascending=\"FALSE\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/spark-profiles.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Intake",
+      "template": 100,
+      "description": "Everything people bring to Data Czars: issues with a supported product, requests for work, questions and access. Each row becomes a ticket on the team's Jira board, and its Jira key and status come back here.",
+      "columns": [
+        {"name": "IntakeType", "display": "What do you need?", "type": "Choice", "choices": ["Report an issue", "Request work", "Ask a question", "Request access"], "default": "Report an issue", "required": true},
+        {"name": "Product", "type": "Lookup", "lookup": "Products"},
+        {"name": "Details", "type": "Note", "required": true, "description": "What you did, what you expected, what happened; or what you need and the decision it serves."},
+        {"name": "Impact", "display": "How much does it hurt?", "type": "Choice", "choices": ["Blocking my work", "Slowing me down", "Minor"], "default": "Slowing me down"},
+        {"name": "AffectedTeam", "display": "Who is affected", "type": "Text"},
+        {"name": "NeededBy", "display": "Needed by", "type": "DateTime"},
+        {"name": "Status", "type": "Choice", "choices": ["New", "Sent to Jira", "In progress", "Waiting on you", "Done", "Declined"], "default": "New", "required": true},
+        {"name": "JiraKey", "display": "Jira", "type": "Text"},
+        {"name": "JiraLink", "display": "Jira link", "type": "URL"},
+        {"name": "Owner", "type": "User"},
+        {"name": "SyncNote", "display": "Last sync", "type": "Text", "description": "What the Jira flow last did with this row, in its own words."}
+      ],
+      "formatters": {"Status": "formatting/intake-status.json", "JiraKey": "formatting/jira-key.json"},
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "IntakeType", "Product", "Status", "JiraKey", "JiraLink", "Owner", "Author", "Created"], "query": "<OrderBy><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Mine", "fields": ["Title", "IntakeType", "Product", "Status", "JiraKey", "JiraLink", "Created"], "query": "<Where><Eq><FieldRef Name=\"Author\" /><Value Type=\"Integer\"><UserID Type=\"Integer\" /></Value></Eq></Where><OrderBy><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 20, "formatter": "formatting/intake-mine.json"},
+        {"name": "Triage", "fields": ["LinkTitle", "IntakeType", "Product", "Impact", "NeededBy", "Author", "Status", "SyncNote"], "query": "<Where><Or><Eq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">New</Value></Eq><Eq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">Waiting on you</Value></Eq></Or></Where><OrderBy><FieldRef Name=\"ID\" /></OrderBy>", "rowLimit": 100},
+        {"name": "Open", "fields": ["LinkTitle", "IntakeType", "Product", "Status", "JiraKey", "JiraLink", "Owner"], "query": "<Where><And><Neq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">Done</Value></Neq><Neq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">Declined</Value></Neq></And></Where><OrderBy><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Links",
+      "template": 100,
+      "description": "Every place Data Czars works in, one row per link: Confluence, Bitbucket, Jira, Power BI, Teams and the rest.",
+      "columns": [
+        {"name": "Url", "display": "Link", "type": "URL", "required": true},
+        {"name": "Category", "type": "Choice", "choices": ["Confluence", "Bitbucket", "Jira", "Power BI", "Teams", "SharePoint", "Docs", "Other"], "default": "Other", "required": true},
+        {"name": "LinkDescription", "display": "Description", "type": "Text"},
+        {"name": "ShownTo", "display": "For", "type": "Choice", "choices": ["Everyone", "Members"], "default": "Everyone"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Url", "Category", "ShownTo"], "query": "<OrderBy><FieldRef Name=\"Category\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 200, "replace": true},
+        {"name": "By category", "fields": ["Title", "Url", "Category", "LinkDescription", "ShownTo"], "query": "<GroupBy Collapse=\"FALSE\" GroupLimit=\"30\"><FieldRef Name=\"Category\" /></GroupBy><OrderBy><FieldRef Name=\"SortOrder\" /><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 200, "formatter": "formatting/links.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Contacts",
+      "template": 100,
+      "description": "The Data Czars team, each with what to ask them about and how they prefer to be reached: a Teams chat, an email, a call or a meeting.",
+      "columns": [
+        {"name": "Email", "type": "Text", "required": true},
+        {"name": "Person", "type": "User"},
+        {"name": "Role", "type": "Text"},
+        {"name": "Topics", "display": "Ask me about", "type": "Text"},
+        {"name": "PreferredMethod", "display": "Preferred method", "type": "Choice", "choices": ["Teams chat", "Email", "Teams call", "Book a meeting"], "default": "Teams chat", "required": true},
+        {"name": "WorkingHours", "display": "Working hours", "type": "Text"},
+        {"name": "ShownTo", "display": "For", "type": "Choice", "choices": ["Everyone", "Members"], "default": "Everyone"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Role", "Topics", "PreferredMethod", "Email", "WorkingHours"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Cards", "fields": ["Title", "Email", "Role", "Topics", "PreferredMethod", "WorkingHours"], "query": "<Where><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 60, "type2": "TILES", "formatter": "formatting/contacts-cards.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "FAQ",
+      "template": 100,
+      "description": "Questions people ask Data Czars, answered once. The site agent answers from here first.",
+      "columns": [
+        {"name": "Answer", "type": "Note", "required": true},
+        {"name": "Topic", "type": "Choice", "choices": ["Getting started", "Access", "Common errors", "Getting help", "Usage reports", "This site", "Other"], "choicesFrom": "products[].name", "default": "Getting help"},
+        {"name": "ShownTo", "display": "For", "type": "Choice", "choices": ["Everyone", "Members"], "default": "Everyone"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Topic", "ShownTo"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Everyone", "fields": ["Title", "Answer", "Topic"], "query": "<Where><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/faq.json"},
+        {"name": "Common errors", "fields": ["Title", "Answer", "Topic"], "query": "<Where><And><Eq><FieldRef Name=\"Topic\" /><Value Type=\"Choice\">Common errors</Value></Eq><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></And></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 20, "formatter": "formatting/faq.json"}
+      ],
+      "seed": [
+        {"Title": "How do I report an issue with one of your products?", "Answer": "Get help > Report an issue. Pick the product, say what you did, what you expected and what happened. It becomes a ticket on our Jira board, and its key and status show under My tickets.", "Topic": "Getting help", "ShownTo": "Everyone", "SortOrder": 10},
+        {"Title": "What happens after I submit?", "Answer": "Your request becomes a ticket on our Jira board once the team has seen it. We triage it within {{team.triageDays}} business days: we take it, say when, or tell you who can help instead. Its status here follows the ticket.", "Topic": "Getting help", "ShownTo": "Everyone", "SortOrder": 20},
+        {"Title": "Where are the usage reports?", "Answer": "Usage reports > Latest reports. Every report the usage tool publishes lands there; open one to read it in the browser or download it.", "Topic": "Usage reports", "ShownTo": "Everyone", "SortOrder": 30},
+        {"Title": "How do I reach someone on the team?", "Answer": "Contact lists everyone with what to ask them about. The button on each card opens the way that person prefers: a Teams chat, an email, a call or a meeting.", "Topic": "This site", "ShownTo": "Everyone", "SortOrder": 40},
+        {"Title": "Can I ask Copilot instead?", "Answer": "Yes. Ask the Czars, the agent in this site's header, in Teams and in Microsoft Copilot, answers from this site and cites what it used. Czars Desk, the team's agent in Copilot, can also file an issue for you and say where your tickets stand.", "Topic": "This site", "ShownTo": "Everyone", "SortOrder": 50},
+        {"Title": "What do I need before I can use the {{kernel.name}}?", "Answer": "The access on Get started > Get access, granted. Request every entitlement marked Using the kernel in one go; the ones marked Contributing code only if you will change the code. Then follow Set up on the same page.", "Topic": "Access", "ShownTo": "Everyone", "SortOrder": 60},
+        {"Title": "Which Spark profile should I use?", "Answer": "The smallest one that fits. Get started > Pick a profile says what each profile asks the cluster for and when to use it. Move up one when a job runs out of memory; tell Ask the Czars your data's size and it suggests one.", "Topic": "Getting started", "ShownTo": "Everyone", "SortOrder": 70}
+      ]
+    },
+    {
+      "name": "Prompts",
+      "template": 100,
+      "description": "Prompts that work, for Microsoft 365 Copilot and the Data Czars agents: copy one, change the brackets, send it.",
+      "columns": [
+        {"name": "PromptText", "display": "Prompt", "type": "Note", "required": true},
+        {"name": "UseIn", "display": "Use in", "type": "Choice", "choices": ["Microsoft Copilot", "Ask the Czars", "Czars Desk", "Usage Analyst", "Copilot in SharePoint", "Copilot in Excel"], "default": "Microsoft Copilot", "required": true},
+        {"name": "Purpose", "type": "Text"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "UseIn", "Purpose"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Library", "fields": ["Title", "PromptText", "UseIn", "Purpose"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "formatter": "formatting/prompts.json"}
+      ],
+      "seed": [
+        {"Title": "Report an issue for me", "PromptText": "@Czars Desk I have a problem with [product]: [what I did], [what I expected], [what happened]. File it as an issue and tell me when it has a Jira key.", "UseIn": "Czars Desk", "Purpose": "Raise an issue without leaving Copilot", "SortOrder": 10},
+        {"Title": "Where does my ticket stand?", "PromptText": "@Czars Desk Where do my requests with Data Czars stand?", "UseIn": "Czars Desk", "Purpose": "Your tickets and their Jira status", "SortOrder": 20},
+        {"Title": "Summarise a usage report", "PromptText": "@Usage Analyst Compare the last three monthly usage reports for [my team]: what went up, what went down, and the three reports or workspaces worth a look. Show it as a chart.", "UseIn": "Usage Analyst", "Purpose": "Read the usage reports in a minute", "SortOrder": 30},
+        {"Title": "Who should I ask?", "PromptText": "@Ask the Czars Who on Data Czars should I talk to about [topic], and how do they prefer to be reached?", "UseIn": "Ask the Czars", "Purpose": "The right person, the right way", "SortOrder": 40},
+        {"Title": "What changed this month?", "PromptText": "@Ask the Czars What changed in Data Czars products in the last 30 days, and do I need to do anything?", "UseIn": "Ask the Czars", "Purpose": "Releases that affect you", "SortOrder": 50},
+        {"Title": "Draft my weekly status from the board", "PromptText": "Using the Data Czars site and my Jira emails from this week, draft a five-line status: shipped, in progress, blocked, asks, next.", "UseIn": "Microsoft Copilot", "Purpose": "A status note from what already happened", "SortOrder": 60}
+      ]
+    },
+    {
+      "name": "UsageReports",
+      "template": 101,
+      "description": "The reports the usage tool publishes, for members of this site to read and download. Every file carries its report type, period and status.",
+      "columns": [
+        {"name": "ReportType", "display": "Report", "type": "Choice", "choices": ["Usage report"], "choicesFrom": "usageTool.reportTypes[].name", "description": "Set from the folder the report lands in."},
+        {"name": "PeriodStart", "display": "Period", "type": "DateTime", "description": "The first day the report covers; set from the folder."},
+        {"name": "PeriodType", "display": "Period type", "type": "Choice", "choices": ["Daily", "Weekly", "Monthly", "Quarterly", "Ad hoc"], "default": "Monthly"},
+        {"name": "Scope", "display": "Covers", "type": "Text"},
+        {"name": "ToolVersion", "display": "Usage tool version", "type": "Text"},
+        {"name": "ReportStatus", "display": "Status", "type": "Choice", "choices": ["Published", "Draft", "Superseded"], "default": "Published"}
+      ],
+      "views": [
+        {"name": "All Documents", "fields": ["DocIcon", "LinkFilename", "ReportType", "PeriodStart", "PeriodType", "ReportStatus", "Modified"], "query": "<OrderBy><FieldRef Name=\"PeriodStart\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Latest", "fields": ["DocIcon", "LinkFilename", "ReportType", "PeriodStart", "Scope"], "query": "<Where><Eq><FieldRef Name=\"ReportStatus\" /><Value Type=\"Choice\">Published</Value></Eq></Where><OrderBy><FieldRef Name=\"PeriodStart\" Ascending=\"FALSE\" /><FieldRef Name=\"FileLeafRef\" /></OrderBy>", "rowLimit": 12, "formatter": "formatting/reports.json"},
+        {"name": "By report", "fields": ["DocIcon", "LinkFilename", "PeriodStart", "Scope", "ReportStatus"], "query": "<GroupBy Collapse=\"TRUE\" GroupLimit=\"30\"><FieldRef Name=\"ReportType\" /></GroupBy><OrderBy><FieldRef Name=\"PeriodStart\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100},
+        {"name": "Drafts", "fields": ["DocIcon", "LinkFilename", "ReportType", "PeriodStart", "Modified"], "query": "<Where><Eq><FieldRef Name=\"ReportStatus\" /><Value Type=\"Choice\">Draft</Value></Eq></Where><OrderBy><FieldRef Name=\"Modified\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 50}
+      ],
+      "seed": []
+    }
+  ]
+}

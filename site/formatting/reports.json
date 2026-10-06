@@ -1,0 +1,83 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "center",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "12px 14px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "span",
+        "attributes": {
+          "iconName": "ExcelDocument",
+          "class": "ms-fontColor-themePrimary"
+        },
+        "style": {
+          "font-size": "22px",
+          "width": "36px",
+          "flex-shrink": "0",
+          "line-height": "1.2"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "a",
+            "txtContent": "[$FileLeafRef]",
+            "attributes": {
+              "href": "[$FileRef]",
+              "target": "_blank",
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "text-decoration": "none"
+            }
+          },
+          {
+            "elmType": "div",
+            "txtContent": "=[$ReportType] + ' · ' + toLocaleDateString([$PeriodStart]) + if([$Scope] == '', '', ' · ' + [$Scope])",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "13px",
+              "margin-top": "2px"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "a",
+        "txtContent": "Download",
+        "attributes": {
+          "href": "=@currentWeb + '/_layouts/15/download.aspx?SourceUrl=' + [$FileRef]",
+          "class": "ms-fontColor-themeDark"
+        },
+        "style": {
+          "font-size": "13px",
+          "font-weight": "600",
+          "flex-shrink": "0",
+          "margin-left": "12px"
+        }
+      }
+    ]
+  }
+}

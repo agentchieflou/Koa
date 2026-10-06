@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {"name": "Koa", "path": ".."},
+    {"name": "data-czars", "path": "../../data-czars"},
+    {"name": "usage_tool", "path": "../../usage_tool"},
+    {"name": "this-next-please", "path": "../../this-next-please"}
+  ],
+  "settings": {
+    "chat.promptFiles": true
+  }
+}

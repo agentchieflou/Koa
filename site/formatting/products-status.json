@@ -1,0 +1,89 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/tile-formatting.schema.json",
+  "height": 92,
+  "width": 240,
+  "hideSelection": true,
+  "formatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-bgColor-white ms-borderColor-neutralLight"
+    },
+    "style": {
+      "box-sizing": "border-box",
+      "margin": "6px",
+      "border-width": "1px",
+      "border-style": "solid",
+      "border-radius": "6px",
+      "overflow": "hidden",
+      "width": "228px",
+      "height": "80px",
+      "padding": "12px 14px"
+    },
+    "children": [
+      {
+        "elmType": "div",
+        "style": {
+          "display": "flex",
+          "justify-content": "space-between",
+          "align-items": "baseline"
+        },
+        "children": [
+          {
+            "elmType": "span",
+            "txtContent": "[$Title]",
+            "attributes": {
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "white-space": "nowrap",
+              "overflow": "hidden",
+              "text-overflow": "ellipsis",
+              "max-width": "150px"
+            }
+          },
+          {
+            "elmType": "span",
+            "txtContent": "[$CurrentVersion]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "div",
+        "attributes": {
+          "class": "=if([$Status] == 'Operational', 'sp-field-severity--good', if([$Status] == 'Down', 'sp-field-severity--blocked', 'sp-field-severity--warning'))"
+        },
+        "style": {
+          "display": "inline-flex",
+          "align-items": "center",
+          "margin-top": "8px",
+          "padding": "2px 8px 2px 4px",
+          "border-radius": "3px",
+          "font-size": "13px"
+        },
+        "children": [
+          {
+            "elmType": "span",
+            "attributes": {
+              "iconName": "=if([$Status] == 'Operational', 'CheckMark', if([$Status] == 'Maintenance', 'Repair', if([$Status] == 'Down', 'ErrorBadge', 'Warning')))"
+            },
+            "style": {
+              "padding": "0 4px"
+            }
+          },
+          {
+            "elmType": "span",
+            "txtContent": "[$Status]"
+          }
+        ]
+      }
+    ]
+  }
+}

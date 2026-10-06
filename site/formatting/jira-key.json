@@ -1,0 +1,15 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "a",
+  "txtContent": "@currentField",
+  "attributes": {
+    "href": "[$JiraLink]",
+    "target": "_blank",
+    "class": "ms-fontColor-themeDark"
+  },
+  "style": {
+    "font-family": "Consolas, 'Cascadia Code', monospace",
+    "font-weight": "600",
+    "display": "=if(@currentField == '', 'none', 'inline')"
+  }
+}

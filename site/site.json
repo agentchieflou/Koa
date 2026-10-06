@@ -1,0 +1,85 @@
+{
+  "site": {
+    "title": "Data Czars",
+    "path": "/sites/OSP-Data-Czars",
+    "kind": "Team site connected to a Microsoft 365 group",
+    "description": "Data Czars: the kernel and tooling we support in the PAE, how to start with it, how to get help, the usage reports, and the team."
+  },
+  "look": {
+    "theme": "Teal",
+    "header": {"layout": "Standard", "background": "None", "siteTitle": "Data Czars", "logo": "assets/logo.png", "thumbnail": "assets/logo.png"},
+    "navigation": {"orientation": "Horizontal", "menu": "Mega menu", "audienceTargeting": true},
+    "headerAgent": "Ask the Czars"
+  },
+  "navigation": [
+    {"label": "Home", "page": "home"},
+    {"label": "Get started", "page": "get-started", "groups": [
+      {"heading": "Get started", "links": [
+        {"label": "What you get", "page": "get-started", "anchor": "what-you-get"},
+        {"label": "Get access", "page": "get-started", "anchor": "get-access"},
+        {"label": "Set up", "page": "get-started", "anchor": "set-up"},
+        {"label": "Your first session", "page": "get-started", "anchor": "your-first-session"},
+        {"label": "Pick a profile", "page": "get-started", "anchor": "pick-a-profile"},
+        {"label": "Common errors", "page": "get-started", "anchor": "common-errors"}
+      ]}
+    ]},
+    {"label": "Products", "page": "products", "groups": [
+      {"heading": "Products", "links": [
+        {"label": "Product catalog", "page": "products", "anchor": "product-catalog"},
+        {"label": "Status", "page": "products", "anchor": "status"},
+        {"label": "What's new", "page": "products", "anchor": "releases"}
+      ]}
+    ]},
+    {"label": "Usage reports", "page": "usage-reports", "groups": [
+      {"heading": "Reports", "links": [
+        {"label": "Latest reports", "page": "usage-reports", "anchor": "latest-reports"},
+        {"label": "All reports", "page": "usage-reports", "anchor": "all-reports"},
+        {"label": "About the usage tool", "page": "usage-reports", "anchor": "about-the-usage-tool"}
+      ]}
+    ]},
+    {"label": "Get help", "page": "get-help", "groups": [
+      {"heading": "Get help", "links": [
+        {"label": "Report an issue", "page": "get-help", "anchor": "report-an-issue"},
+        {"label": "Request something", "page": "get-help", "anchor": "request-something"},
+        {"label": "My tickets", "page": "get-help", "anchor": "my-tickets"},
+        {"label": "FAQ", "page": "get-help", "anchor": "questions-people-ask"}
+      ]},
+      {"heading": "For the team", "members": true, "links": [
+        {"label": "Triage", "page": "get-help", "anchor": "for-the-team", "members": true},
+        {"label": "Jira board", "url": "the jira.boardUrl fact", "members": true}
+      ]}
+    ]},
+    {"label": "Links", "page": "links"},
+    {"label": "Contact", "page": "contact"},
+    {"label": "The fleet", "page": "fleet"},
+    {"label": "Copilot", "page": "copilot", "groups": [
+      {"heading": "Copilot", "links": [
+        {"label": "Ask the Czars", "page": "copilot", "anchor": "ask-the-czars"},
+        {"label": "Prompts that work", "page": "copilot", "anchor": "prompts-that-work"},
+        {"label": "In Teams", "page": "copilot", "anchor": "in-teams"}
+      ]}
+    ]}
+  ],
+  "pages": [
+    {"id": "home", "file": "pages/home.md", "title": "Home", "url": "SitePages/Home.aspx",
+     "uses": ["Products/Status", "Products/Featured", "UsageReports/Latest", "Releases/Latest"]},
+    {"id": "get-started", "file": "pages/get-started.md", "title": "Get started", "url": "SitePages/Get-started.aspx",
+     "uses": ["Access/Checklist", "SparkProfiles/Pick a profile", "FAQ/Common errors"]},
+    {"id": "products", "file": "pages/products.md", "title": "Products", "url": "SitePages/Products.aspx",
+     "uses": ["Products/Catalog", "Products/Status", "Releases/All Items"]},
+    {"id": "usage-reports", "file": "pages/usage-reports.md", "title": "Usage reports", "url": "SitePages/Usage-reports.aspx",
+     "uses": ["UsageReports/Latest", "UsageReports/By report"]},
+    {"id": "get-help", "file": "pages/get-help.md", "title": "Get help", "url": "SitePages/Get-help.aspx",
+     "uses": ["Intake/Mine", "FAQ/Everyone"]},
+    {"id": "links", "file": "pages/links.md", "title": "Links", "url": "SitePages/Links.aspx",
+     "uses": ["Links/By category"]},
+    {"id": "contact", "file": "pages/contact.md", "title": "Contact", "url": "SitePages/Contact.aspx",
+     "uses": ["Contacts/Cards"]},
+    {"id": "fleet", "file": "pages/fleet.md", "title": "The fleet", "url": "SitePages/The-fleet.aspx",
+     "uses": []},
+    {"id": "copilot", "file": "pages/copilot.md", "title": "Copilot", "url": "SitePages/Copilot.aspx",
+     "uses": ["Prompts/Library"]}
+  ],
+  "agents": "agents/README.md",
+  "skill": "skills/data-czars-pages/SKILL.md"
+}

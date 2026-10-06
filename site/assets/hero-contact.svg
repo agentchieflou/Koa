@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img">
+  <title>The team</title>
+  <rect width="1600" height="900" fill="#013234"/>
+  <g fill="#036669"><circle cx="520" cy="420" r="130"/><circle cx="760" cy="380" r="130"/></g>
+  <circle cx="1000" cy="430" r="130" fill="#8EC2C4"/>
+  <path d="M1120 220 h260 a30 30 0 0 1 30 30 v130 a30 30 0 0 1 -30 30 h-170 l-60 50 v-50 h-30 a30 30 0 0 1 -30 -30 v-130 a30 30 0 0 1 30 -30 z" fill="none" stroke="#4FA0A3" stroke-width="8"/>
+  <g fill="#4FA0A3"><circle cx="1190" cy="315" r="12"/><circle cx="1250" cy="315" r="12"/><circle cx="1310" cy="315" r="12"/></g>
+</svg>

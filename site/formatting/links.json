@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "center",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "12px 14px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "span",
+        "attributes": {
+          "iconName": "=if([$Category] == 'Confluence', 'Page', if([$Category] == 'Bitbucket', 'GitGraph', if([$Category] == 'Jira', 'TaskManager', if([$Category] == 'Power BI', 'PowerBILogo', if([$Category] == 'Teams', 'TeamsLogo', if([$Category] == 'SharePoint', 'SharepointLogo', if([$Category] == 'Docs', 'Documentation', 'Link')))))))",
+          "class": "ms-fontColor-themePrimary"
+        },
+        "style": {
+          "font-size": "20px",
+          "width": "36px",
+          "flex-shrink": "0",
+          "line-height": "1.2"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "a",
+            "txtContent": "[$Title]",
+            "attributes": {
+              "href": "[$Url]",
+              "target": "_blank",
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "text-decoration": "none"
+            }
+          },
+          {
+            "elmType": "div",
+            "txtContent": "[$LinkDescription]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "13px",
+              "margin-top": "2px",
+              "display": "=if([$LinkDescription] == '', 'none', 'block')"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "span",
+        "txtContent": "Members",
+        "attributes": {
+          "class": "ms-bgColor-neutralLighter ms-fontColor-neutralPrimary"
+        },
+        "style": {
+          "font-size": "12px",
+          "padding": "1px 6px",
+          "border-radius": "3px",
+          "flex-shrink": "0",
+          "margin-left": "12px",
+          "display": "=if([$ShownTo] == 'Members', 'inline', 'none')"
+        }
+      }
+    ]
+  },
+  "groupProps": {
+    "headerFormatter": {
+      "elmType": "div",
+      "attributes": {
+        "class": "ms-fontColor-neutralPrimary"
+      },
+      "style": {
+        "font-size": "16px",
+        "font-weight": "600",
+        "padding": "14px 4px 6px"
+      },
+      "txtContent": "@group.fieldData.displayValue"
+    }
+  }
+}
