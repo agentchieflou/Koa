@@ -1,12 +1,19 @@
 # FleetAgent mobile lane: the two Power Automate flows
 
-Two cloud flows connect the laptop's OneDrive bridge (`ad-fleet`'s outbox/inbox folders under the synced
-`FleetAgent/` tree) to the five SharePoint lists the FleetAgent canvas app reads, and back:
+Two cloud flows connect the operators' laptops to the five SharePoint lists the FleetAgent canvas app reads, and
+back. Several operators share one site:
+- **Bridge folders:** each operator's laptop bridge (`ad-fleet`'s outbox/inbox folders) lives in their own folder of
+  the site's `FleetAgent` document library. The folder is named by their UPN, and their laptop syncs it as a
+  OneDrive shortcut (`../build/each-operator.md`).
+- **Flows:** `FleetDecide` serves every operator. `FleetOutboxToLists` has one copy per operator, which reads only
+  that operator's folder, so each copy stays inside the daily request limit ([Request budget](#request-budget)).
+- **Rows:** every row carries its `Operator`.
+- **Permissions:** the five lists and the library are readable by the site's Owners only.
 
 | Flow | Kind | Trigger | Does |
 |---|---|---|---|
-| `FleetOutboxToLists` | automated | OneDrive for Business **When a file is created (properties only)** on `FleetAgent/outbox` (subfolders included) | one run per new `*.json`: Parse JSON, Switch on `kind`, upsert the matching list row by `Title`, push for approvals and non-info notifications |
-| `FleetDecide` | instant | **Power Apps (V2)**, called by the app as `FleetDecide.Run(...)` | validates, writes `FleetAgent/inbox/<kind>-<nonce>.json` signed with the invoker's UPN, records the `FleetDecisions` row, marks the approval `sent`, responds `ok/nonce/inboxFile/error` |
+| `FleetOutboxToLists (<UPN>)`, one per operator | automated | SharePoint **When a file is created (properties only)** on that operator's folder of the `FleetAgent` library, kept to `*.json` under its `outbox/` | one run per new file: Parse JSON, Switch on `kind`, upsert the matching list row by `Operator` (the copy's operator) and `Title`, push to that operator for approvals and non-info notifications |
+| `FleetDecide` | instant | **Power Apps (V2)**, called by the app as `FleetDecide.Run(...)` | validates, writes `FleetAgent/<invoker's UPN>/inbox/<kind>-<nonce>.json` signed with that UPN, records the `FleetDecisions` row, marks the approval `sent`, responds `ok/nonce/inboxFile/error` |
 
 Files here:
 
@@ -32,13 +39,16 @@ list column is text. JSON field names are snake_case, list columns are PascalCas
 objects land in `*Json` columns as JSON text. The outbox files are immutable and uniquely named, so a *created*
 trigger sees every one of them exactly once (plus the platform's at-least-once replays, which the upserts absorb).
 
+Every outbox file sits under `FleetAgent/<operator UPN>/outbox/`. The operator is that folder's name, and every
+row is identified by `Operator` (that UPN, lowercase) and `Title` together:
+
 | Outbox file | `kind` | Target list | Row key (`Title`) | Push |
 |---|---|---|---|---|
 | `attention/<repo>-<seq>.json` | `attention` | `FleetAttention` | repo alias | no |
 | `approvals/<id>.json` | `approval` | `FleetApprovals` | approval id | yes: "An agent is waiting for your approval", `{"screen":"approval","approvalId":"<id>"}` |
 | `approvals/<id>.decision.json` | `decision` | `FleetApprovals` (+ `FleetDecisions` when a nonce is present) | approval id / nonce | no |
 | `notifications/<at>-<repo>-<state>-<seq>.json` | `notification` | `FleetNotifications` | key (`<repo>:<state>`) | when `quiet` is false and `severity` is not `info`: "Fleet: an agent needs you", `{"screen":"agent","repo":"<repo>"}` |
-| `heartbeat/<yyyymmdd-hhmm>.json` | `heartbeat` | `FleetHeartbeat` | `laptop` | no |
+| `heartbeat/<yyyymmdd-hhmm>.json` | `heartbeat` | `FleetHeartbeat` | the operator's UPN (one row per operator) | no |
 | `results/<nonce>.result.json` | `result` | `FleetDecisions` (+ `FleetApprovals` when a decision was rejected) | nonce | no |
 
 Inbox files the app causes to be written (by `FleetDecide`, never by the app directly):
@@ -64,10 +74,15 @@ step (Q9). Leave the *current value* empty before export so import prompts for i
 | Name (schema name) | Used by | Value | Where it comes from |
 |---|---|---|---|
 | `fleet_FleetSiteUrl` | both flows, every SharePoint action (Site Address) | `https://contoso.sharepoint.com/sites/FleetAgent` | the site that holds the five lists |
-| `fleet_FleetOutboxFolderId` | `FleetOutboxToLists` trigger (Folder) | an opaque folder ID | pick `FleetAgent/outbox` once in the trigger's folder picker, read the stored `folderId` in the trigger's Code view, paste it here. It is tenant- and drive-specific. |
-| `fleet_FleetInboxFolderPath` | `FleetDecide` Create file (Folder Path) | `/FleetAgent/inbox` | the path form; the operator's OneDrive |
+| `fleet_FleetLibrary` | `FleetOutboxToLists` trigger (Library Name); `FleetDecide` Create file (Folder Path) | `FleetAgent` | the document library that holds one bridge folder per operator |
 | `fleet_FleetAppId` | `FleetOutboxToLists` push actions (Your app) | the canvas app GUID | Power Apps > Apps > FleetAgent > Details > App ID |
-| `fleet_FleetOperatorEmail` | `FleetOutboxToLists` push actions (Recipients) | the operator's UPN | one user per push action (connector rule); the same UPN the laptop's `pairing.json` names as `operator` |
+| `fleet_FleetOperator` | `FleetOutboxToLists`: the trigger's Folder, its trigger condition, `Compose_operator` | the UPN of the operator this copy serves, lowercase | one value per copy; `build/prepare.py flows` writes a copy for each UPN in `operators` |
+
+`FleetDecide` has no operator variable: each inbox file goes to the folder of whoever ran the app.
+
+An environment variable holds one value per environment, so a solution can carry only one copy of
+`FleetOutboxToLists`. The other operators' copies are made by `build/prepare.py flows` (step 05), which writes the
+values in as literals.
 
 Changed values take effect only after the flow is saved or turned off and on again (Q9).
 
@@ -77,13 +92,13 @@ All five connectors are Standard, Microsoft 365 seeded, and on the "cannot be bl
 
 | Connector | `apiId` | Connection reference (logical name) | Flow, actions | Run-only setting |
 |---|---|---|---|---|
-| OneDrive for Business | `/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness` | `fleet_sharedonedriveforbusiness_fleetagent` | `FleetOutboxToLists`: trigger, Get file content. `FleetDecide`: Create file | owner's connection (the operator owns both flows and the synced OneDrive) |
-| SharePoint | `.../shared_sharepointonline` | `fleet_sharedsharepointonline_fleetagent` | every Get items / Create item / Update item | owner's connection |
+| SharePoint | `/providers/Microsoft.PowerApps/apis/shared_sharepointonline` | `fleet_sharedsharepointonline_fleetagent` | `FleetOutboxToLists`: the library trigger, Get file content, every Get items / Create item / Update item. `FleetDecide`: Create file, Get items / Create item / Update item | the builder's connection, in every copy. Its account must be a site Owner, the only people who can read the lists and every operator's folder |
 | Power Apps Notification V2 | `.../shared_powerappsnotificationv2` | `fleet_sharedpowerappsnotificationv2_fleetagent` | `FleetOutboxToLists`: the two Send push notification V2 actions | owner's connection |
 | Office 365 Users | `.../shared_office365users` | `fleet_sharedoffice365users_fleetagent` | `FleetDecide`: Get my profile (V2) | **Provided by run-only user**, so the profile is the invoker's (server-attested `by`) |
 | Excel Online (Business) | `.../shared_excelonlinebusiness` | (fallback only) | replaces the SharePoint actions in the Excel fallback (`../data/README.md`) | owner's connection |
 
-Throttles: OneDrive 100 calls/connection/minute, SharePoint 600, Excel 100 (Q1, Q3).
+Throttles: SharePoint 600 calls/connection/minute, Excel 100 (Q1, Q3). Every operator's copy writes through the
+one SharePoint connection: three copies at their busiest make about 60 calls a minute, a tenth of the throttle.
 
 ## Build sheet: `FleetOutboxToLists`
 
@@ -93,26 +108,31 @@ replaced by underscores). Expressions are entered through **Add dynamic content 
 
 Notation used below: `J(x)` means `body('Parse_JSON')?['x']`; `J(a.b)` means `body('Parse_JSON')?['a']?['b']`.
 
-### Trigger: **When a file is created (properties only)** (OneDrive for Business, `OnNewFilesV2`)
+### Trigger: **When a file is created (properties only)** (SharePoint, `GetOnNewFileItems`)
 
 | Parameter | Value |
 |---|---|
-| Folder | pick `FleetAgent/outbox` (then move the stored ID into `fleet_FleetOutboxFolderId` and reference the variable, or leave the picked value: both work) |
-| Include subfolders | Yes |
-| Number of files to return | 20 |
+| Site Address | `fleet_FleetSiteUrl` |
+| Library Name | `fleet_FleetLibrary` (`FleetAgent`) |
+| Folder | `/<library>/<the operator's UPN>`, that is `@concat('/', fleet_FleetLibrary, '/', fleet_FleetOperator)`: this operator's folder and its subfolders |
 | Settings > Split On | On (the default; one run per file) |
-| Settings > Trigger conditions | `@endswith(triggerOutputs()?['body/Name'], '.json')` |
+| Settings > Trigger conditions | `@and(endswith(triggerOutputs()?['body/{FilenameWithExtension}'], '.json'), contains(toLower(triggerOutputs()?['body/{Path}']), concat('/', fleet_FleetOperator, '/outbox/')))`: only this operator's outbox records, never an inbox file, `pairing.json`, or another operator's file even if the Folder were ignored |
 | Settings > Concurrency control | leave Off for SharePoint lists; set On, degree 1 for the Excel fallback (irreversible once enabled) |
 
 The poll interval is the licence's: 5 minutes on Microsoft 365 plans, whatever the recurrence says (Q1).
 
 ### 1. **Try** (Control > Scope), containing steps 2-4
 
-### 2. **Get file content** (OneDrive for Business, `GetFileContent`)
+**Compose operator** (first inside Try): `fleet_FleetOperator`, the operator this copy serves. Every step below
+that writes a row sets **Operator** to it, every Get items adds `and Operator eq '@{outputs('Compose_operator')}'`
+to its filter, and both push actions send to it.
+
+### 2. **Get file content** (SharePoint, `GetFileContent`)
 
 | Parameter | Value |
 |---|---|
-| File | `@triggerOutputs()?['body/Id']` |
+| Site Address | `fleet_FleetSiteUrl` |
+| File Identifier | `@triggerOutputs()?['body/{Identifier}']` |
 | Infer Content Type | No |
 
 ### 3. **Parse JSON** (Data Operation)
@@ -124,7 +144,8 @@ The poll interval is the licence's: 5 minutes on Microsoft 365 plans, whatever t
 
 ### 4. **Switch on kind** (Control > Switch), On = `@body('Parse_JSON')?['kind']`, six cases, empty Default
 
-Every SharePoint action below: Site Address = `fleet_FleetSiteUrl`, List Name = the list named, and on every
+Every SharePoint action below: Site Address = `fleet_FleetSiteUrl`, List Name = the list named, **Operator** =
+`@outputs('Compose_operator')` on every Create item and Update item, and on every
 **Create item** / **Update item**: **Settings > Networking > Retry Policy = None** (idempotency by `Title` comes
 first; a retried insert is a duplicate). Get items: **Filter Query** as given, **Top Count** 1. Update item's
 **Id** = `@first(outputs('<the Get items step>')?['body/value'])?['ID']`.
@@ -166,7 +187,7 @@ Both write every column: `Title`=repo, `Project`, `Ticket`, `State`, `Role`, `Ne
      list it is SharePoint's own read-only creation time, which is when this row was made from the request (see
      `../data/README.md`). Then **Send push notification V2
      approval** (Power Apps Notification V2): Mobile app = Power Apps, Your app = `fleet_FleetAppId`, Recipients
-     Item-1 = `fleet_FleetOperatorEmail`, Message = `An agent is waiting for your approval`, Open app = Yes,
+     Item-1 = `@outputs('Compose_operator')`, Message = `An agent is waiting for your approval`, Open app = Yes,
      Parameters = `{"screen":"approval","approvalId":"@{J(id)}"}`.
    - No (replay, or the decision mirror got there first): **Approval row has no summary** (Condition):
      `empty(coalesce(first(...)?['Summary'], ''))` is equal to `true`. Yes: **Update item FleetApprovals
@@ -203,10 +224,11 @@ Both write every column: `Title`=repo, `Project`, `Ticket`, `State`, `Role`, `Ne
 
 #### Case `heartbeat`
 
-1. **Get items FleetHeartbeat**: `Title eq 'laptop'`.
+1. **Get items FleetHeartbeat**: `Title eq '@{outputs('Compose_operator')}'` (one row per operator, `Title` = the
+   operator's UPN).
 2. **Heartbeat row exists** (Condition) > Yes: **Heartbeat file is newer** (Condition): `coalesce(J(at), '')` is
    greater than or equal to the row's `At` (ISO text compares lexicographically) > Yes: **Update item
-   FleetHeartbeat**. No row: **Create item FleetHeartbeat**. Columns: `Title` = `laptop`, `At`, `EverySeconds`
+   FleetHeartbeat**. No row: **Create item FleetHeartbeat**. Columns: `Title` = the operator's UPN, `At`, `EverySeconds`
    (every_s), `ExpireSeconds` (expire_s), `Contract`, `Operator`, `Bridge`, `LaptopId` (laptop_id), `ServeUp`
    (serve_up, bool), `DeskStreams` (desk_streams), `Repos`, `NeedsHuman`, `ApprovalsPending`, `Notifications24h`,
    `Rejected24h` (all from `counts.*`), `InboxLastSeen` (inbox_last_seen).
@@ -260,9 +282,10 @@ added; the expressions below depend on that order):
 All ten are required (the designer default); the app always passes all ten. Adding an input or removing a
 response output later breaks the published app, so copy the flow to change it (Q6).
 
-**Flow details > Run only users > Edit**: share with the operator; under *Connections Used* set **Office 365
-Users** to **Provided by run-only user** (keep OneDrive and SharePoint on the owner's connections), then re-add
-the flow in the app and save the app (known issue, Q6).
+**Flow details > Run only users > Edit**: share with every operator; under *Connections Used* set **Office 365
+Users** to **Provided by run-only user** (keep SharePoint on the owner's connection), then re-add the flow in the
+app and save the app (known issue, Q6). The sender's UPN comes from their own Office 365 Users connection, so
+nobody can write into another operator's inbox.
 
 ### 1. **Try** (Scope), containing steps 2-16
 
@@ -290,17 +313,20 @@ the flow in the app and save the app (known issue, Q6).
     "device"}`. Invalid `AnswersJson` fails here and surfaces through the Catch as `ok` = No.
 11. **Compose record**: `@if(equals(trim(coalesce(triggerBody()?['text'], '')), 'decision'), outputs('Compose_decision_record'), outputs('Compose_reply_record'))`.
 12. **Compose inbox file name**: `@concat(trim(coalesce(triggerBody()?['text'], '')), '-', outputs('Compose_nonce'), '.json')`.
-13. **Create file** (OneDrive for Business, `CreateFile`): Folder Path = `fleet_FleetInboxFolderPath`,
+13. **Create file** (SharePoint, `CreateFile`): Site Address = `fleet_FleetSiteUrl`, Folder Path =
+    `@concat('/', fleet_FleetLibrary, '/', toLower(outputs('Compose_by')), '/inbox')`, the sender's own inbox,
     File Name = `outputs('Compose_inbox_file_name')`, File Content = `@string(outputs('Compose_record'))`.
     A name collision is impossible in practice (fresh GUID); if it ever happens the action fails and the app
     gets `ok` = No, which is the right outcome (Q1: treat "already exists" as "already answered").
 14. **Create item FleetDecisions** (Retry Policy None): `Title` = nonce, `Kind`, `ApprovalId`, `Repo`,
     `Decision`, `Reason` (truncated 255), `Message`, `AnswersJson`, `Digest`, `By` = Compose by, `Device`,
-    `Issued`, `Expires`, `InboxFile`, `Result` = `sent`, `ResultCode`/`ResultText`/`ResultAt` empty.
+    `Issued`, `Expires`, `InboxFile`, `Result` = `sent`, `ResultCode`/`ResultText`/`ResultAt` empty,
+    `Operator` = `toLower(Compose by)`.
 15. **Mark approval sent** (Condition): `trim(Kind)` is equal to `decision` > Yes: **Get items FleetApprovals
-    by id** `Title eq '@{trim(ApprovalId)}'`; **Approval row found** (Condition) > Yes: **Update item
-    FleetApprovals sent** (Retry Policy None): `Title` = ApprovalId, `Status` = `sent`, `DecidedBy` = Compose
-    by, `DecidedAt` = issued, `Nonce` = nonce, `Via` = `mobile`.
+    by id** `Title eq '@{trim(ApprovalId)}' and Operator eq '<toLower(Compose by)>'`, so a phone can only mark
+    its own operator's approval; **Approval row found** (Condition) > Yes: **Update item FleetApprovals sent**
+    (Retry Policy None): `Title` = ApprovalId, `Status` = `sent`, `DecidedBy` = Compose by, `DecidedAt` =
+    issued, `Nonce` = nonce, `Via` = `mobile`, `Operator` = `toLower(Compose by)`.
 16. **Respond ok** (Respond to a PowerApp or flow): outputs named exactly `ok` (Yes/No) = Yes, `nonce` (Text),
     `inboxFile` (Text), `error` (Text) = `''`.
 
@@ -317,7 +343,7 @@ the flow in the app and save the app (known issue, Q6).
    would be rejected by the laptop as `mobile_already_decided` anyway).
 
 App side, for reference: `Set(r, FleetDecide.Run("decision", ThisItem.Title, "", "approved", "", "", "",
-ThisItem.Digest, Value(LookUp(FleetHeartbeat, Title = "laptop").ExpireSeconds), "phone"))`, then `r.ok`,
+ThisItem.Digest, Value(Heartbeat.ExpireSeconds), "phone"))`, where `Heartbeat = LookUp(FleetHeartbeat, Title = Me)`, then `r.ok`,
 `r.nonce`, `r.inboxfile`, `r.error` (Power Apps lower-cases output names in the record).
 
 ## Retry and idempotency rules
@@ -325,7 +351,8 @@ ThisItem.Digest, Value(LookUp(FleetHeartbeat, Title = "laptop").ExpireSeconds), 
 - The platform delivers at-least-once (Q2): a run can repeat, and a Low-profile owner gets up to 2 automatic
   retries ~5-10 minutes apart on 408/429/5xx. **Retry Policy = None on every SharePoint Create item / Update
   item**; everything else keeps the default.
-- Every write is an upsert keyed by `Title` (repo, approval id, key, `laptop`, nonce) preceded by a Get items.
+- Every write is an upsert keyed by `Operator` and `Title` (repo, approval id, key, the UPN, nonce) preceded by a
+  Get items. Two operators' rows with the same `Title` (both have a `luna` repo) never meet.
   A replayed file finds its row and either updates it with identical values or, for `attention`, `notification`
   and `heartbeat`, skips because the file is not newer than the row (`Seq` / `At`). Two files of the same key in
   one poll may run in parallel; the same newer-than check makes the order irrelevant.
@@ -333,42 +360,62 @@ ThisItem.Digest, Value(LookUp(FleetHeartbeat, Title = "laptop").ExpireSeconds), 
   replay never pushes twice.
 - `FleetDecide` writes nothing before validation passes; its nonce is fresh per run, so a retry from the app is
   a second decision the laptop rejects (`mobile_already_decided`), never a duplicate apply.
-- The laptop writes each outbox file once, atomically, with a unique name (Q4/Q8), so "files moved within
-  OneDrive are not new" (Q1) never bites.
+- The laptop writes each outbox file once, atomically, with a unique name (Q4/Q8), so "moved files are not new"
+  (Q1) never bites. Microsoft's SharePoint connector page also says a file synced over from another library keeps
+  its metadata and starts no flow; a file the laptop writes is new, which [Verify on import](#verify-on-import)
+  row 22 confirms on the first heartbeat.
 - Keep bursts under about 30 new files per poll (Q1 known issue): the heartbeat is one file per five minutes and
   attention files are written only when a repo's digest changes; a laptop that comes back online after hours
   can exceed it, and the laptop's pruning of decided approvals and old notifications is the control.
 
 ## Request budget
 
-Owner: a Microsoft 365 seeded user, 6,000 Power Platform requests per 24 h (official per-user limit; during the
-transition period the enforced number is 10,000 per cloud flow per day for Low-profile flows and 200,000 for
-Power Apps-triggered ones, capped at 100,000 per 5 minutes, Q11). Every executed action counts, including
-Scope, Condition, Switch, Compose and retries; an empty poll that starts no run does not.
+Every executed action counts as a Power Platform request, including Scope, Condition, Switch, Compose and
+retries; a poll that starts no run does not. A Microsoft 365 licence (Microsoft Learn, *Requests limits and
+allocations*):
+
+| Period | Limit for an Office 365 licence | Applies to |
+|---|---|---|
+| now (Microsoft's licensing transition period) | 10,000 per cloud flow per 24 h | each flow, whoever runs it |
+| after the transition ends | 6,000 per user per 24 h | an automated flow's **owner**; an instant flow's **invoker** |
+
+A flow above its limit is slowed, and one that stays throttled for 14 days is turned off. For one operator's laptop:
 
 | Run | Actions counted (trigger + Try scope + steps) | Files/day | Requests/day |
 |---|---|---|---|
-| `heartbeat` (every 300 s) | trigger, Try, Get file content, Parse JSON, Switch, Get items, 2 Conditions, Update item = 9 | 86,400 / 300 = **288** | **2,592** |
-| `attention` (a file per state change per repo) | 9-10 | ~80 (4 repos x 20 changes) | ~800 |
-| `notification` | 11-12 (+1 push) | ~30 | ~350 |
-| `approval` + `decision` mirror + `result` | 10 + 12 + 10 | ~10 cycles | ~320 |
-| `FleetDecide` | ~17 | ~10 | ~170 |
-| **Total** | | | **~4,200** (~70% of 6,000) |
+| `heartbeat` (every 300 s) | trigger, Try, Compose operator, Get file content, Parse JSON, Switch, Get items, 2 Conditions, Update item = 10 | 86,400 / 300 = **288** | **2,880** |
+| `attention` (a file per state change per repo) | 10-11 | ~80 (4 repos x 20 changes) | ~850 |
+| `notification` | 12-13 (+1 push) | ~30 | ~380 |
+| `approval` + `decision` mirror + `result` | 11 + 13 + 11 | ~10 cycles | ~350 |
+| **`FleetOutboxToLists`, one operator** | | | **~4,500** |
+| `FleetDecide` (billed to whoever taps, not the owner) | ~17 | ~10 | ~170 |
 
-The heartbeat is 60% of the bill. If the day's total ever nears 6,000, double `every_s` to 600 (144 files,
-1,296 requests) before touching anything else; the phone's "laptop not syncing" rule is `now - At > 3 x
-EverySeconds`, so it adapts by itself. Two other consequences of the same table: the 90-day
-"no trigger activity" switch-off can never happen while the laptop heartbeats (Q11), and the OneDrive
-connector's 100 calls/minute is nowhere near reached (2 calls per run, at most 20 runs per poll).
+So the outbox flow is one copy per operator:
+
+- **One shared copy** for three laptops would make ~13,500 requests a day: over the 10,000 a flow may make now,
+  and over twice the 6,000 its owner may make later.
+- **One copy per operator** makes ~4,500 a day each: inside 10,000 now.
+- **After the transition**, an automated flow is billed to its owner. The builder creates every copy, so step 05
+  changes each copy's primary owner to its operator (**Details** > **Edit** > **Primary owner**, solution-aware
+  flows only); it then runs on that operator's 6,000 (Microsoft Learn, *Change the owner of a cloud flow*: up to
+  seven days to take effect, or edit and save the flow to apply it at once). Until that is done, the builder's
+  account carries every copy, which is fine during the transition and over 6,000 after it.
+
+The heartbeat is 64% of the bill. If an operator's day nears 6,000, double their laptop's `every_s` to 600 (144
+files, 1,440 requests) before touching anything else; the phone's "laptop not syncing" rule is
+`now - At > 3 x EverySeconds`, so it adapts by itself. Two other consequences of the same table: the 90-day
+"no trigger activity" switch-off can never happen while a laptop heartbeats (Q11), and SharePoint's 600 calls per
+connection per minute is nowhere near reached.
 
 ## DLP checks (before building)
 
-1. In the Power Platform admin center, **Data policies** for the target environment: SharePoint, OneDrive for
-   Business, Power Apps Notification (v1 and v2), Microsoft 365 Users and Excel Online (Business) must sit in
+1. In the Power Platform admin center, **Data policies** for the target environment: SharePoint,
+   Power Apps Notification (v1 and v2), Office 365 Users and Excel Online (Business) must sit in
    the **same** group (Business). They cannot be blocked, only classified, and Microsoft's default-environment
    guidance moves them into Business together (Q10).
-2. **Connector action control**: no rule blocking OneDrive `Get file content` / `Create file` or SharePoint
-   `Create item` / `Update item` / `Get items`; since October 2024 action control also governs triggers.
+2. **Connector action control**: no rule blocking SharePoint *When a file is created (properties only)*,
+   `Get file content`, `Create file`, `Create item`, `Update item`, `Get items` or (for step 02) *Send an HTTP
+   request to SharePoint*; since October 2024 action control also governs triggers.
 3. A managed default environment with an **advanced connector policy** (allowlist) can restrict even these; ask
    for the list.
 4. The Power Apps (V2) trigger and Data Operations (Compose, Parse JSON, Filter array) are platform capabilities,
@@ -378,7 +425,9 @@ connector's 100 calls/minute is nowhere near reached (2 calls per run, at most 2
 
 ## Import sheet
 
-For the day the two flows work in the operator's tenant:
+For the day the two flows work in the operators' tenant. The solution carries `FleetDecide` and one copy of
+`FleetOutboxToLists`; every other operator's copy comes from `build/prepare.py flows` (see
+[Environment variables](#environment-variables)).
 
 1. Build both flows inside one unmanaged solution (**FleetAgent**, publisher prefix `fleet`) so they bind to
    connection references and environment variables rather than to raw connections (Q9). Microsoft 365 users
@@ -393,12 +442,12 @@ For the day the two flows work in the operator's tenant:
 4. **Check the zip in under `flows/solution/`** (one zip per export, name with the date), next to these
    definitions. The zip is the importable artifact; the JSON stays the reviewable one.
 5. To import elsewhere (or after a reset): **Solutions > Import solution > Browse** the zip > Next > map the four
-   connection references to existing connections (create them first, signed in as the operator) > enter the
-   five environment variable values > Import. Flows are turned off and on during import and the importer becomes
+   connection references to existing connections (create them first, signed in as a site Owner) > enter the
+   four environment variable values > Import. Flows are turned off and on during import and the importer becomes
    their owner; `ConnectionAuthorizationFailed` on turn-on means a connection the importer does not own.
-6. After import: re-pick the outbox folder in the trigger if the folder ID variable was left empty, set the
-   `FleetDecide` run-only users again (that setting is not part of the solution), re-add the flow in the app,
-   and run the test plan.
+6. After import: set the `FleetDecide` run-only users again (that setting is not part of the solution), change
+   the outbox copy's primary owner to its operator ([Request budget](#request-budget)), re-add the flow in the
+   app, and run the test plan.
 
 If solution import is blocked in the tenant, fall back to **Export > Package (.zip)** / **Import Package
 (Legacy)** (incompatible with solutions), and only then to rebuilding from this sheet; the new designer can paste
@@ -417,7 +466,7 @@ unknown keys is itself unverified; if an import or Save complains, strip them fi
 |---|---|---|---|
 | 1 | every SharePoint action, `inputs.parameters` | Site Address is `dataset`, List Name is `table` | open any SharePoint action's Code view after building it by hand; rename if different |
 | 2 | every SharePoint action | `table` accepts the list *name*; Create/Update item columns are flattened `item/<Column>` keys | the designer stores the list GUID; pick the list from the dropdown when building; compare Code view |
-| 3 | trigger `folderId` | an environment variable holding the folder ID works in the trigger's Folder | if the trigger errors, pick the folder in the picker instead (the stored value is the ID to copy into the variable) |
+| 3 | trigger `dataset`, `table`, `folderPath` | the library trigger takes the list actions' `dataset` and `table` (the library's name), and Folder is `folderPath` = `/<library>/<UPN>`, site-relative, covering the folder's subfolders | pick the operator's folder in the trigger's picker and compare Code view; copy the stored form into `prepare.py`'s output. If subfolders are not covered, pick the `outbox` folder itself; the trigger condition still keeps only this operator's files |
 | 4 | trigger `splitOn`, `recurrence` | `@triggerOutputs()?['body/value']` and a 5-minute recurrence | Code view of the trigger after saving with Split On on |
 | 5 | Parse JSON `content` | with Infer Content Type = No the body is `{$content-type, $content}` and `base64ToString($content)` gives the text | if Parse JSON reports "Expected Object but got String/Null": use `@json(string(body('Get_file_content')))`, or set Infer Content Type = Yes and use `@body('Get_file_content')` directly (the connector then returns `application/json` for `.json` files) |
 | 6 | Send push notification V2 parameters | `playerType` = `PowerApps` for *Mobile app = Power Apps*; `recipients` is a one-element array; `dynamicParams` is an object | build one push action by hand, compare Code view; Parameters may be stored as JSON text |
@@ -432,21 +481,27 @@ unknown keys is itself unverified; if an import or Save complains, strip them fi
 | 15 | `utcNow('yyyy-MM-ddTHH:mm:ssZ')` | `T` and `Z` pass through as literals (they are not .NET format specifiers) | check `issued` in a test decision file: `2026-09-26T09:14:05Z`, 20 characters |
 | 16 | `first([])` | returns null (not an error) when Get items finds no row, so the `?['Seq']` / `?['At']` lookups fall back to `'0'` / `''` | seed an attention file for a repo with no row; the Create branch must run without an expression error |
 | 17 | Get my profile (V2) output | property names are camelCase (`userPrincipalName`, `mail`) | the SDK model uses `userPrincipalName`; confirm in the run's outputs |
-| 18 | OneDrive Create file collision | an existing name fails the action instead of overwriting | not reachable with GUID nonces; do not enable any overwrite option |
+| 18 | SharePoint Create file collision | an existing name fails the action instead of overwriting | not reachable with GUID nonces; do not enable any overwrite option |
 | 19 | 255-character single-line columns | `Summary`, `Reason`, `ResultText` are truncated by the flow; `ApprovalsJson` is written whole | `build/prepare.py lists` creates `ApprovalsJson` as *Multiple lines of text* (plain) for that reason; a list made by hand from the workbook needs the same change if an attention update ever fails on its length |
+| 20 | `FleetOutboxToLists` trigger condition | `{Path}` holds `<library>/<UPN>/outbox/<kind>/`, and an environment variable may be used inside a trigger condition | the first run's trigger outputs show `{Path}`. A condition that never matches shows as no runs at all in step 05's check; correct the expression to the shape `{Path}` really has |
+| 21 | `FleetDecide` Create file `folderPath` | SharePoint's Create file takes `/<library>/<UPN>/inbox`, site-relative, and the folder already exists (step 02 makes `<UPN>`, the laptop's `ad-fleet mobile init` makes `inbox`) | send a test decision; the file appears in the sender's `inbox`. A "folder not found" error names the path to correct |
+| 22 | files the OneDrive client uploads | a file the laptop writes into its synced shortcut starts the trigger like a file uploaded in the browser. Microsoft's connector page says a file *synced over from another library* keeps its metadata and starts no flow | step 05's check: a heartbeat the laptop writes produces a run. If none does while a file uploaded in the browser does, report it; the trigger *When a file is created or modified (properties only)* is the fallback |
 
 ## Test plan
 
-Prerequisites: both flows on, the five lists created from `../data/FleetAgent.xlsx` with the sample rows deleted,
-`FleetAgent/outbox/{attention,approvals,notifications,heartbeat,results}` and `FleetAgent/inbox` existing in the
-operator's OneDrive, the app installed on the phone and opened once, OS notifications allowed.
+Prerequisites: `FleetDecide` and the operator's copy of `FleetOutboxToLists` on, the five lists made by step 02
+(or from `../data/FleetAgent.xlsx` with the sample rows deleted), the operator's folder synced as a OneDrive
+shortcut with `outbox/{attention,approvals,notifications,heartbeat,results}` and `inbox` in it (`ad-fleet mobile
+init` makes them), the app installed on the phone and opened once, OS notifications allowed. `<you>` below is that
+folder: `%OneDriveCommercial%\<your UPN>` on the laptop, `FleetAgent/<your UPN>` in the library.
 
-1. **Outbox to row.** Copy `../contract/examples/heartbeat-20260926-0915.json` into `FleetAgent/outbox/heartbeat/` (any
-   unique name ending in `.json`). Within one poll (up to 5 minutes) a `FleetOutboxToLists` run appears; the
-   `FleetHeartbeat` row `laptop` shows `At` = `2026-09-26T09:15:00Z`, `Repos` = `3`, `ServeUp` = `true`.
+1. **Outbox to row.** Copy `../contract/examples/heartbeat-20260926-0915.json` into `<you>/outbox/heartbeat/` (any
+   unique name ending in `.json`). Within one poll (up to 5 minutes) a run of `FleetOutboxToLists (<your UPN>)`
+   appears; the `FleetHeartbeat` row titled with your UPN shows `At` = `2026-09-26T09:15:00Z`, `Repos` = `3`,
+   `ServeUp` = `true`.
    Copy the same file again under a new name: a second run, no change (not newer). Copy
    `../contract/examples/attention-luna-187.json` into `attention/`: the `luna` row appears with `NeedsHuman` = `true`,
-   `QuestionsJson` holding the question array as text, `Seq` = `187`.
+   `QuestionsJson` holding the question array as text, `Seq` = `187`, `Operator` = your UPN.
 2. **Approval to push.** Copy `../contract/examples/approval-rdsd-uat-7f3a.json` into `approvals/`. Expect the
    `FleetApprovals` row (`Status` = `pending`, `SourceFile` = the file name) and, on the phone, "An agent is
    waiting for your approval" with the generic Power Apps icon; tapping it opens the app with
@@ -457,7 +512,7 @@ operator's OneDrive, the app installed on the phone and opened once, OS notifica
 3. **Decide from the app.** Open the pending approval and approve it. `FleetDecide` responds within seconds
    with `ok` = Yes and a nonce; the `FleetDecisions` row exists with `Result` = `sent`, `By` = the operator's
    UPN, `InboxFile` = `decision-<nonce>.json`; the `FleetApprovals` row reads `Status` = `sent`, `Via` =
-   `mobile`, `Nonce` = the nonce; and `FleetAgent/inbox/decision-<nonce>.json` appears in the laptop's synced
+   `mobile`, `Nonce` = the nonce; and `<you>/inbox/decision-<nonce>.json` appears in the laptop's synced
    folder with exactly `schema, kind, nonce, issued, expires, by, id, digest, decision, reason, device`,
    `issued`/`expires` 20-character UTC stamps, `expires - issued` = the `ExpiresSeconds` passed.
 4. **Laptop applies.** The laptop's bridge verifies the file (nonce unused, operator matches, digest matches,
@@ -467,7 +522,7 @@ operator's OneDrive, the app installed on the phone and opened once, OS notifica
    `applied` with `ResultAt`.
 5. **Rejected path.** Copy `../contract/examples/result-c0d3e6f9-rejected.json` into `results/` after creating a
    `FleetDecisions` row titled `c0d3e6f9a2b5c8d1e4f7a0b3c6d9e2f5` and a `FleetApprovals` row whose `Nonce` is
-   that value: the decision row turns `rejected` with `ResultCode` = `mobile_expired` and the approval row
+   that value, both with `Operator` = your UPN: the decision row turns `rejected` with `ResultCode` = `mobile_expired` and the approval row
    `Status` = `rejected`.
 6. **Validation.** From the app (or the flow's Test pane) call `FleetDecide` with `Kind` = `x`, then with
    `Kind` = `decision`, `Decision` = `denied`, `Reason` = `""`, then with a 63-character digest: each returns
@@ -476,5 +531,8 @@ operator's OneDrive, the app installed on the phone and opened once, OS notifica
    `FleetNotifications` row `flow-failed:FleetOutboxToLists:<run>` cannot be written either, so the run shows
    as failed in run history; rename back, drop the file again, and confirm the alert path by instead renaming
    `FleetAttention` and dropping an attention file (the alert row appears with `Severity` = `alert`).
-8. **Budget.** After a full day, read **Analytics > Usage** (or the flow's run counts) and compare with the
-   table above.
+8. **Budget.** After a full day, read each copy's **Analytics > Actions** and compare with the table above:
+   about 4,500 per operator.
+9. **Another operator.** With a second operator connected, repeat step 1 in their folder: only their copy runs,
+   their rows carry their UPN, and on your phone *Show the team's* lists them with Approve, Deny and Reply
+   disabled. `../TESTING.md` §4 is the full three-operator check.

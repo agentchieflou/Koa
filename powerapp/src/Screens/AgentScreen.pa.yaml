@@ -5,7 +5,7 @@ Screens:
       Height: =Max(App.Height, App.MinScreenHeight)
       Fill: =RGBA(250, 250, 250, 1)
       LoadingSpinner: =LoadingSpinner.Controls
-      OnVisible: =Set(selAttention, LookUp(FleetAttention, Title = Coalesce(selAttention.Title, Param("repo"))))
+      OnVisible: =Set(selAttention, LookUp(FleetAttention, Title = Coalesce(selAttention.Title, Param("repo")) && Operator = Coalesce(selAttention.Operator, Me)))
     Children:
       - conAgentRoot:
           Control: GroupContainer
@@ -38,7 +38,7 @@ Screens:
                     =Refresh(FleetAttention);
                     Refresh(FleetApprovals);
                     Refresh(FleetDecisions);
-                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title))
+                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title && Operator = selAttention.Operator))
                   OnSettings: =false
             - conAgentAccent:
                 Control: GroupContainer
@@ -198,7 +198,7 @@ Screens:
                 Properties:
                   Label: ="Last reply"
                   Value: |-
-                    =With({d: First(SortByColumns(Filter(FleetDecisions, Repo = selAttention.Title), "Issued", SortOrder.Descending))}, If(IsBlank(d), "none yet", d.Kind & " " & d.Result & If(IsBlank(d.ResultText), "", " · " & d.ResultText)))
+                    =With({d: First(SortByColumns(Filter(FleetDecisions, Repo = selAttention.Title && Operator = selAttention.Operator), "Issued", SortOrder.Descending))}, If(IsBlank(d), "none yet", d.Kind & " " & d.Result & If(IsBlank(d.ResultText), "", " · " & d.ResultText)))
                   Wrap: =true
                   Width: =Parent.Width - 32
                   Height: =64
@@ -277,7 +277,7 @@ Screens:
                 Properties:
                   Text: ="Reply"
                   Appearance: =ButtonAppearance.Primary
-                  DisplayMode: =If(selAttention.External = "true" || IsBlank(selAttention), DisplayMode.Disabled, DisplayMode.Edit)
+                  DisplayMode: =If(selAttention.External = "true" || IsBlank(selAttention) || selAttention.Operator <> Me, DisplayMode.Disabled, DisplayMode.Edit)
                   AccessibleLabel: ="Reply to the agent"
                   Width: =Parent.Width - 32
                   Height: =52
@@ -286,11 +286,11 @@ Screens:
             - lblAgentReplyNote:
                 Control: ModernText
                 Properties:
-                  Text: ="Reply is off. The laptop reports this session as external, which means somebody else's session, and it refuses to type into one."
+                  Text: =If(selAttention.Operator <> Me, "This is " & selAttention.Operator & "'s agent; only they can reply to it.", "Reply is off. The laptop reports this session as external, which means somebody else's session, and it refuses to type into one.")
                   Size: =14
                   Color: =RGBA(97, 97, 97, 1)
                   Wrap: =true
-                  Visible: =selAttention.External = "true"
+                  Visible: =selAttention.External = "true" || (!IsBlank(selAttention) && selAttention.Operator <> Me)
                   Width: =Parent.Width - 32
                   Height: =48
                   FillPortions: =0
@@ -305,5 +305,5 @@ Screens:
                   Height: =52
                   FillPortions: =0
                   OnSelect: |-
-                    =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId));
+                    =Set(selApproval, LookUp(FleetApprovals, Title = selAttention.ApprovalId && Operator = selAttention.Operator));
                     Navigate(ApprovalScreen, ScreenTransition.Cover)

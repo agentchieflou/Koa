@@ -108,7 +108,10 @@ def test_the_five_lists_are_the_apps_columns_and_every_sample_row_validates():
     defs = KC.defs()
     assert set(LISTS) == set(COLUMNS)
     for table in LISTS:
-        assert list(defs[table]["properties"]) == COLUMNS[table] == defs[table]["required"], table
+        assert list(defs[table]["properties"]) == COLUMNS[table], table
+        optional = set(defs[table]["properties"]) - set(defs[table]["required"])
+        assert optional == (set() if table == "FleetHeartbeat" else {"Operator"}), f"{table}: {optional}"
+        assert defs[table]["required"] == [c for c in COLUMNS[table] if c not in optional], table
         with open(os.path.join(SAMPLE, f"{table}.json"), encoding="utf-8") as f:
             for row in json.load(f):
                 KC.check(row, table, where=f"powerapp/sample/{table}.json {row['Title']}")
@@ -241,7 +244,7 @@ def test_the_workbooks_sample_rows_are_what_the_flows_write_from_the_contract_ex
         "ApprovalId": n["approval_id"]}}
 
     h = ex["heartbeat-20260926-0915.json"]
-    beat = {"Title": "laptop", "At": h["at"], "EverySeconds": _cell(h["every_s"]),
+    beat = {"Title": h["operator"], "At": h["at"], "EverySeconds": _cell(h["every_s"]),
             "ExpireSeconds": _cell(h["expire_s"]), "Contract": _cell(h["contract"]), "Operator": h["operator"],
             "Bridge": h["bridge"], "LaptopId": h["laptop_id"], "ServeUp": _cell(h["serve_up"]),
             "DeskStreams": _cell(h["desk_streams"]), "Repos": _cell(h["counts"]["repos"]),
@@ -249,6 +252,10 @@ def test_the_workbooks_sample_rows_are_what_the_flows_write_from_the_contract_ex
             "Notifications24h": _cell(h["counts"]["notifications_24h"]),
             "Rejected24h": _cell(h["counts"]["rejected_24h"]), "InboxLastSeen": h["inbox_last_seen"]}
     assert [b for b in rows["FleetHeartbeat"] if b["At"] == h["at"]] == [beat]
+
+    for by_title in want.values():                          # every row names its operator, from the flow's config
+        for columns in by_title.values():
+            columns["Operator"] = h["operator"]
 
     off = [f"{table} {title} {c}: {row(table, title)[c]!r}, the example says {v!r}"
            for table, by_title in want.items() for title, columns in by_title.items()

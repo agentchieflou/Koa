@@ -1,8 +1,8 @@
 # Step 01: prerequisites and the config
 
 **Who:** you. The operator signs in when a window opens and answers two questions.
-**Produces:** every tool checked, and `build/fleet.config.json` filled in with `environment`, `siteUrl`, `operator`,
-`outboxFolderPath` and `inboxFolderPath`.
+**Produces:** every tool checked, and `build/fleet.config.json` filled in with `environment`, `siteUrl`, `library`
+and `operators`.
 
 ## 1. The tools
 
@@ -31,47 +31,33 @@ Call FlowAgent `list_environments`.
 
 Call `set_current_env` with it, and record its id as `environment`.
 
-## 3. The laptop's bridge
+## 3. The operators and the site
 
-The flows read and write the folder the laptop's bridge syncs. Run `ad-fleet mobile status`.
+Several operators share one site: each has their own fleet and laptop, and they all see one app. Ask the operator
+who is running this build:
 
-- **The command exists and `folder` is set:** the OneDrive path is the part of `folder` after the OneDrive root.
-  `C:\Users\me\OneDrive - Contoso\FleetAgent` becomes `/FleetAgent`. Set `outboxFolderPath` to
-  `/FleetAgent/outbox` and `inboxFolderPath` to `/FleetAgent/inbox`, with your actual folder name. Take
-  `operator` from the status output.
-- **`ad-fleet` exists but the bridge is off or has no folder:** tell the operator to run
-  `ad-setup --patch fleet.mobile` with these answers:
-  - enabled: yes;
-  - folder: `%OneDriveCommercial%/FleetAgent`;
-  - operator: their UPN;
-  - expire_s: 900;
-  - notify: yes.
+> 1. Which SharePoint site holds FleetAgent? Paste its address, for example
+>    `https://contoso.sharepoint.com/sites/FleetAgent`. It must be a team or communication site you **own**:
+>    the build locks the lists and the bridge library to the site's Owners, and cloud connections cannot reach a
+>    personal site's "My lists".
+> 2. Who are the operators? The UPN (sign-in address) of each person whose fleet will use it, yourself included.
+>    Every one of them must be an Owner of that site.
 
-  Then they run `ad-fleet mobile init`. Run the status again afterwards.
-- **`ad-fleet` is not installed on this machine:** the bridge runs on another laptop. Ask the operator for the
-  bridge folder's name under their OneDrive and for their UPN.
+Record the site as `siteUrl` (no trailing slash, no page name) and the UPNs, lowercase, as `operators`. Keep
+`library` as `FleetAgent` unless the site already has a library of that name used for something else.
 
-Check that the folder exists in OneDrive and is synced. A `pairing.json` file inside it means `init` ran.
+Nobody's laptop changes in this step. Each operator connects their own laptop after the build, following
+[build/each-operator.md](../each-operator.md).
 
-## 4. The SharePoint site
+## 4. Write and check the config
 
-Ask the operator:
-
-> Which SharePoint site should hold the five FleetAgent lists? Paste its address, for example
-> `https://contoso.sharepoint.com/sites/FleetAgent`. If you have none, create one: SharePoint home > **Create
-> site** > **Team site**, name it `FleetAgent`, private.
-
-Record the address as `siteUrl`, with no trailing slash and no page name.
-
-## 5. Write and check the config
-
-If `build/fleet.config.json` does not exist, copy `build/fleet.config.example.json` to it. Fill in the five values
-above and leave `studioUrl`, `appId` and `outboxFolderId` empty for now. Then run:
+If `build/fleet.config.json` does not exist, copy `build/fleet.config.example.json` to it. Fill in `environment`,
+`siteUrl`, `library` and `operators`, and leave `studioUrl` and `appId` empty for now. Then run:
 
 ```
 python build/prepare.py check
 ```
 
-**Check:** the output says `lists: ready`. It says `flows:` is missing only `outboxFolderId` and `appId`.
+**Check:** the output says `lists: ready`, and `flows:` is missing only `appId`.
 
 Record step 01 as `done` in `build/out/state.json`, including the environment's display name, and go to step 02.

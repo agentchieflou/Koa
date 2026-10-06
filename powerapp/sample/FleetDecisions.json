@@ -17,7 +17,8 @@
     "Result": "applied",
     "ResultCode": "",
     "ResultText": "applied: RDSD-117 created",
-    "ResultAt": "2026-09-26T08:21:40Z"
+    "ResultAt": "2026-09-26T08:21:40Z",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "b3Nq8KzR1tVy6WcM0pXe4LaJ9sHd2FgU",
@@ -37,7 +38,8 @@
     "Result": "applied",
     "ResultCode": "",
     "ResultText": "denied: the agent quoted the reason into its friction log",
-    "ResultAt": "2026-09-25T16:43:15Z"
+    "ResultAt": "2026-09-25T16:43:15Z",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "xT5wJ9nQc2vB7hLk0YfR4mZa8pDe3GsN",
@@ -57,7 +59,8 @@
     "Result": "sent",
     "ResultCode": "",
     "ResultText": "said into the console: Answers to your questions -- q1: row count and amounts",
-    "ResultAt": "2026-09-26T09:07:03Z"
+    "ResultAt": "2026-09-26T09:07:03Z",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "Hd2Fg9UkL4sQ7pWx0NeR6vZc3mBt8YaJ",
@@ -77,6 +80,7 @@
     "Result": "rejected",
     "ResultCode": "mobile_digest_mismatch",
     "ResultText": "the approval changed after the phone read it; open it again and decide on the current digest",
-    "ResultAt": "2026-09-26T09:22:01Z"
+    "ResultAt": "2026-09-26T09:22:01Z",
+    "Operator": "operator@example.com"
   }
 ]

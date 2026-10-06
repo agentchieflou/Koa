@@ -3,11 +3,11 @@
 # only by replacing the files AND this pin together, from a published tag. Lines are `key: value`, then
 # `<sha256>  <path relative to contract/>` (the `sha256sum` format, so `sha256sum -c` can read those lines).
 tag: mobile-contract-v1
-source: agentchieflou/this-next-please@913d157765ef8a7944d21a8167b15771edfd133f
-# The tag is published by this-next-please#599. Until it is, the source commit above is the pin, and its
-# contract/released/fleet-mobile.v1.schema.json is byte-identical to the schema pinned here.
+source: agentchieflou/this-next-please@764e7758a56d76e7b1eb5588b6e6fedb381d634a
+# The tag is published by this-next-please#599. Until it is, the source commit above is the pin: the merge of
+# this-next-please#651 (the optional Operator column) into main.
 contract: 1
-77620abfb2327a88489aeda2c2342de5a213db3cf786ef5ac14288f83b09d1ff  fleet-mobile.v1.schema.json
+c8e0d123cfbc8c41fb780919349cd33475c2b799943c375e877fafc1d9cd5630  fleet-mobile.v1.schema.json
 cabe8ca9e13a0f0066ad0ef065891f709dec412b9e78f3f018b5402d4c061a3c  examples/approval-rdsd-uat-7f3a.json
 6743847d75433e2a0a50f2a4468573760fb65f961713a026587826750b7d2696  examples/attention-luna-187.json
 c43ac28cc67df4d6cfa966d119abf13fc04ec9b7f3d4fe3730e49161162904fe  examples/decision-luna-a1c9.json

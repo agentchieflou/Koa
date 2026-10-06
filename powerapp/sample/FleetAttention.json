@@ -26,7 +26,8 @@
     "Supervised": "true",
     "External": "false",
     "Digest": "3c1f0a9d2b7e4c6f8a1d5e2b9c4f7a0d6e3b8c1f2a5d9e4b7c0f3a6d8e1b4c7f",
-    "Seq": "812"
+    "Seq": "812",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "rdsd-uat",
@@ -55,7 +56,8 @@
     "Supervised": "true",
     "External": "false",
     "Digest": "9b2e6c4a1f8d3e7b5c0a2f9d4e6b1c8a3f7d0e5b2c9a4f1d6e8b3c7a0f2d5e9b",
-    "Seq": "455"
+    "Seq": "455",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "dpm-sorting",
@@ -84,7 +86,8 @@
     "Supervised": "false",
     "External": "true",
     "Digest": "5d8a3f1c7e2b9d4a6f0c3e8b1d5a7f2c9e4b6d0a3f8c1e7b5d2a9f4c6e0b3d8a",
-    "Seq": "203"
+    "Seq": "203",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "pbi-brief",
@@ -113,7 +116,8 @@
     "Supervised": "true",
     "External": "false",
     "Digest": "7a4c9e2d6b1f8a3c5e0d7b2f9a4c6e1d8b3f5a0c7e2d9b4f6a1c8e3d0b5f7a2c",
-    "Seq": "391"
+    "Seq": "391",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "luna-docs",
@@ -142,6 +146,7 @@
     "Supervised": "true",
     "External": "false",
     "Digest": "2e7b4d9a1c6f3e8b0d5a2c7f9e4b1d6a8c3f0e5b7d2a9c4f1e6b8d3a0c5f7e2b",
-    "Seq": "678"
+    "Seq": "678",
+    "Operator": "colleague@example.com"
   }
 ]

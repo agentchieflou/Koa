@@ -38,7 +38,7 @@ Screens:
                   OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
                   OnRefresh: |-
                     =Refresh(FleetApprovals);
-                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title))
+                    Set(selApproval, LookUp(FleetApprovals, Title = selApproval.Title && Operator = selApproval.Operator))
                   OnSettings: =false
             - conDecideAccent:
                 Control: GroupContainer
@@ -117,7 +117,7 @@ Screens:
                 Properties:
                   Text: =If(decideChoice = "denied", "Send denial", "Send approval")
                   Appearance: =ButtonAppearance.Primary
-                  DisplayMode: =If(busy || IsBlank(selApproval) || (decideChoice = "denied" && IsBlank(Trim(txtReason.Text))), DisplayMode.Disabled, DisplayMode.Edit)
+                  DisplayMode: =If(busy || IsBlank(selApproval) || selApproval.Operator <> Me || (decideChoice = "denied" && IsBlank(Trim(txtReason.Text))), DisplayMode.Disabled, DisplayMode.Edit)
                   AccessibleLabel: =If(decideChoice = "denied", "Send the denial to the laptop", "Send the approval to the laptop")
                   Width: =Parent.Width - 32
                   Height: =52

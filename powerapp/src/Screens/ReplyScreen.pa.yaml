@@ -38,7 +38,7 @@ Screens:
                   OnBack: =If(!Back(), Navigate(HomeScreen, ScreenTransition.UnCover))
                   OnRefresh: |-
                     =Refresh(FleetAttention);
-                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title))
+                    Set(selAttention, LookUp(FleetAttention, Title = selAttention.Title && Operator = selAttention.Operator))
                   OnSettings: =false
             - conReplyAccent:
                 Control: GroupContainer
@@ -97,7 +97,7 @@ Screens:
                 Properties:
                   Text: ="Send reply"
                   Appearance: =ButtonAppearance.Primary
-                  DisplayMode: =If(busy || IsBlank(selAttention) || selAttention.External = "true" || IsBlank(Trim(txtMessage.Text)), DisplayMode.Disabled, DisplayMode.Edit)
+                  DisplayMode: =If(busy || IsBlank(selAttention) || selAttention.Operator <> Me || selAttention.External = "true" || IsBlank(Trim(txtMessage.Text)), DisplayMode.Disabled, DisplayMode.Edit)
                   AccessibleLabel: ="Send the reply to the laptop"
                   Width: =Parent.Width - 32
                   Height: =52

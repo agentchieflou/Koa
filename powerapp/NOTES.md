@@ -95,3 +95,17 @@ Nothing here changes the contract with the flows or the laptop bridge.
     `Components/`, as the server lays an app out; `build/prepare.py canvas-in` and `canvas-out`
     convert between that layout and this folder's. Every fix Studio's compiler asks for is made
     here first and recorded below this item, with the diagnostic it cleared.
+29. **Several operators share the lists; `Me` is the signed-in operator.** `Me = Lower(User().Email)`
+    (Learn: `User().Email` returns the UPN, not the SMTP address), lowercase because every flow writes
+    `Operator` lowercase. It is `Me`, not `Operator`, because inside `Filter` and `LookUp` on these
+    lists the column `Operator` would shadow a named formula of that name. What to check in Studio:
+    - Every lookup of a shared list names the operator (`LookUp(FleetAttention, Title = r && Operator
+      = ...)`), and `Heartbeat` is `LookUp(FleetHeartbeat, Title = Me)`, since two operators can both
+      have a `luna` repo. `tests/test_mobile_powerapp.py` refuses a lookup that does not.
+    - The galleries read `If(showTeam, <every row>, Filter(<list>, Operator = Me))` inside
+      `SortByColumns`. If Studio flags delegation on that, move the `If` outside, one `SortByColumns`
+      per branch; the two branches stay as they are.
+    - Approve, Deny, the decision's Send and both Reply buttons are disabled unless the row's
+      `Operator` is `Me`, and the screens say whose the row is. The guard is the app's courtesy only:
+      `FleetDecide` writes into the sender's own inbox and marks only the sender's own approval, so a
+      decision on someone else's row could never reach their laptop.

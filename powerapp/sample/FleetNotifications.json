@@ -11,7 +11,8 @@
     "Seq": "812",
     "Quiet": "false",
     "ApprovalId": "luna-jira-transition-20260926T091806-a52c",
-    "SourceFile": "20260926T091806Z-luna-waiting_approval-812.json"
+    "SourceFile": "20260926T091806Z-luna-waiting_approval-812.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "rdsd-uat:needs_human",
@@ -25,7 +26,8 @@
     "Seq": "455",
     "Quiet": "false",
     "ApprovalId": "",
-    "SourceFile": "20260926T085418Z-rdsd-uat-needs_human-455.json"
+    "SourceFile": "20260926T085418Z-rdsd-uat-needs_human-455.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "luna-docs:error",
@@ -39,7 +41,8 @@
     "Seq": "678",
     "Quiet": "false",
     "ApprovalId": "",
-    "SourceFile": "20260926T082313Z-luna-docs-error-678.json"
+    "SourceFile": "20260926T082313Z-luna-docs-error-678.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "pbi-brief:done",
@@ -53,6 +56,7 @@
     "Seq": "391",
     "Quiet": "true",
     "ApprovalId": "",
-    "SourceFile": "20260926T072218Z-pbi-brief-done-391.json"
+    "SourceFile": "20260926T072218Z-pbi-brief-done-391.json",
+    "Operator": "operator@example.com"
   }
 ]

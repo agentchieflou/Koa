@@ -64,20 +64,21 @@ STRING = re.compile(r'"(?:[^"]|"")*"')
 #: focus"); the classic ones the app uses still carry it.
 CLASSIC_WITH_TAB_INDEX = ("Gallery", "Timer")
 
-#: The contract every list column keeps: text, one line unless the bridge says multi-line.
+#: The contract every list column keeps: text, one line unless the bridge says multi-line. `Operator` closes every
+#: list: several operators' fleets share one site's lists, and a row is identified by Operator and Title together.
 COLUMNS = {
     "FleetAttention": ["Title", "Project", "Ticket", "State", "Role", "NeedsHuman", "Says", "LastSaid",
                        "AgeSeconds", "At", "Generated", "ApprovalId", "ApprovalsJson", "QuestionsJson",
                        "RunNumber", "RunOrigin", "RunLive", "Model", "SpendLine", "SpendTotal", "SpendToday",
-                       "SpendBudget", "Turns", "Supervised", "External", "Digest", "Seq"],
+                       "SpendBudget", "Turns", "Supervised", "External", "Digest", "Seq", "Operator"],
     "FleetApprovals": ["Title", "Repo", "Ticket", "ApprovalKind", "Summary", "PayloadPreview", "PayloadTruncated",
                        "PayloadBytes", "Digest", "Created", "Expires", "WaitingSeconds", "Status", "DecidedBy",
-                       "DecidedAt", "Reason", "Via", "Late", "Nonce", "ResultCode", "ResultText", "SourceFile"],
+                       "DecidedAt", "Reason", "Via", "Late", "Nonce", "ResultCode", "ResultText", "SourceFile", "Operator"],
     "FleetDecisions": ["Title", "Kind", "ApprovalId", "Repo", "Decision", "Reason", "Message", "AnswersJson",
                        "Digest", "By", "Device", "Issued", "Expires", "InboxFile", "Result", "ResultCode",
-                       "ResultText", "ResultAt"],
+                       "ResultText", "ResultAt", "Operator"],
     "FleetNotifications": ["Title", "Repo", "Ticket", "State", "Severity", "TitleText", "Body", "At", "Seq",
-                           "Quiet", "ApprovalId", "SourceFile"],
+                           "Quiet", "ApprovalId", "SourceFile", "Operator"],
     "FleetHeartbeat": ["Title", "At", "EverySeconds", "ExpireSeconds", "Contract", "Operator", "Bridge", "LaptopId",
                        "ServeUp", "DeskStreams", "Repos", "NeedsHuman", "ApprovalsPending", "Notifications24h",
                        "Rejected24h", "InboxLastSeen"],
@@ -472,7 +473,7 @@ def test_the_app_object_routes_deep_links_and_declares_the_named_formulas():
     formulas = app["Formulas"]
     assert formulas.startswith("=")
     declared = set(re.findall(r"^\s*([A-Z]\w*)\s*=", formulas, re.M))
-    for name in ("Operator", "Heartbeat", "HeartbeatAgeSeconds", "LaptopStale", "OperatorMismatch", "ExpireSeconds",
+    for name in ("Me", "Heartbeat", "HeartbeatAgeSeconds", "LaptopStale", "OperatorMismatch", "ExpireSeconds",
                  "PendingApprovals", "PendingCount", "NeedsYou", "DeepLinkApproval", "DeepLinkAgent", "IsPhone",
                  "IsWide", "AppVersion"):
         assert name in declared, f"App.Formulas does not declare {name}"
@@ -568,7 +569,8 @@ def test_selection_uses_set_and_the_approval_buttons_are_gated_on_pending_and_ex
     for var in ("selAttention", "selApproval", "decideChoice", "busy"):
         assert any(re.search(rf"\bSet\({var},", _code(f)) for _, _, _, f in formulas), f"{var} is never set"
     approval = {n: c for o, n, c, _, _ in _all_controls() if o == "ApprovalScreen"}
-    gate = '=If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now(), DisplayMode.Edit, DisplayMode.Disabled)'
+    gate = ('=If(selApproval.Status = "pending" && DateTimeValue(selApproval.Expires) > Now() && selApproval.Operator = Me, '
+            'DisplayMode.Edit, DisplayMode.Disabled)')
     for button in ("btnApprove", "btnDeny"):
         assert approval[button]["Properties"]["DisplayMode"] == gate, button
         assert _number(approval[button]["Properties"]["Height"]) == 52
@@ -576,6 +578,58 @@ def test_selection_uses_set_and_the_approval_buttons_are_gated_on_pending_and_ex
     assert 'Set(decideChoice, "denied")' in approval["btnDeny"]["Properties"]["OnSelect"]
     decide = {n: c for o, n, c, _, _ in _all_controls() if o == "DecideScreen"}
     assert 'decideChoice = "denied" && IsBlank(Trim(txtReason.Text))' in decide["btnDecideSend"]["Properties"]["DisplayMode"]
+    assert "selApproval.Operator <> Me" in decide["btnDecideSend"]["Properties"]["DisplayMode"]
+
+
+def _calls(code: str, function: str):
+    """The argument text of every `function(...)` call in `code`, parentheses balanced."""
+    for m in re.finditer(rf"\b{function}\(", code):
+        depth, i = 1, m.end()
+        while depth and i < len(code):
+            depth += {"(": 1, ")": -1}.get(code[i], 0)
+            i += 1
+        yield code[m.end():i - 1]
+
+
+def _arguments(args: str) -> list[str]:
+    """`args` split at its top-level commas."""
+    out, depth, start = [], 0, 0
+    for i, c in enumerate(args):
+        depth += {"(": 1, "[": 1, "{": 1, ")": -1, "]": -1, "}": -1}.get(c, 0)
+        if c == "," and depth == 0:
+            out.append(args[start:i].strip())
+            start = i + 1
+    return out + [args[start:].strip()]
+
+
+#: The lists several operators share: a row is identified by Operator and Title together (contract: optional Operator).
+SHARED = ("FleetAttention", "FleetApprovals", "FleetDecisions", "FleetNotifications")
+
+
+def test_every_read_of_a_shared_list_is_scoped_to_an_operator():
+    """Three operators' fleets share the lists. A LookUp names its row's operator; a Filter is the signed-in operator's
+    (`Operator = Me`) or the selected row's operator's, unless it is the read-only team view's branch of `If(showTeam, <the team's>, <mine>)`; the five
+    controls that act (Approve, Deny, Send decision, Send reply, Reply) are enabled on the operator's own rows only."""
+    for owner, holder, prop, formula in _formulas():
+        code = _code(formula)
+        for args in _calls(code, "LookUp"):
+            if _arguments(args)[0] in SHARED:
+                assert re.search(r"\bOperator = ", args), f"{owner}/{holder}.{prop}: LookUp without an operator: {args[:80]}"
+        team = [_arguments(a)[1] for a in _calls(code, "If") if _arguments(a)[0] == "showTeam"]
+        for args in _calls(code, "Filter"):
+            if _arguments(args)[0] in SHARED and not re.search(r"\bOperator = ", args):
+                assert any(branch == f"Filter({args})" for branch in team), \
+                    f"{owner}/{holder}.{prop}: a Filter of every operator's rows outside the team view: {args[:80]}"
+        for args in _calls(code, "If"):
+            parts = _arguments(args)
+            if parts[0] == "showTeam" and any(table in parts[1] for table in SHARED):
+                assert "Operator = Me" in parts[2] or parts[2] in ("PendingApprovals", "NeedsYou"), \
+                    f"{owner}/{holder}.{prop}: the 'mine' branch is not the operator's own rows: {parts[2][:80]}"
+    gates = {n: c["Properties"]["DisplayMode"] for _, n, c, _, _ in _all_controls()
+             if n in ("btnApprove", "btnDeny", "btnDecideSend", "btnReplySend", "btnAgentReply")}
+    assert len(gates) == 5, sorted(gates)
+    for name, gate in gates.items():
+        assert re.search(r"\.Operator (=|<>) Me", gate), f"{name} is not limited to the operator's own rows"
 
 
 # ---------------------------------------------------------------------------- theme and samples
