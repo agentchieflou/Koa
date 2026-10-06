@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="460" viewBox="0 0 1920 460" role="img">
+  <title>Impact</title>
+  <rect width="1920" height="460" fill="#013234"/>
+  <path d="M1120 390 L1240 350 L1360 362 L1480 290 L1600 262 L1720 180 L1840 140" fill="none" stroke="#8EC2C4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#8EC2C4"><circle cx="1480" cy="290" r="12"/><circle cx="1720" cy="180" r="12"/><circle cx="1840" cy="140" r="16"/></g>
+  <path d="M1100 410 H1880" stroke="#4FA0A3" stroke-width="3"/>
+</svg>

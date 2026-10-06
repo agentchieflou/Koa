@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img">
+  <title>Power BI, shipped safely</title>
+  <rect width="1600" height="900" fill="#013234"/>
+  <g><rect x="220" y="490" width="90" height="150" rx="6" fill="#036669"/><rect x="350" y="430" width="90" height="210" rx="6" fill="#036669"/><rect x="480" y="450" width="90" height="190" rx="6" fill="#036669"/><rect x="610" y="350" width="90" height="290" rx="6" fill="#036669"/><rect x="740" y="300" width="90" height="340" rx="6" fill="#036669"/><rect x="870" y="220" width="90" height="420" rx="6" fill="#036669"/></g>
+  <path d="M180 660 H1060" stroke="#4FA0A3" stroke-width="5"/>
+  <circle cx="1240" cy="300" r="120" fill="none" stroke="#8EC2C4" stroke-width="16"/>
+  <path d="M1185 300 l40 40 l75 -80" fill="none" stroke="#8EC2C4" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

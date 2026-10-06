@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="460" viewBox="0 0 1920 460" role="img">
+  <title>Work with us</title>
+  <rect width="1920" height="460" fill="#013234"/>
+  <path d="M1100 260 C1260 110, 1420 400, 1580 200 S1820 160, 1880 240" fill="none" stroke="#4FA0A3" stroke-width="4" stroke-dasharray="14 14"/>
+  <circle cx="1100" cy="260" r="26" fill="#036669"/><circle cx="1340" cy="250" r="18" fill="#036669"/><circle cx="1580" cy="200" r="18" fill="#036669"/>
+  <circle cx="1760" cy="190" r="34" fill="#8EC2C4"/>
+</svg>

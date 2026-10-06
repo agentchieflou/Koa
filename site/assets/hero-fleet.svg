@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img">
+  <title>The fleet: a desk of agent tiles</title>
+  <rect width="1600" height="900" fill="#013234"/>
+  <g><rect x="200" y="150" width="230" height="140" rx="12" fill="#036669"/><rect x="450" y="150" width="230" height="140" rx="12" fill="#036669"/><rect x="700" y="150" width="230" height="140" rx="12" fill="#036669"/><rect x="950" y="150" width="230" height="140" rx="12" fill="#036669"/><rect x="1200" y="150" width="230" height="140" rx="12" fill="#036669"/><rect x="200" y="320" width="230" height="140" rx="12" fill="#036669"/><rect x="700" y="320" width="230" height="140" rx="12" fill="#036669"/><rect x="950" y="320" width="230" height="140" rx="12" fill="#036669"/><rect x="1200" y="320" width="230" height="140" rx="12" fill="#036669"/><rect x="200" y="490" width="230" height="140" rx="12" fill="#036669"/><rect x="450" y="490" width="230" height="140" rx="12" fill="#036669"/><rect x="700" y="490" width="230" height="140" rx="12" fill="#036669"/><rect x="1200" y="490" width="230" height="140" rx="12" fill="#036669"/></g>
+  <rect x="450" y="320" width="230" height="140" rx="12" fill="#8EC2C4"/><circle cx="565" cy="390" r="22" fill="#013234"/>
+  <rect x="950" y="490" width="230" height="140" rx="12" fill="none" stroke="#8EC2C4" stroke-width="6"/>
+</svg>

@@ -1,0 +1,325 @@
+{
+  "lists": [
+    {
+      "name": "Tools",
+      "template": 100,
+      "description": "Every tool Data Czars builds and supports: one row per tool. Drives the catalog, the status strip and the featured cards.",
+      "columns": [
+        {"name": "Summary", "type": "Note", "description": "One or two sentences: what the tool does for the person using it."},
+        {"name": "Category", "type": "Choice", "choices": ["Agent platform", "Data and BI", "Testing and UAT", "Document AI", "Developer experience", "Mobile"], "required": true},
+        {"name": "Maturity", "type": "Choice", "choices": ["GA", "Preview", "Lab", "Retired"], "default": "Preview", "required": true, "description": "GA: supported for everyone. Preview: supported, still changing. Lab: try it, no promises."},
+        {"name": "Status", "type": "Choice", "choices": ["Operational", "Degraded", "Maintenance", "Down"], "default": "Operational", "required": true},
+        {"name": "CurrentVersion", "display": "Current version", "type": "Text"},
+        {"name": "StartCommand", "display": "Start command", "type": "Text", "description": "The one command that starts the tool, as typed."},
+        {"name": "DocsLink", "display": "Docs", "type": "URL"},
+        {"name": "RepoLink", "display": "Repository", "type": "URL"},
+        {"name": "ToolOwner", "display": "Owner", "type": "User"},
+        {"name": "Featured", "type": "Boolean"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "formatters": {"Status": "formatting/tool-status.json", "Maturity": "formatting/maturity.json"},
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Category", "Maturity", "Status", "CurrentVersion", "ToolOwner"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Catalog", "fields": ["Title", "Summary", "Category", "Maturity", "StartCommand", "DocsLink", "RepoLink", "ToolOwner"], "query": "<Where><Neq><FieldRef Name=\"Maturity\" /><Value Type=\"Choice\">Retired</Value></Neq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 60, "type2": "TILES", "formatter": "formatting/tools-catalog.json"},
+        {"name": "Status", "fields": ["Title", "Status", "CurrentVersion"], "query": "<Where><Neq><FieldRef Name=\"Maturity\" /><Value Type=\"Choice\">Retired</Value></Neq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 12, "type2": "TILES", "formatter": "formatting/tools-status.json"},
+        {"name": "Featured", "fields": ["Title", "Summary", "Category", "Maturity", "StartCommand", "DocsLink", "RepoLink", "ToolOwner"], "query": "<Where><Eq><FieldRef Name=\"Featured\" /><Value Type=\"Boolean\">1</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 3, "type2": "TILES", "formatter": "formatting/tools-catalog.json"}
+      ],
+      "seed": [
+        {"Title": "ad-* CLI and skills", "Summary": "Copilot orchestration for cheap models: shared skills and a credential-blind data adapter, one install per laptop.", "Category": "Agent platform", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-update", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please#readme", "desc": "README"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 10},
+        {"Title": "The fleet", "Summary": "Several headless agents, one per repository, watched and answered from one window.", "Category": "Agent platform", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-fleet serve --open", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet.md", "desc": "docs/fleet.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": true, "SortOrder": 20},
+        {"Title": "FleetAgent", "Summary": "The fleet on a phone: answer an agent and decide an approval from Power Apps. The app decides nothing.", "Category": "Mobile", "Maturity": "Preview", "Status": "Operational", "CurrentVersion": "contract v1", "StartCommand": "Power Apps mobile", "DocsLink": {"url": "https://github.com/agentchieflou/Koa#readme", "desc": "Koa README"}, "RepoLink": {"url": "https://github.com/agentchieflou/Koa", "desc": "Koa"}, "Featured": false, "SortOrder": 30},
+        {"Title": "The world", "Summary": "The fleet as a place: walk to the agent that needs you, with the keyboard or a controller.", "Category": "Agent platform", "Maturity": "Lab", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "/world", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet-world.md", "desc": "docs/fleet-world.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 40},
+        {"Title": "Power BI toolkit", "Summary": "Lint TMDL, check the model against the report, deploy through Tabular Editor 2, refresh over XMLA.", "Category": "Data and BI", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-pbip check", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/power-bi-features.md", "desc": "docs/power-bi-features.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": true, "SortOrder": 50},
+        {"Title": "Data connectors", "Summary": "Teradata, Hive, Impala and Oracle behind one adapter, with a dialect lint before every query.", "Category": "Data and BI", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-sql-check", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/setup.md", "desc": "docs/setup.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": true, "SortOrder": 60},
+        {"Title": "UAT reconciliation", "Summary": "Replays a sprint from Jira and reconciles expected values against the warehouses, tier by tier.", "Category": "Testing and UAT", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-uat", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/plan-luna-pipeline.md", "desc": "docs/plan-luna-pipeline.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 70},
+        {"Title": "Document AI", "Summary": "Field extraction over DPM-routed text, with Azure Content Understanding as the engine.", "Category": "Document AI", "Maturity": "Preview", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-dpm", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/tree/main/skills/dpm-router", "desc": "skills/dpm-router"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 80},
+        {"Title": "Jira, Bitbucket and Confluence", "Summary": "Create, triage and transition Jira issues, open pull requests, publish Markdown to Confluence.", "Category": "Developer experience", "Maturity": "GA", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-jira", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/tree/main/skills/jira-router", "desc": "skills/jira-router"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 90},
+        {"Title": "Code graph and project context", "Summary": "What a repository is in seconds, without a model, and a code graph behind a human approval gate.", "Category": "Developer experience", "Maturity": "Preview", "Status": "Operational", "CurrentVersion": "0.18.0", "StartCommand": "ad-context build", "DocsLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/project-context.md", "desc": "docs/project-context.md"}, "RepoLink": {"url": "https://github.com/agentchieflou/this-next-please", "desc": "this-next-please"}, "Featured": false, "SortOrder": 100}
+      ]
+    },
+    {
+      "name": "Releases",
+      "template": 100,
+      "description": "One row per release of a tool: what changed and whether an update needs more than the standard commands.",
+      "columns": [
+        {"name": "Headline", "type": "Text", "required": true},
+        {"name": "Tool", "type": "Lookup", "lookup": "Tools"},
+        {"name": "ReleasedOn", "display": "Released", "type": "DateTime"},
+        {"name": "Kind", "type": "Choice", "choices": ["Feature", "Fix", "Breaking", "Security", "Notes"], "default": "Feature"},
+        {"name": "ReleaseNotes", "display": "Notes", "type": "Note"},
+        {"name": "UpdateSteps", "display": "On update", "type": "Note", "description": "What an update needs beyond ad-update and a new Copilot chat. Empty when nothing."},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Headline", "Tool", "Kind", "ReleasedOn"], "query": "<OrderBy><FieldRef Name=\"ReleasedOn\" Ascending=\"FALSE\" /><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true, "formatter": "formatting/releases.json"},
+        {"name": "Latest", "fields": ["Title", "Headline", "Kind"], "query": "<OrderBy><FieldRef Name=\"ReleasedOn\" Ascending=\"FALSE\" /><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 5, "formatter": "formatting/releases.json"}
+      ],
+      "seed": [
+        {"Title": "0.17.6", "Headline": "Voxel's hits and rewards", "Kind": "Feature", "ReleaseNotes": "An agent that errors knocks its strip.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/CHANGELOG.md#0176", "desc": "CHANGELOG"}},
+        {"Title": "0.17.7", "Headline": "Playbook: a coach's chalkboard skin", "Kind": "Feature", "ReleaseNotes": "Every agent is an O on the board.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/CHANGELOG.md#0177", "desc": "CHANGELOG"}},
+        {"Title": "0.17.8", "Headline": "Playbook's board", "Kind": "Feature", "ReleaseNotes": "One static shader under the marks: grain and haze on the slate.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/CHANGELOG.md#0178", "desc": "CHANGELOG"}},
+        {"Title": "0.18.0", "Headline": "Fleet agents launch like a Copilot window", "Kind": "Feature", "ReleaseNotes": "Every tool on, autopilot on, the auto model. Custom visuals are certified-only whatever a project says. Verified against Power BI Desktop 2.157.", "UpdateSteps": "The two standard commands, then start a new Copilot chat.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/CHANGELOG.md#0180", "desc": "CHANGELOG"}}
+      ]
+    },
+    {
+      "name": "Requests",
+      "template": 100,
+      "description": "Work requested from Data Czars by partners across the bank: one row per request, triaged within the promised days.",
+      "columns": [
+        {"name": "RequestType", "display": "Request type", "type": "Choice", "choices": ["New report or dashboard", "Data pull", "Automation or agent", "Tool access", "UAT support", "Consultation", "Problem with a tool"], "required": true},
+        {"name": "Details", "type": "Note", "required": true, "description": "What you need and what decision it serves."},
+        {"name": "UsedBy", "display": "Who will use it", "type": "Text"},
+        {"name": "RequesterTeam", "display": "Your team", "type": "Text"},
+        {"name": "NeededBy", "display": "Needed by", "type": "DateTime"},
+        {"name": "Benefit", "type": "Choice", "choices": ["High", "Medium", "Low"], "default": "Medium"},
+        {"name": "Status", "type": "Choice", "choices": ["New", "Triage", "Accepted", "In progress", "Blocked", "Done", "Declined"], "default": "New", "required": true},
+        {"name": "Owner", "type": "User"},
+        {"name": "JiraKey", "display": "Jira", "type": "Text"}
+      ],
+      "formatters": {"Status": "formatting/request-status.json"},
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "RequestType", "Status", "Owner", "NeededBy", "Author", "JiraKey"], "query": "<OrderBy><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Mine", "fields": ["LinkTitle", "RequestType", "Status", "Owner", "NeededBy"], "query": "<Where><Eq><FieldRef Name=\"Author\" /><Value Type=\"Integer\"><UserID Type=\"Integer\" /></Value></Eq></Where><OrderBy><FieldRef Name=\"ID\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 30},
+        {"name": "Triage", "fields": ["LinkTitle", "RequestType", "Benefit", "NeededBy", "Author", "RequesterTeam", "Status"], "query": "<Where><Or><Eq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">New</Value></Eq><Eq><FieldRef Name=\"Status\" /><Value Type=\"Choice\">Triage</Value></Eq></Or></Where><OrderBy><FieldRef Name=\"ID\" /></OrderBy>", "rowLimit": 100}
+      ],
+      "seed": []
+    },
+    {
+      "name": "Roadmap",
+      "template": 100,
+      "description": "What Data Czars is building now, next and later. One row per item; the lane is the promise.",
+      "columns": [
+        {"name": "Lane", "type": "Choice", "choices": ["Now", "Next", "Later", "Shipped"], "default": "Next", "required": true},
+        {"name": "Tool", "type": "Lookup", "lookup": "Tools"},
+        {"name": "Summary", "type": "Note"},
+        {"name": "Ticket", "type": "Text", "description": "The issue, epic or plan the item comes from."},
+        {"name": "MoreLink", "display": "Link", "type": "URL"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Lane", "Tool", "Ticket"], "query": "<OrderBy><FieldRef Name=\"Lane\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Now", "fields": ["Title", "Tool", "Ticket", "Summary"], "query": "<Where><Eq><FieldRef Name=\"Lane\" /><Value Type=\"Choice\">Now</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 10, "formatter": "formatting/roadmap.json"},
+        {"name": "Next", "fields": ["Title", "Tool", "Ticket", "Summary"], "query": "<Where><Eq><FieldRef Name=\"Lane\" /><Value Type=\"Choice\">Next</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 10, "formatter": "formatting/roadmap.json"},
+        {"name": "Later", "fields": ["Title", "Tool", "Ticket", "Summary"], "query": "<Where><Eq><FieldRef Name=\"Lane\" /><Value Type=\"Choice\">Later</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 10, "formatter": "formatting/roadmap.json"}
+      ],
+      "seed": [
+        {"Title": "Fresh: renew stale agents in one click", "Lane": "Now", "Ticket": "epic #238", "Summary": "Every session records the install it started on; renewing the stale ones is previewed, then one click.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/plan-fresh.md", "desc": "docs/plan-fresh.md"}, "SortOrder": 10},
+        {"Title": "FleetAgent: the first phone round trip", "Lane": "Now", "Ticket": "Koa TESTING.md", "Summary": "A prompt typed on the phone reaching an agent on the laptop, and an approval decided on the phone releasing one.", "MoreLink": {"url": "https://github.com/agentchieflou/Koa/blob/main/TESTING.md", "desc": "Koa TESTING.md"}, "SortOrder": 20},
+        {"Title": "This site, and Ask the Czars", "Lane": "Now", "Ticket": "Koa site/", "Summary": "Everything Data Czars in one place, built from Koa and answered by its own agent.", "SortOrder": 30},
+        {"Title": "Panes: every agent its own column", "Lane": "Next", "Ticket": "docs/plan-panes.md", "Summary": "One arrangement where every agent is a full-height column, resized by dragging the gutter.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/plan-panes.md", "desc": "docs/plan-panes.md"}, "SortOrder": 10},
+        {"Title": "Ink: skins drawn live", "Lane": "Next", "Ticket": "epic #246", "Summary": "Every skin drawn by pencil, pen, marker and highlighter, with one plain fallback where WebGL is missing.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/plan-ink.md", "desc": "docs/plan-ink.md"}, "SortOrder": 20},
+        {"Title": "The world: agents as places", "Lane": "Later", "Ticket": "#626", "Summary": "Walk the fleet with a controller at 100 frames a second or more; the agents become objects you go to.", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet-world.md", "desc": "docs/fleet-world.md"}, "SortOrder": 10}
+      ]
+    },
+    {
+      "name": "Decisions",
+      "template": 100,
+      "description": "The decision log: what Data Czars decided, why, and what it costs. One row per decision; superseded rows stay.",
+      "columns": [
+        {"name": "DecisionNo", "display": "No.", "type": "Text", "required": true},
+        {"name": "DecisionStatus", "display": "Status", "type": "Choice", "choices": ["Proposed", "Accepted", "Superseded", "Rejected"], "default": "Proposed", "required": true},
+        {"name": "DecidedOn", "display": "Decided", "type": "DateTime"},
+        {"name": "DecisionContext", "display": "Context", "type": "Note"},
+        {"name": "DecisionText", "display": "Decision", "type": "Note"},
+        {"name": "Consequences", "type": "Note"},
+        {"name": "SourceRef", "display": "Source", "type": "Text"},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "formatters": {"DecisionStatus": "formatting/decision-status.json"},
+      "views": [
+        {"name": "All Items", "fields": ["DecisionNo", "LinkTitle", "DecisionStatus", "DecidedOn", "SourceRef"], "query": "<OrderBy><FieldRef Name=\"DecisionNo\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Log", "fields": ["DecisionNo", "Title", "DecisionStatus", "SourceRef"], "query": "<OrderBy><FieldRef Name=\"DecisionNo\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 10, "formatter": "formatting/decisions.json"}
+      ],
+      "seed": [
+        {"Title": "One pull request at a time; the operator merges", "DecisionNo": "001", "DecisionStatus": "Accepted", "DecisionText": "No trains in Koa: one open pull request, merged by the operator.", "SourceRef": "this-next-please#600, D11"},
+        {"Title": "Fleet agents launch like a Copilot window by default", "DecisionNo": "002", "DecisionStatus": "Accepted", "DecisionText": "fleet.permissions defaults to all, autopilot on, the auto model; repo and strict stay one setting away.", "SourceRef": "#625, 0.18.0"},
+        {"Title": "Custom visuals are certified-only, whatever a project says", "DecisionNo": "003", "DecisionStatus": "Accepted", "DecisionText": "A visual that is not Microsoft-certified is an ad-pbip check error and an ad-pbi publish refusal.", "SourceRef": "0.18.0"},
+        {"Title": "The mobile contract is pinned, never edited", "DecisionNo": "004", "DecisionStatus": "Accepted", "DecisionText": "contract/ changes only by adopting a published mobile-contract tag, in one pull request.", "SourceRef": "Koa AGENTS.md"},
+        {"Title": "The app decides nothing", "DecisionNo": "005", "DecisionStatus": "Accepted", "DecisionText": "FleetAgent shows the laptop's words verbatim; its only rule is that three missed heartbeats means not syncing.", "SourceRef": "Koa AGENTS.md"}
+      ]
+    },
+    {
+      "name": "Glossary",
+      "template": 100,
+      "description": "The words Data Czars uses, defined once. The site agent answers from here first.",
+      "columns": [
+        {"name": "Definition", "type": "Note", "required": true},
+        {"name": "SeeAlso", "display": "See also", "type": "Text"},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Definition", "SeeAlso"], "query": "<OrderBy><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 200, "replace": true},
+        {"name": "A to Z", "fields": ["Title", "Definition"], "query": "<OrderBy><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 200, "formatter": "formatting/glossary.json"}
+      ],
+      "seed": [
+        {"Title": "AGENTS.md", "Definition": "About thirty lines of project facts in each repository, pointing the agent at the installed skills."},
+        {"Title": "Approval", "Definition": "A write an agent wants to make to Jira, Bitbucket or Confluence, held until a person clicks."},
+        {"Title": "Bridge", "Definition": "The laptop side of FleetAgent: it writes the outbox and applies a phone's decision only after checking it."},
+        {"Title": "Contract", "Definition": "The pinned JSON Schema both sides of the fleet build to, changed only by adopting a tagged version."},
+        {"Title": "Desk", "Definition": "The fleet's page: one tile per registered repository."},
+        {"Title": "PBIP", "Definition": "A Power BI project saved as files, so a repository can diff and review it."},
+        {"Title": "Router", "Definition": "The skill that picks exactly one other skill for each request."},
+        {"Title": "Skill", "Definition": "A SKILL.md with one job, read by Copilot when a chat starts."},
+        {"Title": "TMDL", "Definition": "The model of a PBIP, written as text."},
+        {"Title": "TOON", "Definition": "The compact table format the tools hand an agent: inline when small; header, sample and stats when not."},
+        {"Title": "XMLA", "Definition": "The endpoint Tabular Editor and a refresh use to reach a Power BI semantic model."},
+        {"Title": "ad-doctor", "Definition": "The offline health check: every fail row names the setting behind it and the fix."}
+      ]
+    },
+    {
+      "name": "FAQ",
+      "template": 100,
+      "description": "Questions people ask Data Czars, answered once. Partners see the Partners rows; members see all.",
+      "columns": [
+        {"name": "Answer", "type": "Note", "required": true},
+        {"name": "Topic", "type": "Choice", "choices": ["Getting started", "The fleet", "Power BI", "Data", "Requests", "This site"]},
+        {"name": "ShownTo", "display": "Shown to", "type": "Choice", "choices": ["Partners", "Members"], "default": "Partners"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Topic", "ShownTo"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Partners", "fields": ["Title", "Answer"], "query": "<Where><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Partners</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 20, "formatter": "formatting/faq.json"},
+        {"name": "Members", "fields": ["Title", "Answer"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 40, "formatter": "formatting/faq.json"}
+      ],
+      "seed": [
+        {"Title": "Do I need to clone a repository to use the CLI?", "Answer": "No. The CLI installs straight from GitHub with pip, and project repositories install nothing: per project you only run ad-setup --project.", "Topic": "Getting started", "ShownTo": "Partners", "SortOrder": 10},
+        {"Title": "Why did my update not take?", "Answer": "pip will not reinstall a git URL whose version has not changed. Run ad-update, which forces it, then start a new Copilot chat so it reads the new skills.", "Topic": "Getting started", "ShownTo": "Partners", "SortOrder": 20},
+        {"Title": "Does an agent ever write to Jira on its own?", "Answer": "No. A write waits for one click from you, on the desk or on your phone.", "Topic": "The fleet", "ShownTo": "Partners", "SortOrder": 30},
+        {"Title": "Which models do the agents use?", "Answer": "Cheap ones, on purpose. The platform is proven on MAI 1.1 Flash, Luna and Auto.", "Topic": "The fleet", "ShownTo": "Partners", "SortOrder": 40},
+        {"Title": "How fast do you triage a request?", "Answer": "Within [N] business days. You can follow every request under My requests on Work with us.", "Topic": "Requests", "ShownTo": "Partners", "SortOrder": 50},
+        {"Title": "How do I add or change a page on this site?", "Answer": "Open Copilot on the page and ask; the site skill data-czars-pages keeps it in the house style. Every page has a sheet in Koa's site/pages.", "Topic": "This site", "ShownTo": "Members", "SortOrder": 60},
+        {"Title": "Where does a decision go?", "Answer": "A row in Decisions, with the context and the consequences, numbered after the last one. Superseded rows stay.", "Topic": "This site", "ShownTo": "Members", "SortOrder": 70}
+      ]
+    },
+    {
+      "name": "Metrics",
+      "template": 100,
+      "description": "The numbers on Home and Impact, one row per measure, written by a scheduled flow. Every number carries its method.",
+      "columns": [
+        {"name": "MetricValue", "display": "Value", "type": "Text", "required": true},
+        {"name": "MetricLabel", "display": "Label", "type": "Text", "required": true},
+        {"name": "MetricWindow", "display": "Window", "type": "Text"},
+        {"name": "Definition", "type": "Note"},
+        {"name": "SourceRef", "display": "Source", "type": "Text"},
+        {"name": "RefreshedOn", "display": "Refreshed", "type": "DateTime"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "MetricValue", "MetricWindow", "RefreshedOn"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "replace": true},
+        {"name": "Tiles", "fields": ["Title", "MetricValue", "MetricLabel", "MetricWindow"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 4, "type2": "TILES", "formatter": "formatting/metrics-tiles.json"},
+        {"name": "Method", "fields": ["Title", "Definition", "SourceRef", "RefreshedOn"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 20}
+      ],
+      "seed": [
+        {"Title": "Agent turns", "MetricValue": "[N]", "MetricLabel": "agent turns run this month", "MetricWindow": "last 30 days", "Definition": "Every turn a fleet agent completed, counted once, whatever the model.", "SourceRef": "the fleet ledger, ad-fleet history", "SortOrder": 10},
+        {"Title": "Reports shipped", "MetricValue": "[N]", "MetricLabel": "reports shipped through the toolkit", "MetricWindow": "this quarter", "Definition": "Reports published to the service through the toolkit after ad-pbip check passed.", "SourceRef": "ad-pbi publish records", "SortOrder": 20},
+        {"Title": "Hours given back", "MetricValue": "[N]", "MetricLabel": "analyst hours given back", "MetricWindow": "this quarter, estimated", "Definition": "[The method the team agrees, written here before the first number is shown.]", "SourceRef": "[Source]", "SortOrder": 30},
+        {"Title": "Teams on the platform", "MetricValue": "[N]", "MetricLabel": "teams on the platform", "MetricWindow": "today", "Definition": "Teams with at least one person who ran ad-doctor clean in the last 30 days.", "SourceRef": "[Source]", "SortOrder": 40}
+      ]
+    },
+    {
+      "name": "LearningPaths",
+      "template": 100,
+      "description": "The 101, 201 and 301 paths: one row per module, in order.",
+      "columns": [
+        {"name": "PathLevel", "display": "Path", "type": "Choice", "choices": ["101", "201", "301"], "required": true},
+        {"name": "StepNo", "display": "Step", "type": "Number", "required": true},
+        {"name": "ModuleFormat", "display": "Format", "type": "Choice", "choices": ["Guide", "Video", "Workshop"], "default": "Guide"},
+        {"name": "Tool", "type": "Lookup", "lookup": "Tools"},
+        {"name": "Summary", "type": "Note"},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "PathLevel", "StepNo", "ModuleFormat", "Tool"], "query": "<OrderBy><FieldRef Name=\"PathLevel\" /><FieldRef Name=\"StepNo\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "101", "fields": ["Title", "StepNo", "ModuleFormat", "MoreLink"], "query": "<Where><Eq><FieldRef Name=\"PathLevel\" /><Value Type=\"Choice\">101</Value></Eq></Where><OrderBy><FieldRef Name=\"StepNo\" /></OrderBy>", "rowLimit": 12, "formatter": "formatting/learning-path.json"},
+        {"name": "201", "fields": ["Title", "StepNo", "ModuleFormat", "MoreLink"], "query": "<Where><Eq><FieldRef Name=\"PathLevel\" /><Value Type=\"Choice\">201</Value></Eq></Where><OrderBy><FieldRef Name=\"StepNo\" /></OrderBy>", "rowLimit": 12, "formatter": "formatting/learning-path.json"},
+        {"name": "301", "fields": ["Title", "StepNo", "ModuleFormat", "MoreLink"], "query": "<Where><Eq><FieldRef Name=\"PathLevel\" /><Value Type=\"Choice\">301</Value></Eq></Where><OrderBy><FieldRef Name=\"StepNo\" /></OrderBy>", "rowLimit": 12, "formatter": "formatting/learning-path.json"}
+      ],
+      "seed": [
+        {"Title": "Install the CLI and the skills", "PathLevel": "101", "StepNo": 1, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please#first-install", "desc": "First install"}},
+        {"Title": "Read ad-doctor and fix what it names", "PathLevel": "101", "StepNo": 2, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/setup.md", "desc": "docs/setup.md"}},
+        {"Title": "Set up a project with ad-setup --project", "PathLevel": "101", "StepNo": 3, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please#per-project", "desc": "Per project"}},
+        {"Title": "Your first query: ad-td and ad-sql-check", "PathLevel": "101", "StepNo": 4, "ModuleFormat": "Workshop"},
+        {"Title": "Register repositories and open the desk", "PathLevel": "201", "StepNo": 1, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet.md", "desc": "docs/fleet.md"}},
+        {"Title": "Approvals, replies and the unblock sentence", "PathLevel": "201", "StepNo": 2, "ModuleFormat": "Video", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet-approvals.md", "desc": "docs/fleet-approvals.md"}},
+        {"Title": "Start the day fresh, end it with wrapup", "PathLevel": "201", "StepNo": 3, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet.md#the-daily-loop", "desc": "The daily loop"}},
+        {"Title": "FleetAgent: the fleet on your phone", "PathLevel": "201", "StepNo": 4, "ModuleFormat": "Video", "MoreLink": {"url": "https://github.com/agentchieflou/Koa/blob/main/TESTING.md", "desc": "Koa TESTING.md"}},
+        {"Title": "How the router picks exactly one skill", "PathLevel": "301", "StepNo": 1, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/tree/main/skills/router", "desc": "skills/router"}},
+        {"Title": "Write a SKILL.md with one job", "PathLevel": "301", "StepNo": 2, "ModuleFormat": "Workshop"},
+        {"Title": "Friction logs and the repair loop", "PathLevel": "301", "StepNo": 3, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/prompts/remediate-from-friction.prompt.md", "desc": "remediate-from-friction"}},
+        {"Title": "Ship it: one pull request, the operator merges", "PathLevel": "301", "StepNo": 4, "ModuleFormat": "Guide", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/developing-with-agents.md", "desc": "docs/developing-with-agents.md"}}
+      ]
+    },
+    {
+      "name": "WhoToAsk",
+      "template": 100,
+      "description": "Who answers what: one row per topic, with a backup and the right place to ask.",
+      "columns": [
+        {"name": "Contact", "display": "Ask", "type": "User"},
+        {"name": "Backup", "type": "User"},
+        {"name": "Channel", "display": "Where", "type": "Choice", "choices": ["Team channel", "Office hours", "Request work"], "default": "Team channel"},
+        {"name": "Details", "type": "Text"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "Contact", "Backup", "Channel"], "query": "<OrderBy><FieldRef Name=\"Title\" /></OrderBy>", "rowLimit": 100, "replace": true}
+      ],
+      "seed": [
+        {"Title": "Install and update", "Channel": "Team channel"},
+        {"Title": "The fleet", "Channel": "Team channel"},
+        {"Title": "FleetAgent on the phone", "Channel": "Team channel"},
+        {"Title": "Power BI toolkit", "Channel": "Office hours"},
+        {"Title": "Data connectors and SQL lint", "Channel": "Office hours"},
+        {"Title": "UAT reconciliation", "Channel": "Request work"},
+        {"Title": "Document AI", "Channel": "Request work"},
+        {"Title": "This site", "Channel": "Team channel"}
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "template": 100,
+      "description": "A new Czar's first day, week and month: one row per task, in order.",
+      "columns": [
+        {"name": "Phase", "type": "Choice", "choices": ["Day one", "Week one", "Month one"], "required": true},
+        {"name": "StepNo", "display": "Step", "type": "Number"},
+        {"name": "Category", "type": "Choice", "choices": ["Access", "Laptop", "Reading", "People", "First task"]},
+        {"name": "Details", "type": "Note"},
+        {"name": "MoreLink", "display": "Link", "type": "URL"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["StepNo", "LinkTitle", "Phase", "Category", "MoreLink"], "query": "<OrderBy><FieldRef Name=\"StepNo\" /></OrderBy>", "rowLimit": 100, "replace": true}
+      ],
+      "seed": [
+        {"Title": "Get added to the Data Czars group", "Phase": "Day one", "StepNo": 1, "Category": "Access"},
+        {"Title": "Meet your buddy", "Phase": "Day one", "StepNo": 2, "Category": "People"},
+        {"Title": "Install Python 3.14 and Git", "Phase": "Day one", "StepNo": 3, "Category": "Laptop"},
+        {"Title": "Install the CLI and the skills", "Phase": "Day one", "StepNo": 4, "Category": "Laptop", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please#first-install", "desc": "First install"}},
+        {"Title": "Run ad-setup, then ad-doctor until it is clean", "Phase": "Week one", "StepNo": 5, "Category": "Laptop", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/setup.md", "desc": "docs/setup.md"}},
+        {"Title": "Jira and Bitbucket through pncli", "Phase": "Week one", "StepNo": 6, "Category": "Access", "Details": "pncli config init keeps the Jira token; the tools only borrow it by key name."},
+        {"Title": "Read AGENTS.md and the data format policy", "Phase": "Week one", "StepNo": 7, "Category": "Reading", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/data-format-policy.md", "desc": "docs/data-format-policy.md"}},
+        {"Title": "Take 101: your first week", "Phase": "Week one", "StepNo": 8, "Category": "Reading"},
+        {"Title": "Come to office hours", "Phase": "Week one", "StepNo": 9, "Category": "People"},
+        {"Title": "Run a fleet of two agents for a day", "Phase": "Month one", "StepNo": 10, "Category": "First task", "MoreLink": {"url": "https://github.com/agentchieflou/this-next-please/blob/main/docs/fleet.md", "desc": "docs/fleet.md"}},
+        {"Title": "Ship one change through a pull request", "Phase": "Month one", "StepNo": 11, "Category": "First task"},
+        {"Title": "Write your first friction log", "Phase": "Month one", "StepNo": 12, "Category": "First task"}
+      ]
+    },
+    {
+      "name": "Guides",
+      "template": 101,
+      "description": "Guides, runbooks, standards, decks and recordings. Every file carries Kind, Tool, Review by and Owner, so the site agent can tell a current runbook from an old one.",
+      "columns": [
+        {"name": "Kind", "type": "Choice", "choices": ["Guide", "Runbook", "Reference", "Standard", "Recording", "Deck", "Template"], "default": "Guide", "required": true},
+        {"name": "Tool", "type": "Lookup", "lookup": "Tools"},
+        {"name": "ReviewBy", "display": "Review by", "type": "DateTime"},
+        {"name": "DocOwner", "display": "Owner", "type": "User"},
+        {"name": "ShownTo", "display": "Shown to", "type": "Choice", "choices": ["Partners", "Members"], "default": "Partners"}
+      ],
+      "views": [
+        {"name": "All Documents", "fields": ["DocIcon", "LinkFilename", "Kind", "Tool", "ReviewBy", "DocOwner", "Modified"], "query": "<OrderBy><FieldRef Name=\"FileLeafRef\" /></OrderBy>", "rowLimit": 100, "replace": true},
+        {"name": "Guides", "fields": ["DocIcon", "LinkFilename", "Kind", "Tool", "ReviewBy"], "query": "<Where><Or><Or><Eq><FieldRef Name=\"Kind\" /><Value Type=\"Choice\">Guide</Value></Eq><Eq><FieldRef Name=\"Kind\" /><Value Type=\"Choice\">Runbook</Value></Eq></Or><Eq><FieldRef Name=\"Kind\" /><Value Type=\"Choice\">Reference</Value></Eq></Or></Where><OrderBy><FieldRef Name=\"FileLeafRef\" /></OrderBy>", "rowLimit": 30},
+        {"name": "Standards", "fields": ["DocIcon", "LinkFilename", "ReviewBy", "DocOwner"], "query": "<Where><Eq><FieldRef Name=\"Kind\" /><Value Type=\"Choice\">Standard</Value></Eq></Where><OrderBy><FieldRef Name=\"FileLeafRef\" /></OrderBy>", "rowLimit": 30},
+        {"name": "Recordings", "fields": ["DocIcon", "LinkFilename", "Tool", "Modified"], "query": "<Where><Eq><FieldRef Name=\"Kind\" /><Value Type=\"Choice\">Recording</Value></Eq></Where><OrderBy><FieldRef Name=\"Modified\" Ascending=\"FALSE\" /></OrderBy>", "rowLimit": 30}
+      ],
+      "seed": []
+    }
+  ]
+}

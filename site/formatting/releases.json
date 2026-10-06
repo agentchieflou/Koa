@@ -1,0 +1,76 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "flex-start",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "12px 14px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "span",
+        "txtContent": "[$Title]",
+        "attributes": {
+          "class": "ms-fontColor-themeDarker"
+        },
+        "style": {
+          "font-family": "Consolas, 'Cascadia Code', monospace",
+          "font-size": "13px",
+          "font-weight": "600",
+          "width": "64px",
+          "flex-shrink": "0",
+          "line-height": "1.6"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "div",
+            "txtContent": "[$Headline]",
+            "attributes": {
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "line-height": "1.4",
+              "cursor": "pointer"
+            },
+            "customRowAction": {
+              "action": "defaultClick"
+            }
+          },
+          {
+            "elmType": "span",
+            "txtContent": "[$Kind]",
+            "attributes": {
+              "class": "ms-bgColor-neutralLighter ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "display": "inline-block",
+              "margin-top": "4px",
+              "font-size": "12px",
+              "padding": "1px 6px",
+              "border-radius": "3px"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

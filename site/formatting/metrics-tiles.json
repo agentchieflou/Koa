@@ -1,0 +1,49 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/tile-formatting.schema.json",
+  "height": 142,
+  "width": 270,
+  "hideSelection": true,
+  "formatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-bgColor-themePrimary ms-fontColor-white"
+    },
+    "style": {
+      "box-sizing": "border-box",
+      "width": "258px",
+      "height": "130px",
+      "margin": "6px",
+      "padding": "18px 20px",
+      "border-radius": "6px"
+    },
+    "children": [
+      {
+        "elmType": "div",
+        "txtContent": "[$MetricValue]",
+        "style": {
+          "font-size": "40px",
+          "font-weight": "600",
+          "line-height": "1.1"
+        }
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$MetricLabel]",
+        "style": {
+          "font-size": "14px",
+          "margin-top": "6px",
+          "line-height": "1.4"
+        }
+      },
+      {
+        "elmType": "div",
+        "txtContent": "[$MetricWindow]",
+        "style": {
+          "font-size": "12px",
+          "margin-top": "4px",
+          "opacity": "0.9"
+        }
+      }
+    ]
+  }
+}

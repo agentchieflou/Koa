@@ -1,0 +1,88 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "flex-start",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "12px 14px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "span",
+        "txtContent": "[$DecisionNo]",
+        "attributes": {
+          "class": "ms-fontColor-neutralSecondary"
+        },
+        "style": {
+          "font-family": "Consolas, 'Cascadia Code', monospace",
+          "font-size": "13px",
+          "font-weight": "600",
+          "width": "44px",
+          "flex-shrink": "0",
+          "line-height": "1.6"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "div",
+            "txtContent": "[$Title]",
+            "attributes": {
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "line-height": "1.4",
+              "cursor": "pointer"
+            },
+            "customRowAction": {
+              "action": "defaultClick"
+            }
+          },
+          {
+            "elmType": "div",
+            "txtContent": "[$SourceRef]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "13px",
+              "margin-top": "2px"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "span",
+        "txtContent": "[$DecisionStatus]",
+        "attributes": {
+          "class": "=if([$DecisionStatus] == 'Accepted', 'sp-field-severity--good', if([$DecisionStatus] == 'Rejected', 'sp-field-severity--blocked', if([$DecisionStatus] == 'Superseded', 'sp-field-severity--low', 'sp-field-severity--warning')))"
+        },
+        "style": {
+          "font-size": "12px",
+          "font-weight": "600",
+          "padding": "2px 8px",
+          "border-radius": "3px",
+          "flex-shrink": "0",
+          "margin-left": "12px"
+        }
+      }
+    ]
+  }
+}

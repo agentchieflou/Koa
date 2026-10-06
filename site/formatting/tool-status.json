@@ -1,0 +1,23 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "div",
+  "attributes": {
+    "class": "=if(@currentField == 'Operational', 'sp-field-severity--good', if(@currentField == 'Degraded', 'sp-field-severity--warning', if(@currentField == 'Maintenance', 'sp-field-severity--warning', if(@currentField == 'Down', 'sp-field-severity--blocked', ''))))"
+  },
+  "children": [
+    {
+      "elmType": "span",
+      "style": {
+        "display": "inline-block",
+        "padding": "0 4px"
+      },
+      "attributes": {
+        "iconName": "=if(@currentField == 'Operational', 'CheckMark', if(@currentField == 'Degraded', 'Warning', if(@currentField == 'Maintenance', 'Repair', if(@currentField == 'Down', 'ErrorBadge', ''))))"
+      }
+    },
+    {
+      "elmType": "span",
+      "txtContent": "@currentField"
+    }
+  ]
+}
