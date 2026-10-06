@@ -3,9 +3,9 @@
 # only by replacing the files AND this pin together, from a published tag. Lines are `key: value`, then
 # `<sha256>  <path relative to contract/>` (the `sha256sum` format, so `sha256sum -c` can read those lines).
 tag: mobile-contract-v1
-source: agentchieflou/this-next-please@a407b8a9ba5c3a8a4e867cfc47e7e45fe6e24c8f
-# The tag is published by this-next-please#599. Until it is, the source commit above is the pin: the head of
-# this-next-please#651 (the optional Operator column); re-pin to its merge commit, which carries the same bytes.
+source: agentchieflou/this-next-please@764e7758a56d76e7b1eb5588b6e6fedb381d634a
+# The tag is published by this-next-please#599. Until it is, the source commit above is the pin: the merge of
+# this-next-please#651 (the optional Operator column) into main.
 contract: 1
 c8e0d123cfbc8c41fb780919349cd33475c2b799943c375e877fafc1d9cd5630  fleet-mobile.v1.schema.json
 cabe8ca9e13a0f0066ad0ef065891f709dec412b9e78f3f018b5402d4c061a3c  examples/approval-rdsd-uat-7f3a.json
