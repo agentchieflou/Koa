@@ -12,6 +12,7 @@ site/
   context.example.json         the shape of what the scans find (made-up values; tests use it)
   czars.code-workspace         VS Code: Koa, data-czars, usage_tool and this-next-please side by side, for the scans
   prompts/m365-org-facts.md    the prompt for Microsoft Copilot: the team's people, channels and spaces
+  prompts/confluence-page-facts.md   the prompt for Copilot in Edge, one Confluence page at a time
   site.json                    the navigation, the pages and the lists each one shows, the look
   lists.json                   every list: columns, views, formatting, the starter rows that hold no internal fact
   LISTS.md                     lists.json in words, with a Copilot prompt per list (generated: provision.py docs)
@@ -35,7 +36,7 @@ a colleague's name or a product's internals, and `tests/test_site.py` refuses th
 
 | Step | Who | Time |
 | --- | --- | --- |
-| 0. The facts | a Copilot agent scans the repositories; Microsoft Copilot knows the people | 20 min |
+| 0. The facts | a Copilot agent scans the repositories; Copilot in Edge reads the Confluence pages; Microsoft Copilot knows the people | 30 min |
 | 1. The look | a site owner, by hand | 10 min |
 | 2. The lists | a Copilot agent through the provisioning flow, or a site owner through the console | 5 min |
 | 3. The site skill | a site owner, in Copilot in SharePoint | 2 min |
@@ -52,7 +53,8 @@ Standard connectors for steps 2 and 6; the this-next-please CLI on the laptop fo
 ## 0. The facts
 
 Koa, `data-czars` and `usage_tool` sit side by side in one folder. A Copilot agent reads the two repositories and the
-fleet, and Microsoft Copilot answers for the people; each writes one file under `site/local/context/`.
+fleet, Copilot in Edge reads the team's Confluence pages, and Microsoft Copilot answers for the people; each writes
+one file under `site/local/context/`.
 
 1. **Open them together.** VS Code: **File** > **Open Workspace from File** > `site/czars.code-workspace`. Copilot CLI:
    start it in the folder that holds all three.
@@ -60,6 +62,10 @@ fleet, and Microsoft Copilot answers for the people; each writes one file under 
    `/czars-scan-fleet` (in Copilot CLI: "Follow `.github/prompts/czars-scan-data-czars.prompt.md`", and so on). Each
    reads only, never runs the code, and ends by naming its gaps.
 3. **Ask Microsoft Copilot** with `site/prompts/m365-org-facts.md`; save its answer as `site/local/context/org.json`.
+   Then, for each Confluence page the prompt `site/prompts/confluence-page-facts.md` lists (the kernel's page, its
+   common errors, onboarding and Spark configuration pages), open the page in Edge and run that prompt in Copilot's
+   sidebar; save each answer as `site/local/context/wiki-<page>.json`. The repository wins where both say something;
+   the pages fill what it leaves out, which is usually the access to request and the setup steps.
 4. **Your own answers.** Write what only the team decides, and anything a scan got wrong or left as a gap, to
    `site/local/context/00-operator.json`, for example
    `{"site": {"url": "https://<tenant>.sharepoint.com/sites/OSP-Data-Czars"}, "team": {"triageDays": "3"}}`.
@@ -81,8 +87,9 @@ Settings (the gear):
 
 ## 2. The lists
 
-Seven lists and one library (`LISTS.md`), with their columns, views, formatting and starter rows: the products, links,
-contacts, releases and questions the scans found, plus the questions and prompts every Data Czars site starts with.
+Nine lists and one library (`LISTS.md`), with their columns, views, formatting and starter rows: the products, access,
+Spark profiles, links, contacts, releases and questions the scans found, plus the questions and prompts every Data
+Czars site starts with.
 Every way below is safe to run again.
 
 **A. A Copilot agent.** With the `power-automate` plugin installed (`build/README.md` §2), say: *Build the Data Czars
@@ -115,6 +122,8 @@ In **Copilot** on the home page, paste:
 Build this site's navigation. Keep it horizontal with a mega menu, remove the links that are there now (Notebook, Documents, Pages, Site contents and Recycle bin stay reachable from Settings), and create exactly these, in this order. Each label links to its page; each group heading is a label without a link; each link goes to the page and anchor given. Propose it first and wait for my go-ahead.
 
 Home: Home.aspx
+Get started: Get-started.aspx
+  Get started: What you get (#what-you-get), Get access (#get-access), Set up (#set-up), Your first session (#your-first-session), Pick a profile (#pick-a-profile), Common errors (#common-errors)
 Products: Products.aspx
   Products: Product catalog (#product-catalog), Status (#status), What's new (#releases)
 Usage reports: Usage-reports.aspx
@@ -135,8 +144,8 @@ Then target the **For the team** heading and its links to the site's Members gro
 ## 5. The pages
 
 `python site/provision.py pages` writes every sheet in `pages/` to `site/out/pages/` with the scanned facts filled in.
-Build them in this order, so every link a page makes has somewhere to go: `products`, `usage-reports`, `get-help`,
-`links`, `contact`, `fleet`, `copilot`, then `home`. For each:
+Build them in this order, so every link a page makes has somewhere to go: `get-help`, `get-started`, `products`,
+`usage-reports`, `links`, `contact`, `fleet`, `copilot`, then `home`. For each:
 
 1. Upload the page's images from `assets/` to **Site Assets**.
 2. Paste the filled-in prompt into Copilot as the sheet says; check the proposal against the sheet's *Sections*
@@ -185,6 +194,7 @@ in the same pull request.
 | S11 | a form submission reaches the laptop as `intake-<id>.json` | `intake/README.md`, set it up 4 | not yet measured |
 | S12 | a result file merges the Jira key and status into its row | *My tickets* shows the key | not yet measured |
 | S13 | a report copied into `<type>/<yyyy-mm>/` is tagged within the hour | *Latest reports* shows it | not yet measured |
+| S14 | Copilot in Edge reads the open Confluence page (page context allowed on this tenant) | step 0, 3: the answer quotes the page | not yet measured |
 
 ## Changing the site later
 

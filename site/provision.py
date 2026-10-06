@@ -16,10 +16,10 @@ Two inputs, kept apart on purpose because Koa is public:
 
 - `site/lists.json` (tracked) is the structure: every list, column, view, formatter and the starter rows that hold no
   internal fact. `site/formatting/*.json` are the formatters it names.
-- `site/local/context.json` (git-ignored) is what the scans found in data-czars, usage_tool and the fleet, and what
-  Microsoft 365 Copilot knows about the team (`.github/prompts/czars-*.prompt.md`, `site/prompts/`). It becomes list
-  rows, choice values (`choicesFrom`), and the `{{...}}` facts in the page sheets and agent files. Its shape is
-  `site/context.example.json`.
+- `site/local/context.json` (git-ignored) is what the scans found in data-czars, usage_tool, the fleet and the team's
+  Confluence pages, and what Microsoft 365 Copilot knows about the team (`.github/prompts/czars-*.prompt.md`,
+  `site/prompts/`). It becomes list rows, choice values (`choicesFrom`), and the `{{...}}` facts in the page sheets
+  and agent files. Its shape is `site/context.example.json`.
 
 Each list becomes one site script (`createSPList` with its columns, formatters and views as subactions), applied in
 order by SharePoint's `ExecuteTemplateScript` endpoint, the one PnP's `Invoke-PnPSiteScript` uses to apply a script
@@ -70,13 +70,15 @@ TEMPLATES = {100: "list", 101: "document library"}
 TYPE_WORDS = {"Text": "single line of text", "Note": "multiple lines of plain text", "Choice": "choice",
               "Number": "number", "Boolean": "yes/no", "DateTime": "date", "URL": "hyperlink", "User": "person",
               "Lookup": "lookup"}
-PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z0-9_.\[\]]+)\s*\}\}")
+#: `{{team.mission}}`, or `{{kernel.setupSteps|numbered}}` for a list written as a numbered list, one item a line.
+PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z0-9_.\[\]]+)\s*(?:\|\s*(numbered)\s*)?\}\}")
 #: The context's sections and the scan or prompt that owns each (site/README.md, step 0).
-SECTIONS = {"site": dict, "team": dict, "jira": dict, "products": list, "usageTool": dict, "fleet": dict,
-            "links": list, "contacts": list, "releases": list, "faq": list, "gaps": list}
+SECTIONS = {"site": dict, "team": dict, "jira": dict, "kernel": dict, "products": list, "access": list,
+            "profiles": list, "usageTool": dict, "fleet": dict, "links": list, "contacts": list, "releases": list,
+            "faq": list, "gaps": list}
 #: The key that makes two entries of a context list the same entry when the parts are merged.
-IDENTITY = {"products": ("name",), "links": ("url",), "contacts": ("email",), "releases": ("product", "version"),
-            "faq": ("question",), "gaps": ()}
+IDENTITY = {"products": ("name",), "access": ("name",), "profiles": ("name",), "links": ("url",),
+            "contacts": ("email",), "releases": ("product", "version"), "faq": ("question",), "gaps": ()}
 
 
 class Refused(Exception):
@@ -134,23 +136,34 @@ def lookup(ctx: dict, path: str):
 
 
 def _text(value) -> str:
-    """A fact as words: a list of sentences runs on as prose, any other list is joined with commas."""
+    """A fact as words: a list of sentences runs on as prose, any other list reads "a, b and c"."""
     if isinstance(value, list):
         items = [_text(v) for v in value if _text(v).strip()]
-        sentences = items and all(i.rstrip().endswith((".", "!", "?")) for i in items)
-        return (" " if sentences else ", ").join(items)
+        if all(i.rstrip().endswith((".", "!", "?")) for i in items) or len(items) < 2:
+            return " ".join(items)
+        return ", ".join(items[:-1]) + " and " + items[-1]
     if isinstance(value, bool):
         return "yes" if value else "no"
     return "" if value is None else str(value)
 
 
+def _numbered(value, indent: str) -> str:
+    items = [_text(v) for v in (value if isinstance(value, list) else [value]) if _text(v).strip()]
+    return ("\n" + indent).join(f"{n}. {item}" for n, item in enumerate(items, 1))
+
+
 def render(text: str, ctx: dict, where: str) -> str:
-    """Every `{{path}}` replaced by the context's value; a missing or empty fact is refused by name."""
+    """Every `{{path}}` replaced by the context's value; a missing or empty fact is refused by name. A `|numbered`
+    list keeps the indent of the line it starts on."""
     missing = []
 
     def sub(m):
         value = lookup(ctx, m.group(1))
-        out = _text(value)
+        if m.group(2) == "numbered":
+            line = text[text.rfind("\n", 0, m.start()) + 1:m.start()]
+            out = _numbered(value, line if not line.strip() else "")
+        else:
+            out = _text(value)
         if not out.strip():
             missing.append(m.group(1))
         return out
@@ -161,7 +174,7 @@ def render(text: str, ctx: dict, where: str) -> str:
 
 
 def placeholders(text: str) -> set[str]:
-    return set(PLACEHOLDER.findall(text))
+    return {m.group(1) for m in PLACEHOLDER.finditer(text)}
 
 
 def _empty(value) -> bool:
@@ -259,6 +272,27 @@ def check_context(ctx: dict, lists: list[dict]) -> list[str]:
             if p.get(k):
                 url(p[k].get("url"), f"{where}.{k}.url")
         strings(p, where)
+    kernel = ctx.get("kernel", {})
+    for k in ("docs", "repo"):
+        if kernel.get(k):
+            url(kernel[k].get("url"), f"kernel.{k}.url")
+    for k in ("includes", "connectsTo", "setupSteps"):
+        if k in kernel and not isinstance(kernel[k], list):
+            problems.append(f"kernel.{k}: is a list")
+    for n, a in enumerate(ctx.get("access", []), 1):
+        where = f"access[{n}]"
+        if not a.get("name"):
+            problems.append(f"{where}: has no name")
+        one_of(a.get("neededFor", "Using the kernel"), _choices_of(lists, "Access", "NeededFor"), f"{where}.neededFor")
+        if a.get("request"):
+            url(a["request"].get("url"), f"{where}.request.url")
+        strings(a, where)
+    for n, pr in enumerate(ctx.get("profiles", []), 1):
+        where = f"profiles[{n}]"
+        if not pr.get("name"):
+            problems.append(f"{where}: has no name")
+        one_of(pr.get("kind", "Standard"), _choices_of(lists, "SparkProfiles", "Kind"), f"{where}.kind")
+        strings(pr, where)
     for n, link in enumerate(ctx.get("links", []), 1):
         where = f"links[{n}]"
         if not link.get("title") or not link.get("url"):
@@ -323,7 +357,8 @@ def gaps(ctx: dict) -> list[str]:
 
 
 def _seed_rows(ctx: dict) -> dict[str, list[dict]]:
-    """List rows from the context: the products, releases, links and contacts the scans found."""
+    """List rows from the context: the products, access, profiles, releases, links, contacts and questions the scans
+    found."""
     rows: dict[str, list[dict]] = {}
 
     def link(value):
@@ -338,6 +373,17 @@ def _seed_rows(ctx: dict) -> dict[str, list[dict]]:
             if link(p.get(key)):
                 row[col] = link(p[key])
         rows.setdefault("Products", []).append(row)
+    for n, a in enumerate(ctx.get("access", []), 1):
+        row = {"Title": a["name"], "Why": a.get("why", ""), "NeededFor": a.get("neededFor") or "Using the kernel",
+               "SortOrder": n * 10}
+        if link(a.get("request")):
+            row["RequestLink"] = link(a["request"])
+        rows.setdefault("Access", []).append(row)
+    for n, pr in enumerate(ctx.get("profiles", []), 1):
+        rows.setdefault("SparkProfiles", []).append({
+            "Title": pr["name"], "UseWhen": pr.get("useWhen", ""), "Executors": str(pr.get("executors", "")),
+            "ExecutorMemory": pr.get("executorMemory", ""), "ExecutorCores": str(pr.get("executorCores", "")),
+            "DriverMemory": pr.get("driverMemory", ""), "Kind": pr.get("kind") or "Standard", "SortOrder": n * 10})
     for r in ctx.get("releases", []):
         row = {"Title": f"{r['product']} {r['version']}", "Headline": r["headline"], "Product": r["product"],
                "Kind": r.get("kind") or "Notes", "ReleaseNotes": r.get("notes", "")}

@@ -19,7 +19,7 @@ Title area: Image layout, topic header "Issues, requests, questions, access", ti
 
 1. Two-column section, no background.
    Left: heading "Report an issue", the text "Something in a product we support is broken or wrong. Say what you did, what you expected and what happened; a screenshot helps.", and a Button web part "Report an issue".
-   Right: heading "Request something", the text "A new report or a change, a question, or access to a product. Say who it is for and by when.", and a Button web part "Request something".
+   Right: heading "Request something", the text "A change or a new feature, a question, or access to a product. Say who it is for and by when.", and a Button web part "Request something".
 2. One-column section, Neutral background. Heading "What happens next", then an Image web part.
 3. One-column section, no background. Heading "My tickets", then a List web part.
 4. One-column section, no background. Heading "Questions people ask", then a List web part.

@@ -1,11 +1,12 @@
 # The Data Czars site: the design
 
-`OSP-Data-Czars` is the SharePoint home of Data Czars and of the tooling it supports in the PAE, the products built
-in the `data-czars` repository. It is where people find a product and its state, raise an issue with it or ask for
-work (and follow it in Jira without opening Jira), download the usage reports the `usage_tool` repository produces,
-find every place the team works, and reach the right person the way that person prefers. The fleet that works the
-team's tickets has one page of its own. Copilot can do all of it from a chat. `README.md` beside this file is the
-build sheet; the canvas *Data Czars Site Design* shows every page as drawn.
+`OSP-Data-Czars` is the SharePoint home of Data Czars and of the tooling it supports in the PAE: the shared kernel and
+the Spark tooling built in the `data-czars` repository. It is where people get access and start their first Spark
+session, find a product and its state, raise an issue with it or ask for work (and follow it in Jira without opening
+Jira), download the usage reports the `usage_tool` repository produces, find every place the team works, and reach the
+right person the way that person prefers. The fleet that works the team's tickets has one page of its own. Copilot can
+do all of it from a chat. `README.md` beside this file is the build sheet; the canvas *Data Czars Site Design* shows
+every page as drawn.
 
 A premier site, for a tools and platform team, behaves like a product: a person gets what they came for in one
 click, every fact on it is current without anyone remembering to edit a page, it answers and acts from Copilot, and
@@ -15,18 +16,20 @@ the team's own systems (Jira, the fleet, the usage tool) feed it instead of peop
 
 | Audience | Who | What they come to do | Where it starts |
 | --- | --- | --- | --- |
-| Users of the PAE | people who use the tooling Data Czars supports (the site's Visitors) | check a product's state; report an issue; ask for work; follow their tickets; read the usage reports; reach someone | Home, Get help, Usage reports, Contact |
+| Users of the PAE | people who use the kernel and tooling Data Czars supports (the site's Visitors) | get access and set up; start Spark with the right profile; fix a common error; check a product's state; report an issue; ask for work; follow their tickets; read the usage reports; reach someone | Home, Get started, Get help, Usage reports, Contact |
 | The team | the Data Czars (the Microsoft 365 group) | triage intake; publish reports; keep products, links and contacts current; run the fleet | Get help (For the team), The fleet, the lists |
 | Leaders | sponsors and their staff | see what is supported, what changed, and what usage looks like | Products, Usage reports |
 
 ## Principles
 
-1. **Task first.** Home answers what this is, how to get help, where the reports are and who to talk to, above the
-   fold. Every page opens with one sentence saying what it is for.
-2. **Fed, not typed.** Products, releases and links come from scanning the repositories; contacts from Microsoft
-   Copilot; Jira keys and statuses from Jira; reports from the usage tool. People edit a row only to correct it.
-3. **One door for help.** Issues, requests, questions and access go through one form and one list, and every one
-   becomes a Jira ticket whose status comes back. Nobody is told "email us".
+1. **Task first.** Home answers what this is, how to start, how to get help, where the reports are and who to talk
+   to, above the fold. Every page opens with one sentence saying what it is for.
+2. **Fed, not typed.** Products, profiles, releases and links come from scanning the repositories; access and setup
+   from the team's Confluence pages; contacts from Microsoft Copilot; Jira keys and statuses from Jira; reports from
+   the usage tool. People edit a row only to correct it.
+3. **One door for help.** Issues, requests, questions and access the team grants go through one form and one list,
+   and every one becomes a Jira ticket whose status comes back. Nobody is told "email us". Entitlements the
+   organisation grants are requested where their `Access` row links, never through the team.
 4. **People, their way.** Every team member chooses how to be reached; the site honours it with one button.
 5. **Copilot-native.** The site's structure, descriptions and metadata are what its agents read. Three agents divide
    the work: answers (Ask the Czars), numbers (Usage Analyst), actions (Czars Desk).
@@ -42,6 +45,7 @@ Horizontal navigation with a mega menu, the exact tree in `site.json`:
 | Label | Links |
 | --- | --- |
 | Home | |
+| Get started | What you get, Get access, Set up, Your first session, Pick a profile, Common errors |
 | Products | Product catalog, Status, What's new |
 | Usage reports | Latest reports, All reports, About the usage tool |
 | Get help | Report an issue, Request something, My tickets, FAQ · **For the team** (targeted): Triage, Jira board |
@@ -50,11 +54,12 @@ Horizontal navigation with a mega menu, the exact tree in `site.json`:
 | The fleet | |
 | Copilot | Ask the Czars, Prompts that work, In Teams |
 
-Eight pages, seven lists and one library:
+Nine pages, nine lists and one library:
 
 | Page | Holds | Lists and views it shows |
 | --- | --- | --- |
 | Home | the front door | Products: Status, Featured · UsageReports: Latest · Releases: Latest |
+| Get started | access, setup, a first Spark session, which profile, common errors | Access: Checklist · SparkProfiles: Pick a profile · FAQ: Common errors |
 | Products | the catalog, what changed, status | Products: Catalog, Status · Releases: All Items |
 | Usage reports | the reports and how the tool works | UsageReports: Latest, By report |
 | Get help | the form, what happens next, my tickets, FAQ | Intake: Mine · FAQ: Everyone |
@@ -67,13 +72,16 @@ What goes where:
 
 | It is | It goes in | Fed by |
 | --- | --- | --- |
-| a supported product, its state | a `Products` row | the data-czars scan; the owner edits the status |
+| the kernel, or a capability a person calls by name, and its state | a `Products` row | the data-czars scan; the owner edits the status |
+| an entitlement the kernel needs | an `Access` row | the Confluence pages, then the data-czars scan |
+| a Spark resource profile | a `SparkProfiles` row | the data-czars scan of the session code |
+| how to set up, the first session | the Get started page | the data-czars scan and the Confluence pages |
 | a release | a `Releases` row | the scans (changelog, tags) |
 | an issue, a request, a question, access | an `Intake` row, then a Jira ticket | the Get help form or Czars Desk; the key and status from Jira |
 | a usage report | a file in `UsageReports/<type>/<yyyy-mm>/` | the usage tool; tagged by its folder |
 | a place the team works | a `Links` row | the scans and Microsoft Copilot |
 | a person and how to reach them | a `Contacts` row | Microsoft Copilot; each person sets their preference |
-| a question asked twice | an `FAQ` row | the scans; the team |
+| a question asked twice, a common error and its fix | an `FAQ` row | the scans and the Confluence pages; the team |
 | a prompt that works | a `Prompts` row | the team |
 | an announcement | a news post | the team |
 

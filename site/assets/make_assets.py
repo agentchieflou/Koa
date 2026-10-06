@@ -105,6 +105,12 @@ def art(accent: str) -> dict[str, str]:
     def title(name, motif, label):
         out[f"title-{name}"] = svg(1920, 460, f'  <rect width="1920" height="460" fill="{d}"/>\n{motif}', label)
 
+    title("start", f'''  <g fill="{m}"><rect x="1200" y="300" width="120" height="60" rx="8"/><rect x="1340" y="240" width="120" height="120" rx="8"/>
+    <rect x="1480" y="180" width="120" height="180" rx="8"/></g>
+  <rect x="1620" y="120" width="120" height="240" rx="8" fill="{li}"/>
+  <path d="M1650 196 l26 22 -26 22 M1690 244 h28" stroke="{d}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1170 380 H1770" stroke="{ln}" stroke-width="4"/>
+''', "Steps up to a notebook")
     title("products", f'''  <g fill="{m}"><rect x="1240" y="110" width="70" height="250" rx="8"/><rect x="1340" y="180" width="70" height="180" rx="8"/>
     <rect x="1440" y="70" width="70" height="290" rx="8"/><rect x="1540" y="220" width="70" height="140" rx="8"/><rect x="1640" y="140" width="70" height="220" rx="8"/></g>
   <path d="M1210 380 H1740" stroke="{ln}" stroke-width="4"/>

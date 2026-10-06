@@ -1,0 +1,102 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "hideSelection": true,
+  "hideColumnHeader": true,
+  "rowFormatter": {
+    "elmType": "div",
+    "attributes": {
+      "class": "ms-borderColor-neutralLighter"
+    },
+    "style": {
+      "display": "flex",
+      "align-items": "center",
+      "box-sizing": "border-box",
+      "width": "100%",
+      "padding": "14px 16px",
+      "border-bottom-width": "1px",
+      "border-bottom-style": "solid"
+    },
+    "children": [
+      {
+        "elmType": "span",
+        "attributes": {
+          "iconName": "=if([$NeededFor] == 'Contributing code', 'Code', 'Permissions')",
+          "class": "ms-fontColor-themePrimary"
+        },
+        "style": {
+          "font-size": "20px",
+          "width": "36px",
+          "flex-shrink": "0",
+          "line-height": "1.2"
+        }
+      },
+      {
+        "elmType": "div",
+        "style": {
+          "flex-grow": "1",
+          "min-width": "0"
+        },
+        "children": [
+          {
+            "elmType": "div",
+            "txtContent": "[$Title]",
+            "attributes": {
+              "class": "ms-fontColor-neutralPrimary"
+            },
+            "style": {
+              "font-size": "14px",
+              "font-weight": "600",
+              "line-height": "1.4"
+            }
+          },
+          {
+            "elmType": "div",
+            "txtContent": "[$Why]",
+            "attributes": {
+              "class": "ms-fontColor-neutralSecondary"
+            },
+            "style": {
+              "font-size": "14px",
+              "margin-top": "2px",
+              "line-height": "1.5",
+              "display": "=if([$Why] == '', 'none', 'block')"
+            }
+          }
+        ]
+      },
+      {
+        "elmType": "span",
+        "txtContent": "[$NeededFor]",
+        "attributes": {
+          "class": "=if([$NeededFor] == 'Using the kernel', 'ms-bgColor-themeLighter ms-fontColor-themeDarker', 'ms-bgColor-neutralLighter ms-fontColor-neutralPrimary')"
+        },
+        "style": {
+          "padding": "2px 8px",
+          "border-radius": "3px",
+          "font-size": "12px",
+          "font-weight": "600",
+          "margin-left": "12px",
+          "flex-shrink": "0",
+          "white-space": "nowrap"
+        }
+      },
+      {
+        "elmType": "a",
+        "txtContent": "Request it",
+        "attributes": {
+          "href": "[$RequestLink]",
+          "target": "_blank",
+          "class": "ms-fontColor-themeDark"
+        },
+        "style": {
+          "font-size": "13px",
+          "font-weight": "600",
+          "flex-shrink": "0",
+          "margin-left": "12px",
+          "white-space": "nowrap",
+          "display": "=if([$RequestLink] == '', 'none', 'inline')"
+        }
+      }
+    ]
+  }
+}

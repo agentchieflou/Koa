@@ -3,8 +3,9 @@
 **URL:** `SitePages/Products.aspx`. **For:** everyone. **Design:** the canvas artboard *Products*.
 
 Every product Data Czars supports in the PAE, its state today, how to start, what changed, and where to report a
-problem. The catalog, the status and the releases are lists filled from the data-czars scan; the page itself only
-changes when its purpose does.
+problem. A product is the kernel, or one capability of the team's package a person calls by name (a Spark session,
+a profiler, a table compare), or another tool the team supports. The catalog, the status and the releases are lists
+filled from the data-czars scan; the page itself only changes when its purpose does.
 
 ## Build it with Copilot
 
@@ -17,7 +18,7 @@ Title area: Image layout, topic header "Supported in the PAE", title "Products",
 
 1. One-column section, no background. Heading "Product catalog", then a List web part.
 2. Two-thirds left section, no background. Left: heading "Releases" and a List web part. Right: heading "Status", a List web part, and a Button web part "Report an issue" linking to Get-help.aspx.
-3. One-column section, Neutral background. A Text web part: "Not sure which product you are using? Ask the Czars in Copilot, or describe what you were doing on Get help and we will route it."
+3. One-column section, Neutral background. A Text web part: "New to the kernel? Get started has the access, the setup and your first session. Not sure which product you are using? Ask the Czars in Copilot, or describe what you were doing on Get help and we will route it."
 ```
 
 ## Sections

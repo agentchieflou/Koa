@@ -1,6 +1,6 @@
 ---
 name: build-czars-site
-description: Builds the Data Czars SharePoint site from this repository and the facts scanned from data-czars and usage_tool - the context, the lists and library with their formatting and rows, the intake and report flows, and the filled-in page and agent prompts - through the power-automate plugin. Use when asked to build, provision, set up, rebuild or update the Data Czars site, its lists, its flows, or the site in site/.
+description: Builds the Data Czars SharePoint site from this repository and the facts scanned from data-czars, usage_tool and the team's Confluence pages - the context, the lists and library with their formatting and rows, the intake and report flows, and the filled-in page and agent prompts - through the power-automate plugin. Use when asked to build, provision, set up, rebuild or update the Data Czars site, its lists, its flows, or the site in site/.
 ---
 
 # Build the Data Czars site

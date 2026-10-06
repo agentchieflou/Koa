@@ -20,7 +20,8 @@ not exist, ask the operator for its path and wait.
    about a customer.
 4. Internal URLs may go into the output file only. It is git-ignored and stays on this laptop.
 5. Plain, short sentences; if the repository does not say it, write `""` and add a line to `gaps`. Never guess.
-6. **Budget.** Read `README*`, `AGENTS.md`, `CHANGELOG*`, the packaging file, the entry point the README names, the
+6. **Budget.** Read `PROJECT_CONTEXT.md` first if it exists: it is the repository's own account of itself. Then
+   `README*`, `AGENTS.md`, `CHANGELOG*`, the packaging file, the entry point the README names, the
    module that writes the report files, the scheduler or pipeline file, and the titles of `docs/`. At most twelve
    files beyond those.
 

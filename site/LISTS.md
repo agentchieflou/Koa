@@ -94,7 +94,73 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then add the scanned values to `Product`; rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 3. Intake
+## 3. Access
+
+What a person must be granted before they can use the kernel or change its code: one row per entitlement, why it is needed and where to request it. A list, 8 script actions, 0 tracked starter rows.
+
+| Column | Shown as | Type | Notes |
+| --- | --- | --- | --- |
+| `Why` | Why | multiple lines of plain text | What the entitlement lets the person do, in one sentence. |
+| `NeededFor` | Needed for | choice | Using the kernel, Contributing code (default Using the kernel); required |
+| `RequestLink` | Where to request it | hyperlink |  |
+| `SortOrder` | Sort order | number |  |
+
+| View | Shows | Layout |
+| --- | --- | --- |
+| All Items | `LinkTitle`, `NeededFor`, `Why`, `RequestLink` | list |
+| Checklist | `Title`, `Why`, `NeededFor`, `RequestLink` | list, `formatting/access-checklist.json` |
+
+**Copilot fallback.** In Copilot in SharePoint on the site, paste:
+
+```text
+Create a list called "Access" with the description "What a person must be granted before they can use the kernel or change its code: one row per entitlement, why it is needed and where to request it."
+Add these columns. Name each one exactly as written here, with no spaces, and add nothing else:
+- Why: multiple lines of plain text.
+- NeededFor: choice with the choices Using the kernel, Contributing code (default Using the kernel), required.
+- RequestLink: hyperlink.
+- SortOrder: number.
+Propose the structure first and wait for my go-ahead before you create it.
+```
+
+Then rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
+
+## 4. SparkProfiles
+
+The Spark resource profiles the kernel's session helper offers: one row per profile, what it asks the cluster for and when to use it. A list, 11 script actions, 0 tracked starter rows.
+
+| Column | Shown as | Type | Notes |
+| --- | --- | --- | --- |
+| `UseWhen` | Use it when | single line of text | required |
+| `Executors` | Executors | single line of text |  |
+| `ExecutorMemory` | Executor memory | single line of text |  |
+| `ExecutorCores` | Cores per executor | single line of text |  |
+| `DriverMemory` | Driver memory | single line of text |  |
+| `Kind` | Kind | choice | Standard, Specialized (default Standard); required |
+| `SortOrder` | Sort order | number |  |
+
+| View | Shows | Layout |
+| --- | --- | --- |
+| All Items | `LinkTitle`, `UseWhen`, `Executors`, `ExecutorMemory`, `ExecutorCores`, `DriverMemory`, `Kind` | list |
+| Pick a profile | `Title`, `UseWhen`, `Executors`, `ExecutorMemory`, `ExecutorCores`, `DriverMemory`, `Kind` | list, `formatting/spark-profiles.json` |
+
+**Copilot fallback.** In Copilot in SharePoint on the site, paste:
+
+```text
+Create a list called "SparkProfiles" with the description "The Spark resource profiles the kernel's session helper offers: one row per profile, what it asks the cluster for and when to use it."
+Add these columns. Name each one exactly as written here, with no spaces, and add nothing else:
+- UseWhen: single line of text, required.
+- Executors: single line of text.
+- ExecutorMemory: single line of text.
+- ExecutorCores: single line of text.
+- DriverMemory: single line of text.
+- Kind: choice with the choices Standard, Specialized (default Standard), required.
+- SortOrder: number.
+Propose the structure first and wait for my go-ahead before you create it.
+```
+
+Then rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
+
+## 5. Intake
 
 Everything people bring to Data Czars: issues with a supported product, requests for work, questions and access. Each row becomes a ticket on the team's Jira board, and its Jira key and status come back here. A list, 19 script actions, 0 tracked starter rows.
 
@@ -140,7 +206,7 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then add by hand `Product` (lookup to Products), `Owner` (person); rename each column to its *Shown as* name (the internal name stays); paste each column formatter in **Format this column** > **Advanced mode**; create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 4. Links
+## 6. Links
 
 Every place Data Czars works in, one row per link: Confluence, Bitbucket, Jira, Power BI, Teams and the rest. A list, 9 script actions, 0 tracked starter rows.
 
@@ -172,7 +238,7 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 5. Contacts
+## 7. Contacts
 
 The Data Czars team, each with what to ask them about and how they prefer to be reached: a Teams chat, an email, a call or a meeting. A list, 12 script actions, 0 tracked starter rows.
 
@@ -209,14 +275,14 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then add by hand `Person` (person); rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 6. FAQ
+## 8. FAQ
 
-Questions people ask Data Czars, answered once. The site agent answers from here first. A list, 8 script actions, 5 tracked starter rows.
+Questions people ask Data Czars, answered once. The site agent answers from here first. A list, 9 script actions, 7 tracked starter rows.
 
 | Column | Shown as | Type | Notes |
 | --- | --- | --- | --- |
 | `Answer` | Answer | multiple lines of plain text | required |
-| `Topic` | Topic | choice | from the scan (`products[].name`), then Getting help, Usage reports, This site, Other (default Getting help) |
+| `Topic` | Topic | choice | from the scan (`products[].name`), then Getting started, Access, Common errors, Getting help, Usage reports, This site, Other (default Getting help) |
 | `ShownTo` | For | choice | Everyone, Members (default Everyone) |
 | `SortOrder` | Sort order | number |  |
 
@@ -224,6 +290,7 @@ Questions people ask Data Czars, answered once. The site agent answers from here
 | --- | --- | --- |
 | All Items | `LinkTitle`, `Topic`, `ShownTo` | list |
 | Everyone | `Title`, `Answer`, `Topic` | list, `formatting/faq.json` |
+| Common errors | `Title`, `Answer`, `Topic` | list, `formatting/faq.json` |
 
 **Copilot fallback.** In Copilot in SharePoint on the site, paste:
 
@@ -231,7 +298,7 @@ Questions people ask Data Czars, answered once. The site agent answers from here
 Create a list called "FAQ" with the description "Questions people ask Data Czars, answered once. The site agent answers from here first."
 Add these columns. Name each one exactly as written here, with no spaces, and add nothing else:
 - Answer: multiple lines of plain text, required.
-- Topic: choice with the choices Getting help, Usage reports, This site, Other (default Getting help).
+- Topic: choice with the choices Getting started, Access, Common errors, Getting help, Usage reports, This site, Other (default Getting help).
 - ShownTo: choice with the choices Everyone, Members (default Everyone).
 - SortOrder: number.
 Propose the structure first and wait for my go-ahead before you create it.
@@ -239,7 +306,7 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then add the scanned values to `Topic`; rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 7. Prompts
+## 9. Prompts
 
 Prompts that work, for Microsoft 365 Copilot and the Data Czars agents: copy one, change the brackets, send it. A list, 8 script actions, 6 tracked starter rows.
 
@@ -269,7 +336,7 @@ Propose the structure first and wait for my go-ahead before you create it.
 
 Then rename each column to its *Shown as* name (the internal name stays); create the views above and paste each view's formatter in **Format current view** > **Advanced mode**.
 
-## 8. UsageReports
+## 10. UsageReports
 
 The reports the usage tool publishes, for members of this site to read and download. Every file carries its report type, period and status. A document library, 12 script actions, 0 tracked starter rows.
 

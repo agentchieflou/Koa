@@ -1,11 +1,11 @@
 ---
 name: data-czars-pages
-description: Builds and edits pages, sections and lists on the Data Czars site in the site's own style. Use whenever someone asks to create a page or news post, add or change a section, restyle a page, add a list or a column, or update rows that pages show (products, releases, links, contacts, FAQ, prompts, usage reports).
+description: Builds and edits pages, sections and lists on the Data Czars site in the site's own style. Use whenever someone asks to create a page or news post, add or change a section, restyle a page, add a list or a column, or update rows that pages show (products, access, Spark profiles, releases, links, contacts, FAQ, prompts, usage reports).
 ---
 
 # Data Czars pages
 
-This site is the home of Data Czars, the team that supports tooling in the PAE. Pages here are built from stock web
+This site is the home of Data Czars, the team that builds and supports the kernel and tooling in the PAE. Pages here are built from stock web
 parts only, and everything that changes lives in a list or a library, so a page never needs editing to stay true.
 Follow these rules for every page, section, list and row you create or change on this site.
 
@@ -27,7 +27,7 @@ Follow these rules for every page, section, list and row you create or change on
 - Headings: one heading per section, in a Text web part, sentence case. Headings become the page's anchors, so keep
   their words when you move them.
 - Use these web parts: Hero (Tiles), Quick links (Button, Compact, List or Grid), Text, List, Document library, News,
-  Button, Call to action, Image, Agent Link, Microsoft PowerApps. Ask before using anything else.
+  Button, Call to action, Image, Code snippet, Agent Link, Microsoft PowerApps. Ask before using anything else.
 
 ## Words
 
@@ -46,10 +46,12 @@ Follow these rules for every page, section, list and row you create or change on
 | --- | --- | --- |
 | Products | one row per supported product: support level, status, version, how to start, docs | Catalog, Status, Featured |
 | Releases | one row per release of a product | Latest, All Items |
+| Access | one row per entitlement the kernel needs: why, who needs it, where to request it | Checklist |
+| SparkProfiles | one row per Spark resource profile: what it asks for, when to use it | Pick a profile |
 | Intake | issues, requests, questions and access; each becomes a Jira ticket | Mine (everyone), Triage, Open (the team) |
 | Links | every place the team works, by category | By category |
 | Contacts | the team, what to ask each about, and their preferred way to be reached | Cards |
-| FAQ | questions and answers | Everyone |
+| FAQ | questions and answers, common errors among them | Everyone, Common errors |
 | Prompts | prompts that work in Microsoft Copilot and the team's agents | Library |
 | UsageReports (library) | the usage tool's reports, by type and period | Latest, By report |
 

@@ -3,8 +3,8 @@
 **URL:** `SitePages/Home.aspx`, the page the site already has: edit it, never create a second one.
 **For:** everyone who uses the PAE and the team. **Design:** the canvas artboard *Home*.
 
-The front door. In the first screen it answers what Data Czars is, how to get help, where the usage reports are and
-who to talk to. Everything below it is live: product status, the latest reports, releases and featured products come
+The front door. In the first screen it answers what Data Czars is, how to start with the kernel, how to get help,
+where the usage reports are and who to talk to. Everything below it is live: product status, the latest reports, releases and featured products come
 from lists and the library, so the page never needs editing to stay true.
 
 ## Build it with Copilot
@@ -16,22 +16,22 @@ to paste, to `site/out/pages/home.md`. Open the page, select **Edit**, then **Co
 Rebuild this page as the Data Czars home page. Remove what is on it now. Use only the sections and web parts below, in this order, and use my words exactly. Propose the layout first and wait for my go-ahead.
 
 1. One-column section, no background. A Hero web part, Tiles layout, five tiles:
-   - Large tile: "Data Czars: tooling for the PAE", call to action "Find a product", linking to Products.aspx.
+   - Large tile: "Data Czars: tooling for the PAE", call to action "Get started", linking to Get-started.aspx.
    - "Report an issue", linking to Get-help.aspx.
    - "Usage reports", linking to Usage-reports.aspx.
    - "Talk to the team", linking to Contact.aspx.
    - "Data Czars in Copilot", linking to Copilot.aspx.
 2. One-column section, Neutral background. A Text web part with "{{team.mission}} {{team.audience}}", then heading "Start here" and a Quick links web part, Button layout, with icons and descriptions:
+   - Get started: "Access, setup and your first Spark session" (Get-started.aspx)
    - Report an issue: "Something broken in a product we support" (Get-help.aspx)
-   - Request something: "A new report, a change, a question or access" (Get-help.aspx)
+   - Request something: "A change, a new feature, a question or access" (Get-help.aspx)
    - My tickets: "Where your requests stand in Jira" (Get-help.aspx#my-tickets)
    - Usage reports: "This period's reports, ready to download" (Usage-reports.aspx)
    - Contact the team: "The right person, the way they like to be reached" (Contact.aspx)
-   - Ask the Czars: "The site's agent, in SharePoint, Teams and Copilot" (Copilot.aspx)
 3. Two-thirds left section, no background. Left: heading "Product status" and a List web part. Right: heading "Latest usage reports" and a Document library web part.
 4. Two-thirds left section, no background. Left: a News web part titled "News", Side-by-side layout. Right: heading "What's new" and a List web part.
 5. One-column section, no background. Heading "Featured products", then a List web part.
-6. One-third left section, Soft background. Left: a Call to action web part with the text "Something not working? Report it here: it becomes a ticket on our Jira board within minutes, and we triage it within {{team.triageDays}} business days." and the button "Report an issue" linking to Get-help.aspx. Right: heading "Ask the Czars" and an Agent Link web part.
+6. One-third left section, Soft background. Left: a Call to action web part with the text "Something not working? Report it here: it becomes a ticket on our Jira board, and we triage it within {{team.triageDays}} business days." and the button "Report an issue" linking to Get-help.aspx. Right: heading "Ask the Czars" and an Agent Link web part.
 7. One-third left section, Strong background. Left: a Text web part: "Data Czars · tooling for the PAE". Right: a Quick links web part, Compact layout: Links (Links.aspx), Jira board ({{jira.boardUrl}}), Contact (Contact.aspx), Get help (Get-help.aspx).
 ```
 
@@ -71,4 +71,4 @@ same here, on Get help and in the FAQ.
 
 - At 1280 px and on a phone: nothing clipped, the hero stacks, every list shows its formatted rows.
 - Every status reads as a word, never as colour alone.
-- Ask the site agent "Which products are degraded right now?": it answers from the Products list and cites it.
+- Ask the site agent "Which products are not Operational right now?": it answers from the Products list and cites it.

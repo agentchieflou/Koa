@@ -1,7 +1,7 @@
 """The Data Czars site (`site/`): the list spec and the site scripts made from it, the formatters, the scanned context
 and what it becomes (rows, choices, filled-in prompts), the provisioning, intake and report flows, the laptop's intake
 runner, the navigation, the page sheets, the site skill, the agents and the artwork. Nothing here reaches SharePoint
-or Jira; what only the tenant can prove is `site/README.md`'s table of rows S1 to S13.
+or Jira; what only the tenant can prove is `site/README.md`'s table of rows S1 to S14.
 """
 from __future__ import annotations
 import copy
@@ -117,11 +117,13 @@ def test_every_site_script_uses_documented_actions_within_the_synchronous_limit(
 
 def test_the_scanned_values_join_their_choice_columns_ahead_of_the_defaults():
     category = P.column(list(RESOLVED.values()), "Products", "Category")
-    assert category["choices"] == ["Monitoring", "Governance", "Other"]
+    assert category["choices"] == ["Kernel", "Spark", "Data quality", "Other"]
     field = xml.dom.minidom.parseString(P.field_xml("Products", category)).documentElement
     assert [c.firstChild.data for c in field.getElementsByTagName("CHOICE")] == category["choices"]
     assert P.column(list(RESOLVED.values()), "UsageReports", "ReportType")["choices"][:2] == ["Report usage", "Workspace activity"]
-    assert P.column(list(RESOLVED.values()), "Releases", "Product")["choices"][:2] == ["Refresh Monitor", "Workspace Inventory"]
+    assert P.column(list(RESOLVED.values()), "Releases", "Product")["choices"][:2] == ["Analytics Kernel", "Spark sessions"]
+    topics = P.column(list(RESOLVED.values()), "FAQ", "Topic")["choices"]
+    assert topics[:3] == ["Analytics Kernel", "Spark sessions", "Table compare"] and "Common errors" in topics
     assert P.column(LISTS, "Products", "Category")["choices"] == ["Other"], "the tracked spec is never changed"
 
 
@@ -191,9 +193,13 @@ def test_the_context_check_names_what_is_wrong():
     bad["links"][0]["url"] = "http://jira.contoso.com"
     bad["releases"][0]["product"] = "Nothing we know"
     bad["team"]["triageDays"] = "soon"
+    bad["access"][0]["neededFor"] = "Curiosity"
+    bad["profiles"][0]["kind"] = "Enormous"
+    bad["kernel"]["setupSteps"] = "Do it all at once."
     problems = "\n".join(P.check_context(bad, LISTS))
     for words in ("'Carrier pigeon' is not one of", "is not an https address", "'Nothing we know' is not one of the products",
-                  "triageDays: 'soon' is a whole number"):
+                  "triageDays: 'soon' is a whole number", "access[1].neededFor: 'Curiosity' is not one of",
+                  "profiles[1].kind: 'Enormous' is not one of", "kernel.setupSteps: is a list"):
         assert words in problems
 
 
@@ -211,12 +217,19 @@ def test_the_parts_merge_first_value_wins_and_lists_join_once_per_identity():
 def test_the_context_becomes_rows_without_a_person_or_a_lookup():
     seeded = {name: entry["seed"] for name, entry in RESOLVED.items()}
     products = seeded["Products"]
-    assert [r["Title"] for r in products] == ["Refresh Monitor", "Workspace Inventory"]
-    assert products[0]["DocsLink"] == {"url": "https://confluence.contoso.com/display/DCZ/Refresh+Monitor", "desc": "Confluence"}
-    assert seeded["Releases"][0]["Title"] == "Refresh Monitor 2.4.0" and seeded["Releases"][0]["ReleasedOn"] == "2026-09-30"
+    assert [r["Title"] for r in products] == ["Analytics Kernel", "Spark sessions", "Table compare"]
+    assert products[0]["DocsLink"] == {"url": "https://confluence.contoso.com/display/DCZ/Analytics+Kernel", "desc": "Confluence"}
+    assert seeded["Releases"][0]["Title"] == "Spark sessions 2026.09" and seeded["Releases"][0]["ReleasedOn"] == "2026-09-30"
+    access = seeded["Access"]
+    assert [r["Title"] for r in access] == [a["name"] for a in EXAMPLE["access"]]
+    assert access[0]["RequestLink"]["url"] == EXAMPLE["access"][0]["request"]["url"] and access[-1]["NeededFor"] == "Contributing code"
+    profiles = seeded["SparkProfiles"]
+    assert [r["Title"] for r in profiles] == ["small", "medium", "large", "wide-shuffle"]
+    assert profiles[-1]["Kind"] == "Specialized" and profiles[0]["ExecutorMemory"] == "4g" and profiles[0]["SortOrder"] == 10
+    assert set(r for row in access + profiles for r in row) <= _columns("Access") | _columns("SparkProfiles")
     assert [r["Email"] for r in seeded["Contacts"]] == [c["email"] for c in EXAMPLE["contacts"]]
     assert [r["Title"] for r in seeded["Links"]] == [link["title"] for link in EXAMPLE["links"]]
-    assert seeded["FAQ"][-1]["Title"] == EXAMPLE["faq"][0]["question"]
+    assert seeded["FAQ"][-1]["Title"] == EXAMPLE["faq"][-1]["question"] and seeded["FAQ"][-1]["Topic"] == "Common errors"
     triage = next(r for r in seeded["FAQ"] if r["Title"] == "What happens after I submit?")
     assert "within 3 business days" in triage["Answer"], "a tracked row's fact is filled in from the context"
 
@@ -226,7 +239,8 @@ def test_tracked_starter_rows_carry_no_internal_fact():
         for row in entry.get("seed", []):
             text = json.dumps(row)
             assert "://" not in text and not re.search(r"[\w.+-]+@[\w-]+\.\w", text), f"{entry['name']}: {row['Title']}"
-    assert not BY_NAME["Products"]["seed"] and not BY_NAME["Contacts"]["seed"] and not BY_NAME["Links"]["seed"]
+    for name in ("Products", "Access", "SparkProfiles", "Contacts", "Links"):
+        assert not BY_NAME[name]["seed"], f"{name}: its rows come only from the context"
 
 
 def test_a_page_fact_missing_from_the_context_is_refused_by_name():
@@ -244,8 +258,12 @@ def test_every_page_and_agent_file_renders_with_nothing_left_unfilled():
         "agents/" + os.path.basename(p) for p in glob.glob(os.path.join(SITE, "agents", "*"))}
     for rel, text in rendered.items():
         assert "{{" not in text and "}}" not in text, rel
-    assert "Refresh Monitor" not in _read("pages/home.md"), "the tracked sheet holds no scanned fact"
+    assert EXAMPLE["kernel"]["name"] not in _read("pages/get-started.md"), "the tracked sheet holds no scanned fact"
     assert EXAMPLE["team"]["mission"] in rendered["pages/home.md"]
+    start = rendered["pages/get-started.md"]
+    steps = "\n".join(f"   {n}. {step}" for n, step in enumerate(EXAMPLE["kernel"]["setupSteps"], 1))
+    assert steps in start, "the setup steps are a numbered list at the prompt's indent"
+    assert EXAMPLE["kernel"]["firstSession"] in start and "pandas, matplotlib and the team's" in start
 
 
 # ------------------------------------------------------------------------------------ provisioning
@@ -328,21 +346,21 @@ def test_a_synced_library_has_no_required_column():
 # ------------------------------------------------------------------------------------ the laptop's intake runner
 
 
-INTAKE_ROW = {"kind": "intake", "id": 12, "title": "Refresh fails every Monday", "type": "Report an issue",
-       "product": "Refresh Monitor", "details": "The 6 AM refresh fails.", "impact": "Blocking my work",
+INTAKE_ROW = {"kind": "intake", "id": 12, "title": "Session fails on Mondays", "type": "Report an issue",
+       "product": "Spark sessions", "details": "The 6 AM job cannot start Spark.", "impact": "Blocking my work",
        "affectedTeam": "Finance reporting", "neededBy": "", "requester": "jordan.sample@contoso.com",
        "requesterName": "Jordan Sample", "created": "2026-10-06T12:00:00Z", "link": f"{SITE_URL}/Lists/Intake/12_.000"}
 
 
 def test_an_intake_row_becomes_the_ticket_the_projects_facts_say():
     t = I.ticket(INTAKE_ROW, EXAMPLE)
-    assert t == {"summary": "Issue (Refresh Monitor): Refresh fails every Monday", "type": "Bug", "project": "DCZ",
-                 "components": ["Refresh Monitor"], "labels": ["sharepoint-intake"],
+    assert t == {"summary": "Issue (Spark sessions): Session fails on Mondays", "type": "Bug", "project": "DCZ",
+                 "components": ["Spark"], "labels": ["sharepoint-intake"],
                  "description": t["description"]}
     assert "Raised by Jordan Sample <jordan.sample@contoso.com> on the Data Czars site, intake #12." in t["description"]
     assert I.ticket(dict(INTAKE_ROW, type="Request access", product=""), EXAMPLE)["type"] == "Task"
     args = I.create_args(t, "body.txt", dry_run=True)
-    assert args[:2] == ["ad-jira", "create"] and args[-1] == "--dry-run" and ["--component", "Refresh Monitor"] == args[10:12]
+    assert args[:2] == ["ad-jira", "create"] and args[-1] == "--dry-run" and ["--component", "Spark"] == args[10:12]
 
 
 def _drop(folder, row):
@@ -510,13 +528,26 @@ def test_the_scan_prompts_read_only_and_write_only_their_own_context_file():
         assert text.startswith("---\ndescription: ")
         assert f"site/local/context/{out}" in text and "python site/provision.py context" in text
         assert "Read only" in text
-    sections = {"data-czars.json": {"team", "jira", "products", "links", "releases", "faq"},
+    sections = {"data-czars.json": {"team", "jira", "kernel", "products", "profiles", "access", "links", "releases", "faq"},
                 "usage_tool.json": {"usageTool", "products", "links", "releases", "faq"}, "fleet.json": {"fleet"}}
     for name, keys in sections.items():
         assert keys <= set(P.SECTIONS), name
     org = _prompt(_read("prompts/m365-org-facts.md"), "Fill in the two")
     shape = json.loads(org[org.index("{"):org.index("Rules:")].strip())
     assert set(shape) <= set(P.SECTIONS) and set(shape["contacts"][0]) == set(EXAMPLE["contacts"][0])
+    wiki = _prompt(_read("prompts/confluence-page-facts.md"), "Fill in the bracketed line")
+    shape = json.loads(wiki[wiki.index("{"):wiki.index("Rules:")].strip())
+    assert set(shape) <= set(P.SECTIONS)
+    for key in ("access", "profiles", "faq", "links"):
+        assert set(shape[key][0]) == set(EXAMPLE[key][0]), key
+    assert set(shape["kernel"]) <= set(EXAMPLE["kernel"])
+    scan = {"kernel": {"name": "From the code"}, "profiles": [{"name": "small", "executors": "2"}]}
+    page = {"kernel": {"name": "From the page", "setupSteps": ["Open JupyterHub."]}, "profiles": [{"name": "small", "executors": "3"}]}
+    parts = sorted([("wiki-kernel.json", page), ("data-czars.json", scan)])
+    ctx, _ = P.merge_context(parts)
+    assert ctx["kernel"] == {"name": "From the code", "setupSteps": ["Open JupyterHub."]} and ctx["profiles"][0]["executors"] == "2", \
+        "the Confluence parts merge after the scans: the repository wins, the page fills what it leaves out"
+    assert "wiki-<page>.json" in _read("README.md") and "wiki-<page>.json" in _read("prompts/confluence-page-facts.md")
 
 
 # ------------------------------------------------------------------------------------ the artwork
@@ -585,7 +616,7 @@ def test_the_site_files_are_utf8_lf_without_trailing_whitespace():
 #: the example context, and the `<tenant>` placeholder. A bank address in a tracked file is a fact leaking out.
 PUBLIC_HOSTS = {"github.com", "developer.microsoft.com", "schema.management.azure.com", "teams.microsoft.com",
                 "www.w3.org", "contoso.sharepoint.com", "jira.contoso.com", "confluence.contoso.com",
-                "bitbucket.contoso.com", "<tenant>.sharepoint.com"}
+                "bitbucket.contoso.com", "access.contoso.com", "<tenant>.sharepoint.com"}
 
 
 def test_tracked_site_files_name_no_internal_host_or_mailbox():

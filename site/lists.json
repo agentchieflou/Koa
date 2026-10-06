@@ -47,6 +47,41 @@
       "seed": []
     },
     {
+      "name": "Access",
+      "template": 100,
+      "description": "What a person must be granted before they can use the kernel or change its code: one row per entitlement, why it is needed and where to request it.",
+      "columns": [
+        {"name": "Why", "type": "Note", "description": "What the entitlement lets the person do, in one sentence."},
+        {"name": "NeededFor", "display": "Needed for", "type": "Choice", "choices": ["Using the kernel", "Contributing code"], "default": "Using the kernel", "required": true},
+        {"name": "RequestLink", "display": "Where to request it", "type": "URL"},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "NeededFor", "Why", "RequestLink"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "replace": true},
+        {"name": "Checklist", "fields": ["Title", "Why", "NeededFor", "RequestLink"], "query": "<OrderBy><FieldRef Name=\"NeededFor\" Ascending=\"FALSE\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/access-checklist.json"}
+      ],
+      "seed": []
+    },
+    {
+      "name": "SparkProfiles",
+      "template": 100,
+      "description": "The Spark resource profiles the kernel's session helper offers: one row per profile, what it asks the cluster for and when to use it.",
+      "columns": [
+        {"name": "UseWhen", "display": "Use it when", "type": "Text", "required": true},
+        {"name": "Executors", "type": "Text"},
+        {"name": "ExecutorMemory", "display": "Executor memory", "type": "Text"},
+        {"name": "ExecutorCores", "display": "Cores per executor", "type": "Text"},
+        {"name": "DriverMemory", "display": "Driver memory", "type": "Text"},
+        {"name": "Kind", "type": "Choice", "choices": ["Standard", "Specialized"], "default": "Standard", "required": true},
+        {"name": "SortOrder", "display": "Sort order", "type": "Number"}
+      ],
+      "views": [
+        {"name": "All Items", "fields": ["LinkTitle", "UseWhen", "Executors", "ExecutorMemory", "ExecutorCores", "DriverMemory", "Kind"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 50, "replace": true},
+        {"name": "Pick a profile", "fields": ["Title", "UseWhen", "Executors", "ExecutorMemory", "ExecutorCores", "DriverMemory", "Kind"], "query": "<OrderBy><FieldRef Name=\"Kind\" Ascending=\"FALSE\" /><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/spark-profiles.json"}
+      ],
+      "seed": []
+    },
+    {
       "name": "Intake",
       "template": 100,
       "description": "Everything people bring to Data Czars: issues with a supported product, requests for work, questions and access. Each row becomes a ticket on the team's Jira board, and its Jira key and status come back here.",
@@ -115,20 +150,23 @@
       "description": "Questions people ask Data Czars, answered once. The site agent answers from here first.",
       "columns": [
         {"name": "Answer", "type": "Note", "required": true},
-        {"name": "Topic", "type": "Choice", "choices": ["Getting help", "Usage reports", "This site", "Other"], "choicesFrom": "products[].name", "default": "Getting help"},
+        {"name": "Topic", "type": "Choice", "choices": ["Getting started", "Access", "Common errors", "Getting help", "Usage reports", "This site", "Other"], "choicesFrom": "products[].name", "default": "Getting help"},
         {"name": "ShownTo", "display": "For", "type": "Choice", "choices": ["Everyone", "Members"], "default": "Everyone"},
         {"name": "SortOrder", "display": "Sort order", "type": "Number"}
       ],
       "views": [
         {"name": "All Items", "fields": ["LinkTitle", "Topic", "ShownTo"], "query": "<OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 100, "replace": true},
-        {"name": "Everyone", "fields": ["Title", "Answer", "Topic"], "query": "<Where><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/faq.json"}
+        {"name": "Everyone", "fields": ["Title", "Answer", "Topic"], "query": "<Where><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 30, "formatter": "formatting/faq.json"},
+        {"name": "Common errors", "fields": ["Title", "Answer", "Topic"], "query": "<Where><And><Eq><FieldRef Name=\"Topic\" /><Value Type=\"Choice\">Common errors</Value></Eq><Eq><FieldRef Name=\"ShownTo\" /><Value Type=\"Choice\">Everyone</Value></Eq></And></Where><OrderBy><FieldRef Name=\"SortOrder\" /></OrderBy>", "rowLimit": 20, "formatter": "formatting/faq.json"}
       ],
       "seed": [
         {"Title": "How do I report an issue with one of your products?", "Answer": "Get help > Report an issue. Pick the product, say what you did, what you expected and what happened. It becomes a ticket on our Jira board, and its key and status show under My tickets.", "Topic": "Getting help", "ShownTo": "Everyone", "SortOrder": 10},
-        {"Title": "What happens after I submit?", "Answer": "Your request becomes a Jira ticket within minutes. We triage it within {{team.triageDays}} business days: we take it, say when, or tell you who can help instead. Its status here follows the ticket.", "Topic": "Getting help", "ShownTo": "Everyone", "SortOrder": 20},
+        {"Title": "What happens after I submit?", "Answer": "Your request becomes a ticket on our Jira board once the team has seen it. We triage it within {{team.triageDays}} business days: we take it, say when, or tell you who can help instead. Its status here follows the ticket.", "Topic": "Getting help", "ShownTo": "Everyone", "SortOrder": 20},
         {"Title": "Where are the usage reports?", "Answer": "Usage reports > Latest reports. Every report the usage tool publishes lands there; open one to read it in the browser or download it.", "Topic": "Usage reports", "ShownTo": "Everyone", "SortOrder": 30},
         {"Title": "How do I reach someone on the team?", "Answer": "Contact lists everyone with what to ask them about. The button on each card opens the way that person prefers: a Teams chat, an email, a call or a meeting.", "Topic": "This site", "ShownTo": "Everyone", "SortOrder": 40},
-        {"Title": "Can I ask Copilot instead?", "Answer": "Yes. Ask the Czars, the agent in this site's header, in Teams and in Microsoft Copilot, answers from this site and cites what it used. Czars Desk, the team's agent in Copilot, can also file an issue for you and say where your tickets stand.", "Topic": "This site", "ShownTo": "Everyone", "SortOrder": 50}
+        {"Title": "Can I ask Copilot instead?", "Answer": "Yes. Ask the Czars, the agent in this site's header, in Teams and in Microsoft Copilot, answers from this site and cites what it used. Czars Desk, the team's agent in Copilot, can also file an issue for you and say where your tickets stand.", "Topic": "This site", "ShownTo": "Everyone", "SortOrder": 50},
+        {"Title": "What do I need before I can use the {{kernel.name}}?", "Answer": "The access on Get started > Get access, granted. Request every entitlement marked Using the kernel in one go; the ones marked Contributing code only if you will change the code. Then follow Set up on the same page.", "Topic": "Access", "ShownTo": "Everyone", "SortOrder": 60},
+        {"Title": "Which Spark profile should I use?", "Answer": "The smallest one that fits. Get started > Pick a profile says what each profile asks the cluster for and when to use it. Move up one when a job runs out of memory; tell Ask the Czars your data's size and it suggests one.", "Topic": "Getting started", "ShownTo": "Everyone", "SortOrder": 70}
       ]
     },
     {
