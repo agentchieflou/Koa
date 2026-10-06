@@ -11,15 +11,6 @@
         },
         "_comment_unverified": "'invoker' is the value expected for 'Provided by run-only user'; 'embedded' for the maker's own connection. README 'Verify on import' row 11."
       },
-      "shared_onedriveforbusiness": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "fleet_sharedonedriveforbusiness_fleetagent"
-        },
-        "api": {
-          "name": "shared_onedriveforbusiness"
-        }
-      },
       "shared_sharepointonline": {
         "runtimeSource": "embedded",
         "connection": {
@@ -50,12 +41,12 @@
             "description": "SharePoint site that hosts the five Fleet* lists (Site Address)."
           }
         },
-        "fleet_FleetInboxFolderPath (fleet_FleetInboxFolderPath)": {
+        "fleet_FleetLibrary (fleet_FleetLibrary)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "fleet_FleetInboxFolderPath",
-            "description": "OneDrive for Business folder path of the inbox, e.g. /FleetAgent/inbox."
+            "schemaName": "fleet_FleetLibrary",
+            "description": "Document library on the site that holds one bridge folder per operator, named by the operator's UPN (FleetAgent)."
           }
         }
       },
@@ -362,15 +353,16 @@
               "type": "OpenApiConnection",
               "inputs": {
                 "host": {
-                  "connectionName": "shared_onedriveforbusiness",
+                  "connectionName": "shared_sharepointonline",
                   "operationId": "CreateFile",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
                 },
                 "parameters": {
-                  "folderPath": "@parameters('fleet_FleetInboxFolderPath (fleet_FleetInboxFolderPath)')",
+                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                  "folderPath": "@concat('/', parameters('fleet_FleetLibrary (fleet_FleetLibrary)'), '/', toLower(outputs('Compose_by')), '/inbox')",
                   "name": "@outputs('Compose_inbox_file_name')",
                   "body": "@string(outputs('Compose_record'))",
-                  "_comment_unverified": "'body' given as a JSON string; the parameter is declared binary and the runtime is expected to upload the text as UTF-8 bytes. README 'Verify on import' row 7."
+                  "_comment_unverified": "SharePoint Create file: 'folderPath' as '/<library>/<folder>/...' from the site root, and 'body' given as a JSON string uploaded as UTF-8 bytes. The folder is the invoker's own (their UPN, from Get my profile on their connection), so a decision can only reach the sender's laptop. README 'Verify on import' rows 7 and 21."
                 },
                 "authentication": "@parameters('$authentication')"
               }
@@ -409,6 +401,7 @@
                   "item/ResultCode": "",
                   "item/ResultText": "",
                   "item/ResultAt": "",
+                  "item/Operator": "@toLower(outputs('Compose_by'))",
                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                 },
                 "authentication": "@parameters('$authentication')",
@@ -447,7 +440,7 @@
                     "parameters": {
                       "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                       "table": "FleetApprovals",
-                      "$filter": "Title eq '@{trim(coalesce(triggerBody()?['text_1'], ''))}'",
+                      "$filter": "Title eq '@{trim(coalesce(triggerBody()?['text_1'], ''))}' and Operator eq '@{toLower(outputs('Compose_by'))}'",
                       "$top": 1,
                       "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                     },
@@ -491,6 +484,7 @@
                           "item/DecidedAt": "@outputs('Compose_issued')",
                           "item/Nonce": "@outputs('Compose_nonce')",
                           "item/Via": "mobile",
+                          "item/Operator": "@toLower(outputs('Compose_by'))",
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
                         "authentication": "@parameters('$authentication')",
@@ -628,7 +622,7 @@
           }
         }
       },
-      "description": "FleetDecide: called by the FleetAgent app; validates, writes FleetAgent/inbox/<kind>-<nonce>.json signed with the invoker's UPN, records the FleetDecisions row and marks the approval 'sent'. Contract v1."
+      "description": "FleetDecide: called by the FleetAgent app; validates, writes <library>/<invoker UPN>/inbox/<kind>-<nonce>.json signed with the invoker's UPN (so each operator's decision reaches their own laptop), records the FleetDecisions row and marks the approval 'sent'. Contract v1."
     },
     "templateName": null
   },

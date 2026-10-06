@@ -1,15 +1,6 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_onedriveforbusiness": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "fleet_sharedonedriveforbusiness_fleetagent"
-        },
-        "api": {
-          "name": "shared_onedriveforbusiness"
-        }
-      },
       "shared_sharepointonline": {
         "runtimeSource": "embedded",
         "connection": {
@@ -50,12 +41,20 @@
             "description": "SharePoint site that hosts the five Fleet* lists (Site Address)."
           }
         },
-        "fleet_FleetOutboxFolderId (fleet_FleetOutboxFolderId)": {
+        "fleet_FleetLibrary (fleet_FleetLibrary)": {
           "defaultValue": "",
           "type": "String",
           "metadata": {
-            "schemaName": "fleet_FleetOutboxFolderId",
-            "description": "OneDrive for Business folder ID of FleetAgent/outbox (from the trigger's folder picker, Code view, or Get file metadata using path)."
+            "schemaName": "fleet_FleetLibrary",
+            "description": "Document library on the site that holds one bridge folder per operator, named by the operator's UPN (FleetAgent)."
+          }
+        },
+        "fleet_FleetOperator (fleet_FleetOperator)": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "fleet_FleetOperator",
+            "description": "The operator this copy of the flow serves: their UPN, lowercase, which is also the name of their bridge folder in the library. One copy of the flow per operator."
           }
         },
         "fleet_FleetAppId (fleet_FleetAppId)": {
@@ -64,14 +63,6 @@
           "metadata": {
             "schemaName": "fleet_FleetAppId",
             "description": "App ID (GUID) of the FleetAgent canvas app: Apps > ... > Details."
-          }
-        },
-        "fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)": {
-          "defaultValue": "",
-          "type": "String",
-          "metadata": {
-            "schemaName": "fleet_FleetOperatorEmail",
-            "description": "UPN of the operator who receives push notifications."
           }
         }
       },
@@ -85,24 +76,24 @@
           "type": "OpenApiConnection",
           "inputs": {
             "host": {
-              "connectionName": "shared_onedriveforbusiness",
-              "operationId": "OnNewFilesV2",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+              "connectionName": "shared_sharepointonline",
+              "operationId": "GetOnNewFileItems",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
             },
             "parameters": {
-              "folderId": "@parameters('fleet_FleetOutboxFolderId (fleet_FleetOutboxFolderId)')",
-              "includeSubfolders": true,
-              "maxFileCount": 20,
-              "_comment_unverified": "folderId taken from an environment variable instead of the folder picker; the picker stores a folder ID, so the variable must hold that ID. README 'Verify on import' row 3."
+              "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+              "table": "@parameters('fleet_FleetLibrary (fleet_FleetLibrary)')",
+              "folderPath": "@concat('/', parameters('fleet_FleetLibrary (fleet_FleetLibrary)'), '/', parameters('fleet_FleetOperator (fleet_FleetOperator)'))",
+              "_comment_unverified": "SharePoint 'When a file is created (properties only)' limited to this operator's folder and its subfolders: 'dataset' and 'table' as in the list actions, 'table' accepting the library's name, and 'folderPath' taking the site-relative '/<library>/<UPN>'. README 'Verify on import' row 3."
             },
             "authentication": "@parameters('$authentication')"
           },
           "conditions": [
             {
-              "expression": "@endswith(triggerOutputs()?['body/Name'], '.json')"
+              "expression": "@and(endswith(triggerOutputs()?['body/{FilenameWithExtension}'], '.json'), contains(toLower(triggerOutputs()?['body/{Path}']), concat('/', parameters('fleet_FleetOperator (fleet_FleetOperator)'), '/outbox/')))"
             }
           ],
-          "_comment_unverified": "splitOn path ('body/value') and the recurrence block: on Microsoft 365 seeded plans the platform enforces a 5-minute floor whatever is written here; confirm in the trigger's Code view. README 'Verify on import' row 4."
+          "_comment_unverified": "splitOn path ('body/value'), the recurrence block (a 5-minute floor on Microsoft 365 seeded plans), the {FilenameWithExtension} and {Path} property names, and an environment variable inside a trigger condition: confirm in the trigger's Code view and the first run's outputs. README 'Verify on import' rows 3, 4 and 20."
         }
       },
       "actions": {
@@ -110,17 +101,27 @@
           "runAfter": {},
           "type": "Scope",
           "actions": {
-            "Get_file_content": {
+            "Compose_operator": {
               "runAfter": {},
+              "type": "Compose",
+              "inputs": "@parameters('fleet_FleetOperator (fleet_FleetOperator)')"
+            },
+            "Get_file_content": {
+              "runAfter": {
+                "Compose_operator": [
+                  "Succeeded"
+                ]
+              },
               "type": "OpenApiConnection",
               "inputs": {
                 "host": {
-                  "connectionName": "shared_onedriveforbusiness",
+                  "connectionName": "shared_sharepointonline",
                   "operationId": "GetFileContent",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
                 },
                 "parameters": {
-                  "id": "@triggerOutputs()?['body/Id']",
+                  "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
+                  "id": "@triggerOutputs()?['body/{Identifier}']",
                   "inferContentType": false
                 },
                 "authentication": "@parameters('$authentication')"
@@ -659,7 +660,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetAttention",
-                          "$filter": "Title eq '@{body('Parse_JSON')?['repo']}'",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['repo']}' and Operator eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -738,6 +739,7 @@
                                   "item/External": "@if(equals(body('Parse_JSON')?['external'], true), 'true', 'false')",
                                   "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
                                   "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                  "item/Operator": "@outputs('Compose_operator')",
                                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                 },
                                 "authentication": "@parameters('$authentication')",
@@ -793,6 +795,7 @@
                                 "item/External": "@if(equals(body('Parse_JSON')?['external'], true), 'true', 'false')",
                                 "item/Digest": "@coalesce(body('Parse_JSON')?['digest'], '')",
                                 "item/Seq": "@string(coalesce(body('Parse_JSON')?['seq'], ''))",
+                                "item/Operator": "@outputs('Compose_operator')",
                                 "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                               },
                               "authentication": "@parameters('$authentication')",
@@ -821,7 +824,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetApprovals",
-                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}'",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}' and Operator eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -879,6 +882,7 @@
                               "item/Nonce": "",
                               "item/ResultCode": "",
                               "item/ResultText": "",
+                              "item/Operator": "@outputs('Compose_operator')",
                               "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                             },
                             "authentication": "@parameters('$authentication')",
@@ -904,7 +908,7 @@
                               "playerType": "PowerApps",
                               "app": "@parameters('fleet_FleetAppId (fleet_FleetAppId)')",
                               "recipients": [
-                                "@parameters('fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)')"
+                                "@outputs('Compose_operator')"
                               ],
                               "message": "An agent is waiting for your approval",
                               "openApp": true,
@@ -959,6 +963,7 @@
                                     "item/Expires": "@coalesce(body('Parse_JSON')?['expires'], '')",
                                     "item/WaitingSeconds": "@string(coalesce(body('Parse_JSON')?['waiting_s'], ''))",
                                     "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                    "item/Operator": "@outputs('Compose_operator')",
                                     "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                   },
                                   "authentication": "@parameters('$authentication')",
@@ -992,7 +997,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetApprovals",
-                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}'",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['id']}' and Operator eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -1038,6 +1043,7 @@
                               "item/Late": "@if(equals(body('Parse_JSON')?['late'], true), 'true', 'false')",
                               "item/Reason": "@substring(coalesce(body('Parse_JSON')?['reason'], ''), 0, min(255, length(coalesce(body('Parse_JSON')?['reason'], ''))))",
                               "item/Nonce": "@coalesce(body('Parse_JSON')?['nonce'], '')",
+                              "item/Operator": "@outputs('Compose_operator')",
                               "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                             },
                             "authentication": "@parameters('$authentication')",
@@ -1082,6 +1088,7 @@
                                 "item/ResultCode": "",
                                 "item/ResultText": "",
                                 "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                "item/Operator": "@outputs('Compose_operator')",
                                 "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                               },
                               "authentication": "@parameters('$authentication')",
@@ -1125,7 +1132,7 @@
                             "parameters": {
                               "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                               "table": "FleetDecisions",
-                              "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}'",
+                              "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}' and Operator eq '@{outputs('Compose_operator')}'",
                               "$top": 1,
                               "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                             },
@@ -1166,6 +1173,7 @@
                                   "item/Title": "@coalesce(body('Parse_JSON')?['nonce'], '')",
                                   "item/Result": "applied",
                                   "item/ResultAt": "@coalesce(body('Parse_JSON')?['decided'], '')",
+                                  "item/Operator": "@outputs('Compose_operator')",
                                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                 },
                                 "authentication": "@parameters('$authentication')",
@@ -1201,7 +1209,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetNotifications",
-                          "$filter": "Title eq '@{body('Parse_JSON')?['key']}'",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['key']}' and Operator eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -1274,6 +1282,7 @@
                                   "item/Quiet": "@if(equals(body('Parse_JSON')?['quiet'], true), 'true', 'false')",
                                   "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
                                   "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                  "item/Operator": "@outputs('Compose_operator')",
                                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                 },
                                 "authentication": "@parameters('$authentication')",
@@ -1309,6 +1318,7 @@
                                     "item/Quiet": "@if(equals(body('Parse_JSON')?['quiet'], true), 'true', 'false')",
                                     "item/ApprovalId": "@coalesce(body('Parse_JSON')?['approval_id'], '')",
                                     "item/SourceFile": "@triggerOutputs()?['body/Name']",
+                                    "item/Operator": "@outputs('Compose_operator')",
                                     "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                   },
                                   "authentication": "@parameters('$authentication')",
@@ -1361,7 +1371,7 @@
                                   "playerType": "PowerApps",
                                   "app": "@parameters('fleet_FleetAppId (fleet_FleetAppId)')",
                                   "recipients": [
-                                    "@parameters('fleet_FleetOperatorEmail (fleet_FleetOperatorEmail)')"
+                                    "@outputs('Compose_operator')"
                                   ],
                                   "message": "Fleet: an agent needs you",
                                   "openApp": true,
@@ -1401,7 +1411,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetHeartbeat",
-                          "$filter": "Title eq 'laptop'",
+                          "$filter": "Title eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -1453,7 +1463,7 @@
                                   "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                                   "table": "FleetHeartbeat",
                                   "id": "@first(outputs('Get_items_FleetHeartbeat')?['body/value'])?['ID']",
-                                  "item/Title": "laptop",
+                                  "item/Title": "@outputs('Compose_operator')",
                                   "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
                                   "item/EverySeconds": "@string(coalesce(body('Parse_JSON')?['every_s'], ''))",
                                   "item/ExpireSeconds": "@string(coalesce(body('Parse_JSON')?['expire_s'], ''))",
@@ -1497,7 +1507,7 @@
                               "parameters": {
                                 "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                                 "table": "FleetHeartbeat",
-                                "item/Title": "laptop",
+                                "item/Title": "@outputs('Compose_operator')",
                                 "item/At": "@coalesce(body('Parse_JSON')?['at'], '')",
                                 "item/EverySeconds": "@string(coalesce(body('Parse_JSON')?['every_s'], ''))",
                                 "item/ExpireSeconds": "@string(coalesce(body('Parse_JSON')?['expire_s'], ''))",
@@ -1541,7 +1551,7 @@
                         "parameters": {
                           "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                           "table": "FleetDecisions",
-                          "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}'",
+                          "$filter": "Title eq '@{body('Parse_JSON')?['nonce']}' and Operator eq '@{outputs('Compose_operator')}'",
                           "$top": 1,
                           "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                         },
@@ -1584,6 +1594,7 @@
                               "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
                               "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
                               "item/ResultAt": "@coalesce(body('Parse_JSON')?['at'], '')",
+                              "item/Operator": "@outputs('Compose_operator')",
                               "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                             },
                             "authentication": "@parameters('$authentication')",
@@ -1625,6 +1636,7 @@
                                 "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
                                 "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
                                 "item/ResultAt": "@coalesce(body('Parse_JSON')?['at'], '')",
+                                "item/Operator": "@outputs('Compose_operator')",
                                 "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                               },
                               "authentication": "@parameters('$authentication')",
@@ -1674,7 +1686,7 @@
                             "parameters": {
                               "dataset": "@parameters('fleet_FleetSiteUrl (fleet_FleetSiteUrl)')",
                               "table": "FleetApprovals",
-                              "$filter": "Nonce eq '@{body('Parse_JSON')?['nonce']}'",
+                              "$filter": "Nonce eq '@{body('Parse_JSON')?['nonce']}' and Operator eq '@{outputs('Compose_operator')}'",
                               "$top": 1,
                               "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                             },
@@ -1716,6 +1728,7 @@
                                   "item/Status": "rejected",
                                   "item/ResultCode": "@coalesce(body('Parse_JSON')?['code'], '')",
                                   "item/ResultText": "@substring(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))), 0, min(255, length(trim(concat(coalesce(body('Parse_JSON')?['error'], ''), ' ', coalesce(body('Parse_JSON')?['hint'], ''))))))",
+                                  "item/Operator": "@outputs('Compose_operator')",
                                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                                 },
                                 "authentication": "@parameters('$authentication')",
@@ -1797,6 +1810,7 @@
                   "item/Quiet": "false",
                   "item/ApprovalId": "",
                   "item/SourceFile": "@coalesce(triggerOutputs()?['body/Name'], '')",
+                  "item/Operator": "@coalesce(actions('Compose_operator')?['outputs'], '')",
                   "_comment_unverified": "UNVERIFIED wire shape: 'dataset' (Site Address) and 'table' (List Name) parameter names, the flattened 'item/<Column>' keys, and whether 'table' accepts the list display name (the designer stores the list GUID). README 'Verify on import' rows 1-2."
                 },
                 "authentication": "@parameters('$authentication')",
@@ -1808,7 +1822,7 @@
           }
         }
       },
-      "description": "FleetOutboxToLists: every new *.json under FleetAgent/outbox becomes an upsert into the five Fleet* lists, keyed by Title, plus a content-free push for approvals and non-info notifications. Contract v1."
+      "description": "FleetOutboxToLists: one run per new outbox/*.json in any operator's bridge folder of the site's FleetAgent library; Parse JSON, switch on kind, upsert the matching list row (keyed by Operator and Title), push to that operator for approvals and alerting notifications. Contract v1."
     },
     "templateName": null
   },

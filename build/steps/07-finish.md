@@ -8,13 +8,19 @@ Studio holds.
 
 Send this:
 
-> Last clicks, about three minutes:
+> Last clicks, about five minutes:
 >
 > 1. *(Optional; the app works with the default theme.)* **Themes** (the brush icon) > **Add a theme** > **Paste
 >    theme** > paste everything below > select **FleetTheme**.
 > 2. **Save**, then **Publish** > **Publish this version**.
-> 3. On the phone, install **Power Apps** from the store, sign in with the same account, and open **FleetAgent**
->    once. Pushes reach only someone who has opened the app in the last 30 days.
+> 3. **Share** (Power Apps > Apps > FleetAgent > **Share**): add every other operator as a **User**, not a
+>    co-owner. If the dialog offers to give them access to the data, leave it: the lists stay readable by the
+>    site's Owners only, and every operator is already one.
+> 4. In Power Automate, open **FleetDecide** > **Run only users** > **Edit**: add every other operator, and keep
+>    **Office 365 Users** on **Provided by run-only user** (SharePoint stays on your connection). Each operator's
+>    phone then signs its messages with their own account.
+> 5. Send each operator `build/each-operator.md`. Connecting their own laptop and phone takes them about five
+>    minutes. Do it yourself first, if you haven't in step 05.
 
 Paste the full content of `powerapp/themes/FleetTheme.yaml` under the message.
 
@@ -32,13 +38,15 @@ what Studio holds, as long as the tests still pass.
 
 ## 3. Verify end to end
 
-1. `get_run_history` for `FleetOutboxToLists` shows Succeeded runs since step 05, and the latest heartbeat run is
-   less than 15 minutes old.
-2. Ask the operator to open the app (the play link below) and check four things:
+1. `get_run_history` for the building operator's `FleetOutboxToLists (<UPN>)` shows Succeeded runs since step 05,
+   and the latest heartbeat run is less than 15 minutes old.
+2. Ask the operator to open the app (the play link below) and check five things:
    - **Settings** shows them as signed in;
    - the laptop's operator matches them, with no mismatch banner;
    - the heartbeat is recent, with no "not syncing" banner;
-   - **Home > Attention** lists the laptop's repositories.
+   - **Home** says *Showing my fleet*, and **Attention** lists their own laptop's repositories;
+   - *Show the team's* adds the other operators' rows once their laptops are connected, and Approve, Deny and
+     Reply stay disabled on those rows.
 
 ## 4. Hand over
 
@@ -51,7 +59,7 @@ Then report:
 
 - **Play link:** `https://apps.powerapps.com/play/e/<environment>/a/<appId>`
 - **Studio:** `studioUrl`
-- **Flows:** `FleetDecide` and `FleetOutboxToLists`, both on, with their ids
+- **Flows:** `FleetDecide` and every `FleetOutboxToLists (<UPN>)`, all on, with their ids and owners
 - **Lists:** the five, on `siteUrl`
 - **Fixes:** every fix made and where it is recorded
 - **Next:** `TESTING.md` §3. Send a prompt from the phone's Reply screen and watch it reach the agent

@@ -21,7 +21,8 @@
     "Nonce": "",
     "ResultCode": "",
     "ResultText": "",
-    "SourceFile": "luna-jira-transition-20260926T091806-a52c.json"
+    "SourceFile": "luna-jira-transition-20260926T091806-a52c.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "luna-jira-create-20260926T081204-7e1b",
@@ -45,7 +46,8 @@
     "Nonce": "Qm7vL2pXa9RkT4wHs8NcE1yBd6ZfU3oG",
     "ResultCode": "",
     "ResultText": "applied: RDSD-117 created",
-    "SourceFile": "luna-jira-create-20260926T081204-7e1b.json"
+    "SourceFile": "luna-jira-create-20260926T081204-7e1b.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "rdsd-uat-pncli-write-20260925T161540-c30d",
@@ -69,7 +71,8 @@
     "Nonce": "b3Nq8KzR1tVy6WcM0pXe4LaJ9sHd2FgU",
     "ResultCode": "",
     "ResultText": "denied: the agent quoted the reason into its friction log",
-    "SourceFile": "rdsd-uat-pncli-write-20260925T161540-c30d.json"
+    "SourceFile": "rdsd-uat-pncli-write-20260925T161540-c30d.json",
+    "Operator": "operator@example.com"
   },
   {
     "Title": "dpm-sorting-jira-transition-20260925T101122-9f4e",
@@ -93,6 +96,7 @@
     "Nonce": "",
     "ResultCode": "",
     "ResultText": "",
-    "SourceFile": "dpm-sorting-jira-transition-20260925T101122-9f4e.json"
+    "SourceFile": "dpm-sorting-jira-transition-20260925T101122-9f4e.json",
+    "Operator": "operator@example.com"
   }
 ]

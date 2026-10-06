@@ -16,9 +16,9 @@ write what you saw there.
 phone: AgentScreen > Reply > ReplyScreen > Send reply
   FleetDecide.Run("reply", "", <repo>, "", "", <message>, "", "", ExpireSeconds, Host.OSType)
     the flow: Get my profile (V2) -> by = your UPN; nonce = guid(); issued/expires
-    OneDrive: FleetAgent/inbox/reply-<nonce>.json          (contract $defs/inbox_reply)
-    FleetDecisions: a row, Result = sent
-laptop: the bridge (ad-fleet serve, or ad-fleet mobile watch), every 5 s
+    SharePoint: FleetAgent/<your UPN>/inbox/reply-<nonce>.json   (contract $defs/inbox_reply; your folder only)
+    FleetDecisions: a row, Operator = your UPN, Result = sent
+laptop: your folder syncs down (a OneDrive shortcut); the bridge (ad-fleet serve, or ad-fleet mobile watch), every 5 s
     checks size, JSON, schema, nonce, time, expiry, operator, repo        (docs/fleet-mobile.md, the checks in order)
     a console the fleet opened -> typed in (via: say); anything else -> resumed headless (via: send)
     outbox/results/<nonce>.result.json                     (contract $defs/result)
@@ -32,16 +32,20 @@ text reaches the agent exactly as typed and is not copied to any list but `Fleet
 ## 0. What you need
 
 - The laptop on this-next-please at or after `913d157` (the bridge, `ad-fleet mobile`, the doctor rows),
-  with OneDrive for Business syncing.
+  with OneDrive for Business syncing, and your folder of the site's `FleetAgent` library added as a shortcut
+  ([build/each-operator.md](build/each-operator.md)).
 - A Microsoft 365 account with Power Apps and Power Automate under the seeded licence (every connector used
-  is Standard), and a SharePoint site you can create lists on.
+  is Standard), and a SharePoint team site on which you and every other operator are Owners.
 - Power Apps mobile on the phone, signed in as the same account the laptop's `fleet.mobile.operator` names.
 - This repository, and `python -m pip install openpyxl` only if you regenerate the workbook.
 
-## 1. The laptop: the bridge folder and the loop (once)
+## 1. The laptop: the bridge folder and the loop (once per operator)
+
+Your bridge folder is your own folder in the site's `FleetAgent` library, synced as a OneDrive shortcut:
+[build/each-operator.md](build/each-operator.md) has the clicks. Then:
 
 ```
-ad-setup --patch fleet.mobile            # enabled = true; folder = %OneDriveCommercial%/FleetAgent;
+ad-setup --patch fleet.mobile            # enabled = true; folder = %OneDriveCommercial%/<your UPN>;
                                          # operator = your UPN; expire_s = 900; notify = true
 ad-fleet mobile init                     # the eight directories and pairing.json, each only when missing
 ad-doctor                                # fleet/mobile ok; a fail names its fix (attrib +p "<folder>" /s /d)
@@ -57,19 +61,20 @@ The folder must not be inside any checkout (`mobile_folder_in_repo`).
 The quickest way is to let a Copilot agent do this section: [build/README.md](build/README.md). It runs the
 checks below as part of its steps. By hand:
 
-1. **The five lists**, from `data/FleetAgent.xlsx`: `data/README.md` §Creating the five lists. Every column
-   text; delete the sample rows afterwards.
-2. **`FleetOutboxToLists`**: `flows/README.md`, the build sheet. Point its trigger at
-   `FleetAgent/outbox` with subfolders included.
-   - Check: within one heartbeat (300 s) `FleetHeartbeat` has its one row, `Title = laptop`, and every
-     registered repository has a `FleetAttention` row. If not, the flow's run history says which action failed;
+1. **The five lists and the library**, from `data/FleetAgent.xlsx`: `data/README.md` §Creating the five lists,
+   then the `FleetAgent` document library with one folder per operator (their UPN). Lock all six to the site's
+   Owners (`data/README.md` §Owners only). Delete the sample rows afterwards.
+2. **`FleetOutboxToLists`**, one copy per operator: `flows/README.md`, the build sheet. Each copy's trigger
+   watches only its operator's folder of the `FleetAgent` library.
+   - Check: within one heartbeat (300 s) `FleetHeartbeat` has your row, `Title` = your UPN, and every
+     registered repository has a `FleetAttention` row with `Operator` = your UPN. If not, the flow's run history says which action failed;
      a Parse JSON failure there is a contract drift `tests/test_flows.py` should have caught, so report it.
 3. **`FleetDecide`**: `flows/README.md`. Its connections are *Provided by run-only user*.
    - Check: run it once from the designer's Test with `Kind = reply`, a registered repo and a message. A
-     `reply-<nonce>.json` lands in `FleetAgent/inbox/`, and on the laptop `ad-fleet mobile apply --dry-run` lists
+     `reply-<nonce>.json` lands in `FleetAgent/<your UPN>/inbox/`, and on the laptop `ad-fleet mobile apply --dry-run` lists
      it as `would_apply`. (The real apply is the bridge's; `apply` without `--dry-run` beside a running serve is
      refused `mobile_serve_running` on purpose.)
-4. **The app**: `README.md`, the Studio build sheet, steps 1-9. Publish, share with yourself, open it once in
+4. **The app**: `README.md`, the Studio build sheet, steps 1-9. Publish, share with the other operators, open it once in
    Power Apps mobile on the phone (pushes reach only a user who opened the app in the last 30 days).
    - Check: Settings shows you as signed in, the laptop's operator equal to you (no mismatch banner), and a
      heartbeat younger than 15 minutes (no "not syncing" banner).
@@ -81,7 +86,7 @@ checks below as part of its steps. By hand:
 2. **Reply**, type one line (for example *"Summarise what you changed since the last turn."*), **Send reply**.
    - The phone says it was sent, or `Not sent: <the flow's error>` verbatim. Nothing else on the phone decides.
    - `FleetDecisions` has a row for the nonce with `Result = sent`.
-3. Watch `FleetAgent/inbox/` on the laptop: `reply-<nonce>.json` arrives with the OneDrive sync, then moves to
+3. Watch `<your folder>/inbox/` on the laptop: `reply-<nonce>.json` arrives with the OneDrive sync, then moves to
    `processed/` within a tick (5 s) of arriving.
 4. The agent receives the line: typed into its console (`via: say`) or resumed headless (`via: send`). The
    agent's event stream carries `mobile.reply {nonce, by, via, answered, words}`.
@@ -96,11 +101,24 @@ Then the refusals, each of which must leave the agent untouched and say why on t
 | --- | --- | --- |
 | Reply while the agent is mid-turn | nothing at first: the laptop retries every tick; `applied` after the turn ends, or `mid_turn` with `retried_s` once `expires` passes | the file waits in `inbox/` |
 | Reply to an agent whose session is external | the **Reply** button is disabled with the laptop's sentence | nothing arrives |
-| Sign in on the phone as another account | the mismatch banner; a sent reply comes back `mobile_wrong_operator` | `rejected/<name>.why.json` |
+| Point your laptop's `fleet.mobile.operator` at someone else's UPN | the mismatch banner; a sent reply comes back `mobile_wrong_operator` | `rejected/<name>.why.json` |
 | Turn the laptop's sync off for longer than `expire_s` (900 s), then on | `mobile_expired` | `rejected/` |
 | Lock the laptop (Win+L), reply to a console agent | `via: say`, or `console_unreachable` (runbook M3) | |
 
-## 4. The approval round trip
+## 4. Three operators
+
+Run this once all three laptops are connected ([build/each-operator.md](build/each-operator.md)).
+
+| Try | Expect |
+| --- | --- |
+| Each operator opens the app | *Showing my fleet* lists only their own repositories; the header counts are theirs |
+| *Show the team's* | every operator's rows. Approve, Deny and Reply are disabled on rows that aren't yours, with "This is <name>'s agent" (or approval) |
+| Two operators reply to agents with the same repository name | each reply lands in its sender's own `inbox/` and reaches only that sender's laptop; each `FleetAttention` row stays its owner's |
+| An approval on operator A's laptop | only A's copy of `FleetOutboxToLists` runs; the push reaches A only; B and C see it under *the team's* with Approve disabled |
+| Someone who is a site Member but not an Owner opens the lists, the library or the app | no lists, no files, empty galleries |
+| Run the provisioning flow again (build step 02) | every `Owners_only` repetition still reads `ownersOnly: true` |
+
+## 5. The approval round trip
 
 1. Make an agent ask for an approval (`ad-fleet approvals` lists it). The push arrives ("An agent is waiting
    for your approval", nothing more on the lock screen); a tap opens **ApprovalScreen** on that approval.
@@ -114,7 +132,7 @@ Then the refusals, each of which must leave the agent untouched and say why on t
 
 | Symptom | Where to look |
 | --- | --- |
-| No `FleetHeartbeat` row | `ad-fleet mobile status` (is the bridge running?); the folder synced?; `FleetOutboxToLists` run history |
+| No `FleetHeartbeat` row | `ad-fleet mobile status` (is the bridge running?); the folder synced?; the run history of your `FleetOutboxToLists (<UPN>)` |
 | "Not syncing" banner on the phone | three heartbeats missed: serve stopped, the laptop asleep, or OneDrive paused |
 | `Not sent: ...` on Send | `FleetDecide` run history; its connections must be the invoker's (run-only user) |
 | `reply-<nonce>.json` never reaches the laptop | the folder is online-only: `attrib +p "<folder>" /s /d`; `ad-doctor` says so |
