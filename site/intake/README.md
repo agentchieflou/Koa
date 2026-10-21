@@ -11,8 +11,9 @@ in the `UsageReports` library tagged with its type and period.
 The team's Jira is inside the bank's network. Power Automate's Jira connector is Premium and does not reach a Jira
 Server or Data Center behind a firewall; doing that needs a custom connector and an on-premises data gateway that IT
 installs. Prefilled create-issue links were switched off in Jira 9. A Jira mail handler needs a Jira administrator and
-never returns the new key. The laptop already reaches Jira: `ad-jira create` (this-next-please) writes with the token
-pncli keeps, and every write waits for the operator's one approval on the desk or the phone. So the site hands each
+never returns the new key. The laptop already reaches Jira: `ad-jira create` (this-next-please 0.22.0+) writes through
+toil's Jira connection, which needs writes turned on in toil, and every write waits for the operator's one approval on
+the desk or the phone. So the site hands each
 request to the laptop and takes the answer back, through two Standard-connector flows and the operator's OneDrive,
 which is the same outbox-and-inbox pattern FleetAgent uses.
 
